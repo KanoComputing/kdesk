@@ -10,7 +10,11 @@ To replace the desktop icon manager, edit this file
 
   * /etc/xdg/lxsession/LXDE/autostart
 
-to add "@kano-desktop".
+to add "@kdesk".
+
+In debug mode, you can save a log of the progress replacing the above line with this:
+
+  * /bin/bash -c "kdesk > /tmp/kdesk.log 2>&1"
 
 Requirements to build the app:
 
