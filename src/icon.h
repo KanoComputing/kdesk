@@ -17,11 +17,15 @@ class Icon
  private:
   Configuration *configuration;
   Window win;
+  int iconx, icony, iconw, iconh;
+  int shadowx, shadowy;
+  int icontitlegap;
   Imlib_Updates updates;
   Imlib_Image image;
   Visual *vis;
   Colormap cmap;
   XftFont *font;
+  XGlyphInfo fontInfo;
   XftDraw *xftdraw1, *xftdraw2;
   XftColor xftcolor, xftcolor_shadow;
 

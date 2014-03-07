@@ -24,6 +24,8 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
 {
   configuration = loaded_conf;
   iconid = iconidx;
+  iconx=icony=iconw=iconh=0;
+  shadowx=shadowy=0;
   win = 0;
 }
 
@@ -70,7 +72,8 @@ bool Icon::is_singleton_running (void)
 Window Icon::create (Display *display)
 {
   unsigned int rc=0;
-  int border, iconx=0, icony=0, iconw=0, iconh=0;
+  string caption = configuration->get_icon_string (iconid, "caption");
+  int border;
 
   vis = DefaultVisual(display, DefaultScreen(display));
   cmap = DefaultColormap(display, DefaultScreen(display));
@@ -78,6 +81,10 @@ Window Icon::create (Display *display)
   int fontsize = configuration->get_config_int ("fontsize");
   string fontname = configuration->get_config_string ("fontname");
   string fontbold = configuration->get_config_string ("bold");
+
+  // Collect font details: shadow offsets and caption screen space occupied, used for centering
+  int shadowx = configuration->get_icon_int (iconid, "shadowx");
+  int shadowy = configuration->get_icon_int (iconid, "shadowx");
 
   if (fontbold.size()) {
     fontname += " bold";
@@ -97,6 +104,10 @@ Window Icon::create (Display *display)
     rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0), "white", &xftcolor);
     rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0), "black", &xftcolor_shadow);
     log1 ("XftColorAllocName bool", rc);
+
+    // Find out the extend of icon caption on the rendering surface
+    // The window containing the icon will be enlarged vertically to accomodate this space
+    XftTextExtentsUtf8 (display, font, (XftChar8*) caption.c_str(), caption.length(), &fontInfo);
   }
 
   XSetWindowAttributes attr;
@@ -115,6 +126,11 @@ Window Icon::create (Display *display)
   iconw = configuration->get_icon_int (iconid, "width");
   iconh = configuration->get_icon_int (iconid, "height");
 
+  // Using this parameter we can control the space
+  // between the icon and name rendered just below
+  icontitlegap = configuration->get_config_int("icontitlegap");
+  log1 ("Icon gap for font title rendering", icontitlegap);
+
   // Decide which icon positioning to use
   if (configuration->get_icon_string(iconid, "relative-to") == "bottom-centre") {
     iconx = w / 2 + iconx;
@@ -129,7 +145,8 @@ Window Icon::create (Display *display)
   #endif
 
   log4 ("icon placement (x,y,w,h): @", iconx, icony, iconw, iconh);
-  win = XCreateWindow (display, DefaultRootWindow(display), iconx, icony, iconw, iconh, border,
+  win = XCreateWindow (display, DefaultRootWindow(display), iconx, icony, 
+		       iconw, iconh + fontInfo.height + icontitlegap, border,
 		       CopyFromParent, CopyFromParent, CopyFromParent,
 		       CWBackPixmap|CWBackingStore|CWOverrideRedirect|CWEventMask,
 		       &attr );
@@ -150,7 +167,6 @@ Window Icon::create (Display *display)
 
 void Icon::initialize (Display *display)  // to be removed!
 {
-  return;
 }
 
 void Icon::draw(Display *display, XEvent ev)
@@ -162,7 +178,8 @@ void Icon::draw(Display *display, XEvent ev)
 
   string ficon1 = configuration->get_icon_string (iconid, "icon");
 
-  log1 ("drawing icon", ficon1);
+  log5 ("drawing icon (name @coords)", ficon1, iconx, icony, iconw, iconh);
+
   imlib_context_set_drawable(win);
   image = imlib_load_image(ficon1.c_str());
 
@@ -179,14 +196,23 @@ void Icon::draw(Display *display, XEvent ev)
 
   /* the old position - so we wipe over where it used to be */
   imlib_render_image_on_drawable(0, 0);
-  //updates = imlib_update_append_rect(updates, 0, 0, w, h);
   updates = imlib_update_append_rect(updates, 0, 0, w, h);
   imlib_free_image();
 
+  // We render the icon name below it, twice to create a shadow effec
+  int fx = (iconw - fontInfo.width) / 2;
+  int fy = iconh;
   string caption = configuration->get_icon_string (iconid, "caption");
-  // We render the caption twice to create a shadow
-  XftDrawStringUtf8(xftdraw1, &xftcolor_shadow, font, 1, font->ascent + 1, (XftChar8 *) caption.c_str(), caption.size());
-  XftDrawStringUtf8(xftdraw1, &xftcolor, font, 0, font->ascent, (XftChar8 *) caption.c_str(), caption.size());
+  if (configuration->get_config_string("shadow") == "true")
+    {
+      XftDrawStringUtf8( xftdraw1, &xftcolor_shadow, font, 
+			 fx + shadowx, fy + shadowy + icontitlegap, 
+			 (XftChar8 *) caption.c_str(), caption.size());
+    }
+
+  XftDrawStringUtf8 (xftdraw1, &xftcolor, font, 
+		     fx, fy + icontitlegap,
+		     (XftChar8 *) caption.c_str(), caption.size());
 }
 
 bool Icon::blink_icon(Display *display, XEvent ev)
