@@ -8,9 +8,8 @@ Build-Depends: libx11-dev, libxft-dev, libstartup-notification0-dev, debhelper (
 Package: kdesk
 Architecture: all
 Depends: ${misc:Depends}, ${shlibs:Depends}, kano-desktop (>=1.0-55)
-
 Description: Kanux desktop icon manager
  This package provides the Kanux graphical desktop facade.
  It presents the Kanux background along with all Kano-Make icons organized
- so you can follow all learning experience apps: Make Pong, Minecraft, Video, etc.
- and surf the rest of system applications directly from the desktop.
+ so you can follow all learning experience apps: Make Pong, Minecraft, Video
+ and surf the rest of system applications directly from the desktop
