@@ -1,0 +1,5 @@
+kdesk (1.1-00) unstable; urgency=low
+
+	  * Initial source code packaging commit.
+
+	 -- Team Kano <dev@kano.me>  Fri, 07 Mar 2014 14:30:14 +0000
