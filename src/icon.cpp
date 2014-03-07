@@ -84,7 +84,7 @@ Window Icon::create (Display *display)
 
   // Collect font details: shadow offsets and caption screen space occupied, used for centering
   int shadowx = configuration->get_icon_int (iconid, "shadowx");
-  int shadowy = configuration->get_icon_int (iconid, "shadowx");
+  int shadowy = configuration->get_icon_int (iconid, "shadowy");
 
   if (fontbold.size()) {
     fontname += " bold";
