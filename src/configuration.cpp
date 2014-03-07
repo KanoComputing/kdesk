@@ -52,6 +52,11 @@ bool Configuration::load_conf(const char *filename)
 	configuration["bold"] = value;
       }
 
+      if (token == "Shadow:") {
+	ifile >> value;
+	configuration["shadow"] = value;
+      }
+
       if (token == "ShadowX:") {
 	ifile >> value;
 	configuration["shadowx"] = value;
@@ -81,6 +86,12 @@ bool Configuration::load_conf(const char *filename)
 	ifile >> value;
 	configuration["iconstartdelay"] = value;
       }
+
+      if (token == "IconTitleGap:") {
+	ifile >> value;
+	configuration["icontitlegap"] = value;
+      }
+
     }
  
   ifile.close();
