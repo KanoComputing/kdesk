@@ -97,6 +97,21 @@ bool Configuration::load_conf(const char *filename)
 	configuration["transparency"] = value;
       }
 
+      if (token == "EnableSound:") {
+	ifile >> value;
+	configuration["enablesound"] = value;
+      }
+
+      if (token == "WelcomeSound:") {
+	ifile >> value;
+	configuration["welcomesound"] = value;
+      }
+
+      if (token == "DisabledIconSound:") {
+	ifile >> value;
+	configuration["disablediconsound"] = value;
+      }
+
     }
  
   ifile.close();
