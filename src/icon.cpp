@@ -52,17 +52,9 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   }
 
   if (iconMapGlow) {
-
     // raise the color's strenght based on transparency setting
     for (int c=0; c < 256; c++) {
-
-      if (c - transparency > 0) {
-	iconMapGlow[c] = (unsigned char) c - transparency;
-      }
-      else {
-	iconMapGlow[c] = 0;
-      }
-
+      iconMapGlow[c] = (c - transparency > 0) ? (unsigned char) c - transparency : 0;
     }
   }
   else {
