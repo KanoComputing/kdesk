@@ -28,6 +28,7 @@ class Icon
   XGlyphInfo fontInfo;
   XftDraw *xftdraw1, *xftdraw2;
   XftColor xftcolor, xftcolor_shadow;
+  unsigned char *iconMapNone, *iconMapGlow;
 
  public:
   int iconid;

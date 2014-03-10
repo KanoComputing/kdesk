@@ -92,6 +92,11 @@ bool Configuration::load_conf(const char *filename)
 	configuration["icontitlegap"] = value;
       }
 
+      if (token == "Transparency:") {
+	ifile >> value;
+	configuration["transparency"] = value;
+      }
+
     }
  
   ifile.close();
