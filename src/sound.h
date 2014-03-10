@@ -34,10 +34,7 @@ class Sound
   bool load_chimes(void);
   bool init(void);
   bool play(std::string filename);
-
-  void play_welcome(void);
-  void play_disabled(void);
-
+  void play_sound(string sound_name);
   bool terminate(void);
   bool set_enabled (bool benabled);
   bool get_enabled (void);

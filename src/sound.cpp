@@ -102,21 +102,20 @@ bool Sound::play(std::string filename)
 
     /* set the output format and open the output device */
     format.bits = mpg123_encsize(encoding) * 8;
-    format.rate = rate;
     format.channels = channels;
+    format.rate = rate;
     format.byte_format = AO_FMT_NATIVE;
     format.matrix = 0;
 
     log4 ("decoding mp3 file (file, bits, rate, channels)", filename, format.bits, format.rate, format.channels);
 
     /* decode and play */
-    log1 ("driver!!!", driver);
     dev = ao_open_live(driver, &format, NULL);
-    log1 ("device opened", dev);
+    log2 ("sound device open (driver, device)", driver, dev);
     int rc=0;
     do {
       rc = mpg123_read(mh, mpg123_outblock_buffer, buffer_size, &done);
-      log1 ("mpg123_read rc", rc);
+      log1 ("mpg123_read operation rc", rc);
       if (rc == MPG123_OK) {
 	ao_play(dev, (char *) mpg123_outblock_buffer, done);
       }
@@ -129,14 +128,9 @@ bool Sound::play(std::string filename)
   return bsuccess;
 }
 
-void Sound::play_welcome(void)
+void Sound::play_sound(string sound_name)
 {
-  string filename = configuration->get_config_string ("welcomesound");
-  play (filename);
-}
-
-void Sound::play_disabled(void)
-{
-  string filename = configuration->get_config_string ("disablediconsound");
+  // sound name is the key name specified in the configuration file
+  string filename = configuration->get_config_string (sound_name);
   play (filename);
 }

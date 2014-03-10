@@ -157,7 +157,7 @@ bool Desktop::process_and_dispatch(Display *display)
 	      if (bstarted == true && (ev.xbutton.time - last_dblclick < pconf->get_config_int("iconstartdelay"))) {
 		log1 ("icon start request too fast (iconstartdelay)", pconf->get_config_int("iconstartdelay"));
 		Sound ksound = Sound(pconf);
-		ksound.play_disabled();
+		ksound.play_sound("disablediconsound");
 	      }
 	      else {
 		log ("DOUBLE CLICK!");
@@ -173,7 +173,7 @@ bool Desktop::process_and_dispatch(Display *display)
 		else {
 		  // The app is already running, icon is disabled
 		  Sound ksound = Sound(pconf);
-		  ksound.play_disabled();
+		  ksound.play_sound("disablediconsound");
 		}
 	      }
 	    }

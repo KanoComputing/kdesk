@@ -65,7 +65,7 @@ bool Background::load (Display *display)
   bool bsuccess=false;
 
   Sound ksound = Sound(pconf);
-  ksound.play_welcome();
+  ksound.play_sound("welcomesound");
 
   buffer = imlib_create_image (deskw, deskh);
   if (!buffer)
