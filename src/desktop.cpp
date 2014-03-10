@@ -25,6 +25,7 @@
 #include <map>
 
 #include "icon.h"
+#include "sound.h"
 #include "desktop.h"
 #include "logging.h"
 
@@ -155,6 +156,8 @@ bool Desktop::process_and_dispatch(Display *display)
 	      // Protect the UI experience by disallowing a new app startup if one is in progress
 	      if (bstarted == true && (ev.xbutton.time - last_dblclick < pconf->get_config_int("iconstartdelay"))) {
 		log1 ("icon start request too fast (iconstartdelay)", pconf->get_config_int("iconstartdelay"));
+		Sound ksound = Sound(pconf);
+		ksound.play_sound("disablediconsound");
 	      }
 	      else {
 		log ("DOUBLE CLICK!");
@@ -166,6 +169,11 @@ bool Desktop::process_and_dispatch(Display *display)
 		  // Notify system we are about to load a new app (hourglass)
 		  notify_startup_load (display, iconHandlers[wtarget]->iconid, ev.xbutton.time);
 		  bstarted = iconHandlers[wtarget]->double_click (display, ev);
+		}
+		else {
+		  // The app is already running, icon is disabled
+		  Sound ksound = Sound(pconf);
+		  ksound.play_sound("disablediconsound");
 		}
 	      }
 	    }

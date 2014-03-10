@@ -27,10 +27,51 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   iconx=icony=iconw=iconh=0;
   shadowx=shadowy=0;
   win = 0;
+
+  // create icon color mappings for glow effect (mouse hover during blink_icon class method)
+  //
+  // - iconMapNone is used to not disturb transparency of the icon
+  // - iconMapGlow is a modified version of original rgb colors enhanced according to "transparency"
+  //   setting in the configuration file.
+  //
+  iconMapNone = (unsigned char *) calloc (sizeof(unsigned char), 256);
+  if (iconMapNone) {
+    for (int c=0; c < 256; c++) {
+      iconMapNone[c] = (unsigned char) c;
+    }
+  }
+  else {
+    log ("Error allocating memory for iconMapNone");
+  }
+
+  iconMapGlow = (unsigned char *) calloc (sizeof(unsigned char), 256);
+  unsigned int transparency = configuration->get_config_int("transparency");
+  if (!transparency) {
+    // Setting transparency to 1 has no visual effect
+    transparency = 1;
+  }
+
+  if (iconMapGlow) {
+    // raise the color's strenght based on transparency setting
+    for (int c=0; c < 256; c++) {
+      iconMapGlow[c] = (c - transparency > 0) ? (unsigned char) c - transparency : 0;
+    }
+  }
+  else {
+    log ("Error allocating memory for iconMapGlow");
+  }
+  
 }
 
 Icon::~Icon (void)
 {
+  if (iconMapNone) {
+    free (iconMapNone);
+  }
+
+  if (iconMapGlow) {
+    free (iconMapGlow);
+  }
 }
 
 int Icon::get_iconid()
@@ -217,9 +258,25 @@ void Icon::draw(Display *display, XEvent ev)
 
 bool Icon::blink_icon(Display *display, XEvent ev)
 {
-  string filename = configuration->get_icon_string (iconid, "filename");
-  log1 ("blinking image on icon", filename);
-  return true;
+  bool bsuccess = false;
+  string ficon = configuration->get_icon_string (iconid, "icon");
+  Imlib_Image transformed = imlib_load_image(ficon.c_str());
+  imlib_context_set_image(transformed);
+
+  if (iconMapGlow && iconMapNone) {
+    imlib_set_color_modifier_tables (iconMapGlow, iconMapGlow, iconMapGlow, iconMapNone);
+    imlib_context_set_anti_alias(1);
+    imlib_context_set_blend(1);
+    imlib_context_set_drawable(win);
+    imlib_render_image_on_drawable(0, 0);
+    imlib_free_image();
+    bsuccess = true;
+  }
+  else {
+    log ("This icon does not have an allocated color map");
+  }
+
+  return bsuccess;
 }
 
 bool Icon::motion(Display *display, XEvent ev)

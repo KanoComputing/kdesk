@@ -6,12 +6,12 @@
 #
 # Requirements:
 #
-#  libx11-dev, libxft-dev, libstartup-notification0-dev
+#  libx11-dev, libxft-dev, libstartup-notification0-dev, libao-dev, libmpg123-0-dev
 #
 
 DEBUGGING:=
 
-LIBS:=-lXft -lImlib2 -lstdc++ `pkg-config --libs libstartup-notification-1.0`
+LIBS:=-lXft -lImlib2 -lstdc++ `pkg-config --libs libstartup-notification-1.0` -lmpg123 -lao
 XFTINC:=-I/usr/include/freetype2
 SNINC=-I/usr/include/startup-notification-1.0
 
@@ -22,7 +22,7 @@ all: $(TARGET)
 debug:
 	make all DEBUGGING="-ggdb -O3 -DDEBUG"
 
-$(TARGET): main.o icon.o background.o configuration.o desktop.o
+$(TARGET): main.o icon.o background.o configuration.o desktop.o sound.o
 	g++ $(LIBS) $^ -o $(TARGET)
 
 icon.o: icon.cpp icon.h logging.h configuration.h
@@ -31,11 +31,14 @@ icon.o: icon.cpp icon.h logging.h configuration.h
 main.o: main.cpp main.h configuration.h logging.h version.h
 	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) main.cpp
 
-background.o: background.cpp logging.h
+background.o: background.cpp logging.h sound.h
 	g++ -c $(DEBUGGING) background.cpp
 
 configuration.o: configuration.cpp configuration.h logging.h
 	g++ -c $(DEBUGGING) configuration.cpp
 
-desktop.o: desktop.cpp desktop.h logging.h configuration.h sn_callbacks.cpp
+desktop.o: desktop.cpp desktop.h logging.h configuration.h sn_callbacks.cpp sound.h
 	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) desktop.cpp
+
+sound.o: sound.cpp sound.h
+	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) sound.cpp
