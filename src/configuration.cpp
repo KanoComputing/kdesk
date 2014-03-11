@@ -11,6 +11,7 @@
 #include <sstream>
 #include <stdlib.h>
 
+#include "main.h"
 #include "configuration.h"
 #include "logging.h"
 
@@ -117,114 +118,142 @@ bool Configuration::load_conf(const char *filename)
 	configuration["sounddisabledicon"] = value;
       }
 
+      if (token == "Background.Delay:") {
+	ifile >> value;
+	configuration["background.delay"] = value;
+      }
     }
  
   ifile.close();
   return true;
 }
 
+bool Configuration::parse_icon (const char *directory, string fname, int iconid)
+{
+  bool bsuccess=false;
+  string lnk_extension = ".lnk";
+  string fpath;
+
+  // Only read kano-desktop LNK files.
+  if (! (std::equal(lnk_extension.rbegin(), lnk_extension.rend(), fname.rbegin()))) {
+    return false;
+  }
+
+  // open the icon file and parse arguments
+  fpath = directory;
+  fpath += "/";
+  fpath += fname.c_str();
+  ifile.open (fpath.c_str(), std::ifstream::in);
+  if (!ifile.is_open()) {
+    log1 ("could not open icon file", fpath);
+  }
+  else {
+    log1 ("parsing icon file", fpath);
+	
+    // Process line-by-line tokens
+    // In the form "Parameter: some values"
+    icons[iconid]["filename"] = fname;
+    std::string line;
+    while (std::getline(ifile, line))
+      {
+	std::istringstream iss(line);
+	std::string temp, value, token;
+	    
+	// Collect the key name aka "token"
+	iss >> token;
+	
+	// Then collec the token's value, up to EOL
+	while (!iss.eof()) {
+	  iss >> temp;
+	  value += temp;
+	  if (!iss.eof()) value += " ";
+	}
+	
+	if (token == "AppID:") {
+	  icons[iconid]["appid"] = value;
+	}
+	
+	if (token == "Command:") {
+	  icons[iconid]["command"] = value;
+	}
+	
+	if (token == "Icon:") {
+	  icons[iconid]["icon"] = value;
+	}
+	
+	if (token == "Caption:") {
+	  
+	  // caption supports environment variable expansion
+	  if (value[0] == '$') {
+	    value = getenv (&value[1]);
+	  }
+	  
+	  icons[iconid]["caption"] = value;
+	}
+	
+	if (token == "X:") {
+	  icons[iconid]["x"] = value;
+	}
+	
+	if (token == "Y:") {
+	  icons[iconid]["y"] = value;
+	}
+	
+	if (token == "Width:") {
+	  icons[iconid]["width"] = value;
+	}
+	
+	if (token == "Height:") {
+	  icons[iconid]["height"] = value;
+	}
+	
+	if (token == "Singleton:") {
+	  icons[iconid]["singleton"] = value;
+	}
+	
+	if (token == "Relative-To:") {
+	  icons[iconid]["relative-to"] = value;
+	}
+      }
+
+    ifile.close();
+    bsuccess = true;
+  }
+
+  return bsuccess;
+}
+
 bool Configuration::load_icons(const char *directory)
 {
-  string fpath, lnk_extension = ".lnk";
   struct dirent **files;
   int numfiles, count;
 
+  // Read kano-desktop distributed icons first
+  log1 ("Loading icons from directory", directory);
   numfiles = scandir (directory, &files, 0, 0);
-  for (count=0; count < numfiles; count++)
+  for (count=0; count < numfiles && numicons <= MAX_ICONS; count++)
     {
       string f = files[count]->d_name;
-
-      // Only read kano-desktop LNK files.
-      if (std::equal(lnk_extension.rbegin(), lnk_extension.rend(), f.rbegin()))
-	{
-	  fpath = directory;
-	  fpath += "/";
-	  fpath += f.c_str();
-	  ifile.open (fpath.c_str(), std::ifstream::in);
-	  if (!ifile.is_open()) {
-	    log1 ("could not open icon file", fpath);
-	  }
-	  else {
-	    log1 ("parsing icon file", fpath);
-
-	    // Process line-by-line tokens
-	    // In the form "Parameter: some values"
-	    icons[numicons]["filename"] = f;
-	    std::string line;
-	    while (std::getline(ifile, line))
-	      {
-		std::istringstream iss(line);
-		std::string temp, value, token;
-
-		// Collect the key name aka "token"
-		iss >> token;
-
-		// Then collec the token's value, up to EOL
-		while (!iss.eof()) {
-		  iss >> temp;
-		  value += temp;
-		  if (!iss.eof()) value += " ";
-		}
-		
-		if (token == "AppID:") {
-		  icons[numicons]["appid"] = value;
-		}
-
-		if (token == "Command:") {
-		  icons[numicons]["command"] = value;
-		}
-
-		if (token == "Icon:") {
-		  icons[numicons]["icon"] = value;
-		}
-
-		if (token == "Caption:") {
-
-		  // caption supports environment variable expansion
-		  if (value[0] == '$') {
-		    value = getenv (&value[1]);
-		  }
-
-		  icons[numicons]["caption"] = value;
-		}
-
-		if (token == "X:") {
-		  icons[numicons]["x"] = value;
-		}
-
-		if (token == "Y:") {
-		  icons[numicons]["y"] = value;
-		}
-
-		if (token == "Width:") {
-		  icons[numicons]["width"] = value;
-		}
-
-		if (token == "Height:") {
-		  icons[numicons]["height"] = value;
-		}
-
-		if (token == "Singleton:") {
-		  icons[numicons]["singleton"] = value;
-		}
-
-		if (token == "Relative-To:") {
-		  icons[numicons]["relative-to"] = value;
-		}
-
-	      }
-	  }
-
-	  ifile.close();
-	  numicons++;
-	  if (numicons == MAX_ICONS) {
-	    log1 ("Warning! Max icons reached:", MAX_ICONS);
-	    break;
-	  }
-	}
+      if (parse_icon (directory, f, numicons) == true) {
+	numicons++;
+      }
     }
 
-  log1 ("Number of icons loaded", numicons);
+  // Read icons located at the user's home directory
+  char *env_display = getenv ("HOME");
+  string kdesk_homedir = env_display + string("/");
+  kdesk_homedir += DIR_KDESKTOP_USER;
+  log1 ("Loading icons from homedir", kdesk_homedir);
+  numfiles = scandir (kdesk_homedir.c_str(), &files, 0, 0);
+  for (count=0; count < numfiles && numicons <= MAX_ICONS; count++)
+    {
+      string f = files[count]->d_name;
+      if (parse_icon (kdesk_homedir.c_str(), f, numicons) == true) {
+	numicons++;
+      }
+    }
+
+  log2 ("Number of icons loaded, max permitted", numicons, MAX_ICONS);
   return (bool) (count > 0);
 }
 

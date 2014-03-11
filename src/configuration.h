@@ -28,6 +28,7 @@ class Configuration
   virtual ~Configuration (void);
   bool load_conf (const char *filename);
   bool load_icons (const char *directory);
+  bool parse_icon (const char *directory, std::string fname, int iconid);
   void dump (void);
 
   std::string get_config_string(std::string item);

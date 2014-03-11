@@ -34,7 +34,7 @@ main.o: main.cpp main.h configuration.h logging.h version.h
 background.o: background.cpp logging.h sound.h
 	g++ -c $(DEBUGGING) background.cpp
 
-configuration.o: configuration.cpp configuration.h logging.h
+configuration.o: configuration.cpp configuration.h logging.h main.h
 	g++ -c $(DEBUGGING) configuration.cpp
 
 desktop.o: desktop.cpp desktop.h logging.h configuration.h sn_callbacks.cpp sound.h

@@ -29,6 +29,11 @@ Sound::Sound (Configuration *loaded_conf)
 
 Sound::~Sound (void)
 {
+  if (playing) {
+    pthread_join(t, NULL);
+  }
+
+  terminate();
 }
 
 bool Sound::set_enabled (bool benabled)
@@ -68,12 +73,18 @@ bool Sound::init(void)
 
     initialized = true;
     bsuccess = true;
+    log1 ("initialized audio device (driver)", driver);
+
   }
   return bsuccess;
 }
 
 bool Sound::terminate(void)
 {
+  if (playing == true) {
+    pthread_join(t, NULL);
+  }
+
   free (mpg123_outblock_buffer);
   ao_close (dev);
   mpg123_close (mh);
@@ -109,7 +120,7 @@ bool Sound::play(void)
     format.byte_format = AO_FMT_NATIVE;
     format.matrix = 0;
 
-    log4 ("decoding mp3 file (file, bits, rate, channels)", tune, format.bits, format.rate, format.channels);
+    log4 ("decoding mp3 file (file, bits, rate, channels)", tune->c_str(), format.bits, format.rate, format.channels);
 
     // decode and play
     dev = ao_open_live(driver, &format, NULL);
@@ -128,6 +139,8 @@ bool Sound::play(void)
 
   terminate();
   playing = false;
+  free (tune);
+
   log ("released access to sound driver");
   return bsuccess;
 }
