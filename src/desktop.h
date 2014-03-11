@@ -24,6 +24,7 @@ class Desktop
   Configuration *pconf;
   bool finish;
   static int error_trap_depth;
+  Sound *ksound;
 
  public:
   Desktop(Configuration *loaded_conf);

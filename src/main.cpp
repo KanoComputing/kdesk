@@ -24,6 +24,7 @@
 #include "main.h"
 #include "icon.h"
 #include "background.h"
+#include "sound.h"
 #include "desktop.h"
 #include "logging.h"
 
@@ -101,6 +102,10 @@ int main(int argc, char *argv[])
   bg.setup(display);
   bg.load(display);
   bg.draw(display);
+
+  // Play sound once the background is displayed
+  Sound ksound = Sound(&conf);
+  ksound.play_sound("soundwelcome");
 
   // startup delay
   //unsigned long ms=1000*2000;

@@ -10,6 +10,8 @@
 #include <ao/ao.h>
 #include <mpg123.h>
 
+#include <pthread.h>
+
 #include "configuration.h"
 #include "logging.h"
 #include "sound.h"
@@ -17,17 +19,16 @@
 Sound::Sound (Configuration *loaded_conf)
 {
   configuration = loaded_conf;
+  playing = false;
   driver = 0;
   dev = NULL;
   mh = NULL;
   mpg123_outblock_buffer = (unsigned char *) NULL;
-
   load_chimes();
 }
 
 Sound::~Sound (void)
 {
-  terminate();
 }
 
 bool Sound::set_enabled (bool benabled)
@@ -85,7 +86,7 @@ bool Sound::terminate(void)
   mpg123_outblock_buffer = (unsigned char *) NULL;
 }
 
-bool Sound::play(std::string filename)
+bool Sound::play(void)
 {
   bool bsuccess = false;
   int channels, encoding;
@@ -93,23 +94,24 @@ bool Sound::play(std::string filename)
   long rate;
 
   init();
-  if (!initialized) {
-    log ("sound driver is not initialized");
+  if (!initialized || tune->size() == 0 || (playing == true)) {
+    log2 ("error initializing sound (tune, playing)", tune, playing);
   }
   else {
-    mpg123_open(mh, filename.c_str());
+    playing = true;
+    mpg123_open(mh, tune->c_str());
     mpg123_getformat(mh, &rate, &channels, &encoding);
 
-    /* set the output format and open the output device */
+    // set the output format and open the output device
     format.bits = mpg123_encsize(encoding) * 8;
     format.channels = channels;
     format.rate = rate;
     format.byte_format = AO_FMT_NATIVE;
     format.matrix = 0;
 
-    log4 ("decoding mp3 file (file, bits, rate, channels)", filename, format.bits, format.rate, format.channels);
+    log4 ("decoding mp3 file (file, bits, rate, channels)", tune, format.bits, format.rate, format.channels);
 
-    /* decode and play */
+    // decode and play
     dev = ao_open_live(driver, &format, NULL);
     log2 ("sound device open (driver, device)", driver, dev);
     int rc=0;
@@ -125,12 +127,16 @@ bool Sound::play(std::string filename)
   }
 
   terminate();
+  playing = false;
+  log ("released access to sound driver");
   return bsuccess;
 }
 
 void Sound::play_sound(string sound_name)
 {
   // sound name is the key name specified in the configuration file
-  string filename = configuration->get_config_string (sound_name);
-  play (filename);
+  if (playing == false) {
+    tune = new std::string (configuration->get_config_string (sound_name));
+    pthread_create(&t, NULL, InternalThreadEntryFunc, this);
+  }
 }

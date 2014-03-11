@@ -24,6 +24,9 @@ class Sound
   mpg123_handle *mh;
   size_t buffer_size;
   unsigned char *mpg123_outblock_buffer;
+  std::string *tune;
+  pthread_t t;
+  bool playing;
 
  public:
   int enabled;
@@ -33,8 +36,14 @@ class Sound
 
   bool load_chimes(void);
   bool init(void);
-  bool play(std::string filename);
-  void play_sound(string sound_name);
+
+  static void * InternalThreadEntryFunc(void * This)
+  {
+    ((Sound *)This)->play(); return NULL;
+  }
+
+  bool play(void);
+  void play_sound(std::string sound_name);
   bool terminate(void);
   bool set_enabled (bool benabled);
   bool get_enabled (void);
