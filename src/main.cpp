@@ -104,17 +104,22 @@ int main(int argc, char *argv[])
   bg.draw(display);
 
   // Play sound once the background is displayed
-  Sound ksound = Sound(&conf);
+  Sound ksound(&conf);
   ksound.play_sound("soundwelcome");
 
-  // startup delay
-  //unsigned long ms=1000*2000;
-  //usleep(ms);   //1000 microseconds in a millisecond.
-
+  // Delay desktop startup if requested
+  unsigned long startup_delay=0L;
+  startup_delay = conf.get_config_int ("background.delay");
+  if (startup_delay > 0) {
+    log1 ("Delaying desktop startup for milliseconds", startup_delay);
+    unsigned long ms=1000 * startup_delay;
+    usleep(ms);   // 1000 microseconds in a millisecond.
+  }
+	  
   // Create and draw desktop icons, then attend user interaction
   Desktop dsk(&conf);
-  int nicons = dsk.create_icons(display);
-  log1 ("number of desktop icons created", nicons);
+  bool bicons = dsk.create_icons(display);
+  log1 ("desktop icons created", (bicons == true ? "successfully" : "errors found"));
 
   cout << "processing events..." << endl;
   dsk.process_and_dispatch(display);
