@@ -102,14 +102,19 @@ bool Configuration::load_conf(const char *filename)
 	configuration["enablesound"] = value;
       }
 
-      if (token == "WelcomeSound:") {
+      if (token == "SoundWelcome:") {
 	ifile >> value;
-	configuration["welcomesound"] = value;
+	configuration["soundwelcome"] = value;
       }
 
-      if (token == "DisabledIconSound:") {
+      if (token == "SoundLaunchApp:") {
 	ifile >> value;
-	configuration["disablediconsound"] = value;
+	configuration["soundlaunchapp"] = value;
+      }
+
+      if (token == "SoundDisabledIcon:") {
+	ifile >> value;
+	configuration["sounddisabledicon"] = value;
       }
 
     }

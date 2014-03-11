@@ -15,7 +15,6 @@
 #include "configuration.h"
 #include "background.h"
 #include "logging.h"
-#include "sound.h"
 
 Background::Background (Configuration *loaded_conf)
 {
@@ -63,9 +62,6 @@ bool Background::load (Display *display)
   string background_file;
   Imlib_Image tmpimg, buffer;
   bool bsuccess=false;
-
-  Sound ksound = Sound(pconf);
-  ksound.play_sound("welcomesound");
 
   buffer = imlib_create_image (deskw, deskh);
   if (!buffer)
