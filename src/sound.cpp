@@ -81,10 +81,6 @@ bool Sound::init(void)
 
 bool Sound::terminate(void)
 {
-  if (playing == true) {
-    pthread_join(t, NULL);
-  }
-
   free (mpg123_outblock_buffer);
   ao_close (dev);
   mpg123_close (mh);

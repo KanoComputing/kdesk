@@ -22,12 +22,12 @@ class Desktop
   SnDisplay *sn_display;
   SnLauncherContext *sn_context;
   Configuration *pconf;
+  Sound *psound;
   bool finish;
   static int error_trap_depth;
-  Sound *ksound;
 
  public:
-  Desktop(Configuration *loaded_conf);
+  Desktop(Configuration *loaded_conf, Sound *psound);
   virtual ~Desktop(void);
 
   bool create_icons (Display *display);

@@ -29,11 +29,11 @@
 #include "desktop.h"
 #include "logging.h"
 
-Desktop::Desktop(Configuration *loaded_conf)
+Desktop::Desktop(Configuration *loaded_conf, Sound *ksound)
 {
   pconf = loaded_conf;
+  psound = ksound;
   finish = false;
-  ksound = new Sound(pconf);
 }
 
 Desktop::~Desktop(void)
@@ -157,7 +157,7 @@ bool Desktop::process_and_dispatch(Display *display)
 	      // Protect the UI experience by disallowing a new app startup if one is in progress
 	      if (bstarted == true && (ev.xbutton.time - last_dblclick < pconf->get_config_int("iconstartdelay"))) {
 		log1 ("icon start request too fast (iconstartdelay)", pconf->get_config_int("iconstartdelay"));
-		ksound->play_sound("sounddisabledicon");
+		psound->play_sound("sounddisabledicon");
 	      }
 	      else {
 		log ("DOUBLE CLICK!");
@@ -167,13 +167,13 @@ bool Desktop::process_and_dispatch(Display *display)
 		// Save to request an app startup: tell the icon a mouse double click needs processing
 		if (iconHandlers[wtarget]->is_singleton_running () == false) {
 		  // Notify system we are about to load a new app (hourglass)
-		  ksound->play_sound("soundlaunchapp");
+		  psound->play_sound("soundlaunchapp");
 		  notify_startup_load (display, iconHandlers[wtarget]->iconid, ev.xbutton.time);
 		  bstarted = iconHandlers[wtarget]->double_click (display, ev);
 		}
 		else {
 		  // The app is already running, icon is disabled
-		  ksound->play_sound("sounddisabledicon");
+		  psound->play_sound("sounddisabledicon");
 		}
 	      }
 	    }

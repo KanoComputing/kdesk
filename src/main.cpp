@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
   }
 	  
   // Create and draw desktop icons, then attend user interaction
-  Desktop dsk(&conf);
+  Desktop dsk(&conf, &ksound);
   bool bicons = dsk.create_icons(display);
   log1 ("desktop icons created", (bicons == true ? "successfully" : "errors found"));
 
