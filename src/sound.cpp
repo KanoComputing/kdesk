@@ -25,6 +25,7 @@ Sound::Sound (Configuration *loaded_conf)
   mh = NULL;
   mpg123_outblock_buffer = (unsigned char *) NULL;
   load_chimes();
+  init();
 }
 
 Sound::~Sound (void)
@@ -100,9 +101,8 @@ bool Sound::play(void)
   size_t done;
   long rate;
 
-  init();
   if (!initialized || tune->size() == 0 || (playing == true)) {
-    log2 ("error initializing sound (tune, playing)", tune, playing);
+    log3 ("error initializing sound (initialized, tune, playing)", initialized, tune, playing);
   }
   else {
     playing = true;
@@ -130,14 +130,14 @@ bool Sound::play(void)
       }
     } while (rc == MPG123_OK);
 
+    ao_close(dev);
+    mpg123_close(mh);
     bsuccess = true;
+    playing = false;
   }
-
-  terminate();
-  playing = false;
   free (tune);
 
-  log ("released access to sound driver");
+  log ("finished playing tune");
   return bsuccess;
 }
 
