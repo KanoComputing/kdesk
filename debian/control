@@ -8,6 +8,9 @@ Build-Depends: libx11-dev, libxft-dev, libimlib2-dev, libstartup-notification0-d
 Package: kdesk
 Architecture: armhf
 Depends: ${misc:Depends}, ${shlibs:Depends}, libao4, libmpg123-0
+Provides: idesk
+Conflicts: idesk
+Replaces: idesk
 Description: Kanux desktop icon manager
  This package provides the Kanux graphical desktop facade.
  It presents the Kanux background along with all Kano-Make icons organized
