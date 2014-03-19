@@ -17,7 +17,10 @@ SNINC=-I/usr/include/startup-notification-1.0
 
 TARGET=kdesk
 
-all: $(TARGET)
+all: $(TARGET) $(SSAVER)
+
+$(SSAVER):
+	cd kfbsaver && make
 
 debug:
 	make all DEBUGGING="-ggdb -O3 -DDEBUG"
