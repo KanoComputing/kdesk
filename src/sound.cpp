@@ -23,9 +23,12 @@ Sound::Sound (Configuration *loaded_conf)
   driver = 0;
   dev = NULL;
   mh = NULL;
+  set_enabled(false);
   mpg123_outblock_buffer = (unsigned char *) NULL;
-  load_chimes();
-  init();
+
+  if (load_chimes() == true) {
+    init();
+  }
 }
 
 Sound::~Sound (void)
@@ -33,8 +36,10 @@ Sound::~Sound (void)
   if (playing) {
     pthread_join(t, NULL);
   }
-
-  terminate();
+  
+  if (get_enabled() == true) {
+    terminate();
+  }
 }
 
 bool Sound::set_enabled (bool benabled)
@@ -53,6 +58,7 @@ bool Sound::load_chimes(void)
 
   if (configuration->get_config_string ("enablesound") == "true") {
     // TODO: Preload chimes in memory for faster response times
+    set_enabled(true);
     bsuccess = true;
   }
 
@@ -144,7 +150,7 @@ bool Sound::play(void)
 void Sound::play_sound(string sound_name)
 {
   // sound name is the key name specified in the configuration file
-  if (playing == false) {
+  if (playing == false && get_enabled() == true) {
     tune = new std::string (configuration->get_config_string (sound_name));
     pthread_create(&t, NULL, InternalThreadEntryFunc, this);
   }

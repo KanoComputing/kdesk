@@ -3,11 +3,11 @@ Maintainer: Team Kano <dev@kano.me>
 Section: x11
 Priority: optional
 Standards-Version: 1.1.0
-Build-Depends: libx11-dev, libxft-dev, libimlib2-dev, libstartup-notification0-dev, libao-dev, libmpg123-dev, debhelper (>=9.0.0)
+Build-Depends: libx11-dev, libxft-dev, libimlib2-dev, libstartup-notification0-dev, libao-dev, libmpg123-dev, libxss-dev, debhelper (>=9.0.0)
 
 Package: kdesk
 Architecture: armhf
-Depends: ${misc:Depends}, ${shlibs:Depends}, libao4, libmpg123-0
+Depends: ${misc:Depends}, ${shlibs:Depends}, libao4, libmpg123-0, libxss1
 Provides: idesk
 Conflicts: idesk
 Replaces: idesk

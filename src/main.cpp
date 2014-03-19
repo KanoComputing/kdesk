@@ -27,9 +27,11 @@
 #include "sound.h"
 #include "desktop.h"
 #include "logging.h"
+#include "ssaver.h"
 
 int main(int argc, char *argv[])
 {
+  Status rc;
   Display *display;
   Configuration conf;
   char *display_name = NULL;
@@ -88,6 +90,10 @@ int main(int argc, char *argv[])
     log ("Warning: no icons have been loaded");
   }
 
+  // Kdesk is a multithreaded X app
+  rc = XInitThreads();
+  log1 ("XInitThreads rc", rc);
+
   // Connect to the X Server
   display = XOpenDisplay(display_name);
   if (!display) {
@@ -115,8 +121,15 @@ int main(int argc, char *argv[])
     unsigned long ms=1000 * startup_delay;
     usleep(ms);   // 1000 microseconds in a millisecond.
   }
-	  
-  // Create and draw desktop icons, then attend user interaction
+
+  // Starting screen saver thread
+  KSAVER_DATA ksaver_data;
+  ksaver_data.display_name  = display_name;
+  ksaver_data.idle_timeout  = conf.get_config_int("screensavertimeout");
+  ksaver_data.saver_program = conf.get_config_string("screensaverprogram").c_str();
+  setup_ssaver (&ksaver_data);
+
+  // Create and draw desktop icons, then attend user interaction  
   Desktop dsk(&conf, &ksound);
   bool bicons = dsk.create_icons(display);
   log1 ("desktop icons created", (bicons == true ? "successfully" : "errors found"));
