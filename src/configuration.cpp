@@ -122,6 +122,17 @@ bool Configuration::load_conf(const char *filename)
 	ifile >> value;
 	configuration["background.delay"] = value;
       }
+
+      if (token == "ScreenSaverTimeout:") {
+	ifile >> value;
+	configuration["screensavertimeout"] = value;
+      }
+
+      if (token == "ScreenSaverProgram:") {
+	ifile >> value;
+	configuration["screensaverprogram"] = value;
+      }
+
     }
  
   ifile.close();

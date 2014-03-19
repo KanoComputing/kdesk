@@ -11,7 +11,7 @@
 
 DEBUGGING:=
 
-LIBS:=-lXft -lImlib2 -lstdc++ `pkg-config --libs libstartup-notification-1.0` -lmpg123 -lao -lpthread
+LIBS:=-lXft -lImlib2 -lstdc++ `pkg-config --libs libstartup-notification-1.0` -lmpg123 -lao -lpthread -lXss
 XFTINC:=-I/usr/include/freetype2
 SNINC=-I/usr/include/startup-notification-1.0
 
@@ -22,13 +22,15 @@ all: $(TARGET)
 debug:
 	make all DEBUGGING="-ggdb -O3 -DDEBUG"
 
-$(TARGET): main.o icon.o background.o configuration.o desktop.o sound.o
+# the linkage
+$(TARGET): main.o icon.o background.o configuration.o desktop.o sound.o ssaver.o
 	g++ $(LIBS) $^ -o $(TARGET)
 
+# the compilation
 icon.o: icon.cpp icon.h logging.h configuration.h
 	g++ -c $(DEBUGGING) $(XFTINC) icon.cpp
 
-main.o: main.cpp main.h configuration.h logging.h version.h
+main.o: main.cpp main.h configuration.h logging.h version.h ssaver.h
 	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) main.cpp
 
 background.o: background.cpp logging.h sound.h
@@ -42,3 +44,6 @@ desktop.o: desktop.cpp desktop.h logging.h configuration.h sn_callbacks.cpp soun
 
 sound.o: sound.cpp sound.h
 	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) sound.cpp
+
+ssaver.o: ssaver.cpp ssaver.h
+	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) ssaver.cpp
