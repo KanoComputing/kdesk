@@ -7,7 +7,7 @@
 all: kdesk
 
 kdesk:
-	cd src && make -B
+	cd src && make
 
 debug:
-	cd src && make debug -B
+	cd src && make debug
