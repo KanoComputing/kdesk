@@ -7,13 +7,14 @@
 // An app to show and bring life to Kano-Make Desktop Icons.
 //
 
-#define POLL_INTERVAL 1000            // milliseconds between each system idle query
+#define POLL_INTERVAL 60*1000         // milliseconds between each system idle query
+#define XREFRESH     "xrefresh"       // called after the screen saver to redraw the desktop
 
 typedef struct _ksaver_data {
 
-  const char *display_name;                 // Usually this can be set to NULL to attach to first available display
+  const char *display_name;           // Usually this can be set to NULL to attach to first available display
   unsigned long idle_timeout;         // seconds to idle before starting the screen saver
-  const char *saver_program;                // path to binary program that paints the screen saver
+  const char *saver_program;          // path to binary program that paints the screen saver
 
 } KSAVER_DATA;
 
@@ -21,3 +22,6 @@ typedef KSAVER_DATA* PKSAVER_DATA;
 
 bool setup_ssaver (KSAVER_DATA *kdata);
 void *idle_time (void *p);
+
+Window create_top_window(Display *display);
+void destroy_top_window(Display *display, Window win);

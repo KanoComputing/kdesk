@@ -123,11 +123,13 @@ int main(int argc, char *argv[])
   }
 
   // Starting screen saver thread
-  KSAVER_DATA ksaver_data;
-  ksaver_data.display_name  = display_name;
-  ksaver_data.idle_timeout  = conf.get_config_int("screensavertimeout");
-  ksaver_data.saver_program = conf.get_config_string("screensaverprogram").c_str();
-  setup_ssaver (&ksaver_data);
+  if (conf.get_config_int("screensavertimeout") > 0) {
+    KSAVER_DATA ksaver_data;
+    ksaver_data.display_name  = display_name;
+    ksaver_data.idle_timeout  = conf.get_config_int("screensavertimeout");
+    ksaver_data.saver_program = conf.get_config_string("screensaverprogram").c_str();
+    setup_ssaver (&ksaver_data);
+  }
 
   // Create and draw desktop icons, then attend user interaction  
   Desktop dsk(&conf, &ksound);

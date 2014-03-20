@@ -1,0 +1,30 @@
+README - KFBSaver
+A very simple frame buffer screen saver for Kdesk
+-------------------------------------------------
+
+Implementing a screen saver in Kdesk is a bit tricky, because
+we depend on Minecraft, and it seems to draw directly to the framebuffer.
+
+A bit of background on the RPi framebuffer:
+
+  http://elinux.org/RPi_Framebuffer
+
+This means we need to have a screen saver that draws directly
+to this buffer on the topmost layer to overlap on top of Minecraft. 
+This screen saver attempts to do this but *still* at this point fails for Minecraft.
+
+Nevertheless it succeeds on the rest of the system apps.
+The code is based on the recipes found on these set of articles:
+
+ http://raspberrycompote.blogspot.ie/2012/12/low-level-graphics-on-raspberry-pi-part_9509.html
+
+Additionally it listens for events from the keyboard and mouse,
+so any activity the user sends to the system will effectively kill the screen saver
+returning the user to the Kano Desktop.
+
+Keys on kdeskrc that control the screen saver are:
+
+ScreenSaverTimeout: x   (expressed in seconds)
+ScreenSaverProgra: y    (binary program to draw on the screen: kfbsaver provides this)
+
+Kano Computing, March 2014
