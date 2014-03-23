@@ -19,6 +19,7 @@ LDFLAGS+=-L$(OPTDIR)/lib/ -lGLESv2 -lEGL -lopenmaxil -lbcm_host -lvcos -lvchiq_a
 APP=kdesk-eglsaver
 
 all: $(APP)
+debug: all
 
 $(APP): $(APP).o
 	$(CC) -o $@ -Wl,--whole-archive $(APP).o $(LDFLAGS) -Wl,--no-whole-archive -rdynamic

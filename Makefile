@@ -7,7 +7,9 @@
 all: kdesk
 
 kdesk:
-	cd src && make
+	cd src && make all
+	cd src/kdesk-eglsaver && make all
 
 debug:
 	cd src && make debug
+	cd src/kdesk-eglsaver && make debug

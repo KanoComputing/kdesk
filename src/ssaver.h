@@ -22,6 +22,3 @@ typedef KSAVER_DATA* PKSAVER_DATA;
 
 bool setup_ssaver (KSAVER_DATA *kdata);
 void *idle_time (void *p);
-
-Window create_top_window(Display *display);
-void destroy_top_window(Display *display, Window win);

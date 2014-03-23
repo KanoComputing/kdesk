@@ -1,9 +1,0 @@
-Opengl screen saver
-===================
-
-In order to convert the icons for the cube surfaces, the must be
-128x128, 3bpp and no alpha channel. To obtain the raw formats
-use of imagemagick and following these simple steps
-
- * convert source.png -resize 128x128 -alpha off clean.png
- * convert clean.png -size 128x128 -endian LSB -flip rgb:source.raw
