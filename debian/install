@@ -1,2 +1,2 @@
 src/kdesk /usr/bin
-src/kdesk/kfbsaver/kfbsaver /usr/bin
+src/kdesk-eglsaver/kdesk-eglsaver /usr/bin

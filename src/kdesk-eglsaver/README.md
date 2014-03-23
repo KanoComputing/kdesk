@@ -11,12 +11,17 @@ include files and libraries. Usually this is provided by the Raspbian package "r
 
 Icons are in raw byte format, no encoding, to make for faster load times.
 
-In order to convert the icons for the cube surfaces, the must be
-128x128, 3bpp and no alpha channel. To obtain the raw formats
-use of imagemagick and following these simple steps
+In order to convert the icons for the cube surfaces, they must be
+128x128, 3bpp and no alpha channel. To obtain these raw formats
+use imagemagick and follow these simple steps
 
- * convert source.png -resize 128x128 -alpha off clean.png
- * convert clean.png -size 128x128 -endian LSB -flip rgb:source.raw
+ $ convert source.png -resize 128x128! -alpha off clean.png
+ $ convert clean.png -size 128x128 -endian LSB -flip rgb:source.raw
+
+This gives each bitmap a small size footprint of 45K Bytes.
+
+The default build process will provide 3 sample Kano bitmaps embedded as C array structures,
+so the binary does not rely on external files and at the same time loads a bit faster.
 
 === Building your own screen saver
 

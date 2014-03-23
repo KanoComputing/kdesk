@@ -46,6 +46,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "cube_texture_and_coords.h"
 
+// Bitmaps to be drawn on surfaces are C embedded data structures from RAW files
+#include "bitmap_minecraft.h"
+#include "bitmap_pong.h"
+#include "bitmap_homefolder.h"
+
 #define PATH "./"
 
 #define IMAGE_SIZE 128
@@ -89,6 +94,7 @@ static GLfloat inc_and_clip_distance(GLfloat distance, GLfloat distance_inc);
 static void redraw_scene(CUBE_STATE_T *state);
 static void update_model(CUBE_STATE_T *state);
 static void init_textures(CUBE_STATE_T *state);
+static void load_tex_buffers(CUBE_STATE_T *state);
 static void load_tex_images(CUBE_STATE_T *state);
 static void exit_func(void);
 static volatile int terminate;
@@ -183,6 +189,9 @@ static void init_ogl(CUBE_STATE_T *state)
 
    // Set background color and clear buffers
    //   glClearColor(0.15f, 0.25f, 0.35f, 1.0f);
+
+   // This mode will set desktop a black desktop background
+   // causing no corners around the box
    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
    // Enable back face culling.
@@ -395,8 +404,14 @@ static void redraw_scene(CUBE_STATE_T *state)
  ***********************************************************/
 static void init_textures(CUBE_STATE_T *state)
 {
-   // load three texture buffers but use them on six OGL|ES texture surfaces
-   load_tex_images(state);
+
+  //  TODO: use load_tex_images when bitmap files are provided on the command line
+  // load three texture buffers from files but use them on six OGL|ES texture surfaces
+  //load_tex_images;
+
+  //  TODO: use load_tex_images when bitmap files are provided on the command line
+  load_tex_buffers(state);
+
    glGenTextures(6, &state->tex[0]);
 
    // setup first texture
@@ -448,6 +463,14 @@ static void init_textures(CUBE_STATE_T *state)
    glEnable(GL_TEXTURE_2D);
 }
 
+static void load_tex_buffers(CUBE_STATE_T *state)
+{
+  state->tex_buf1 = (char *) bitmap_homefolder;
+  state->tex_buf2 = (char *) bitmap_pong;
+  state->tex_buf3 = (char *) bitmap_minecraft; 
+}
+
+
 /***********************************************************
  * Name: load_tex_images
  *
@@ -483,7 +506,7 @@ static void load_tex_images(CUBE_STATE_T *state)
    {
      bytes_read=fread(state->tex_buf2, 1, image_sz, tex_file2);
      //assert(bytes_read == image_sz);  // some problem with file?
-     fclose(tex_file2);      
+     fclose(tex_file2);
    }
 
    tex_file3 = fopen(PATH "pong.raw", "rb");
@@ -510,10 +533,11 @@ static void exit_func(void)
    eglDestroyContext( state->display, state->context );
    eglTerminate( state->display );
 
+   // TODO: Free buffers only if bitmaps were loaded from RAW image files
    // release texture buffers
-   free(state->tex_buf1);
-   free(state->tex_buf2);
-   free(state->tex_buf3);
+   //free(state->tex_buf1);
+   //free(state->tex_buf2);
+   //free(state->tex_buf3);
 
    printf("\ncube closed\n");
 } // exit_func()
@@ -539,40 +563,48 @@ int main ()
    // Open access to input devices (keyboard / mouse)
    int fdkbd, fdmouse, n;
    char buf[128];
+   const char *chkbd="/dev/input/event0", *chmouse="/dev/input/mouse0";
 
-    fdkbd = open("/dev/input/event1", O_RDWR | O_NOCTTY | O_NDELAY);
+    fdkbd = open(chkbd, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fdkbd == -1) {
-      printf("open_port: Unable to open /dev/input/event1");
+      printf("open_port: Unable to open %s\n", chkbd);
     }
     else {
       // Turn off blocking for reads, use (fd, F_SETFL, FNDELAY) if you want that
       fcntl(fdkbd, F_SETFL, O_NONBLOCK);
     }
     
-    fdmouse = open("/dev/input/event0", O_RDWR | O_NOCTTY | O_NDELAY);
+    fdmouse = open(chmouse, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fdmouse == -1) {
-      printf("open_port: Unable to open /dev/input/event2");
+      printf("open_port: Unable to open %s\n", chmouse);
     }
     else {
       // Turn off blocking for reads, use (fd, F_SETFL, FNDELAY) if you want that
       fcntl(fdmouse, F_SETFL, O_NONBLOCK);
     }
-    
+
     // Initial startup delay to settle relax XServer events
     usleep (1000 * 1000);
-    
+
+    // empty initial input type-ahead buffers
+    // this is understood as a "grace period" in case the user types or moves the mouse
+    // at the exact same moment the screen saver is loading
+    //
+    n = read(fdkbd, (void*)buf, sizeof(buf));
+    n = read(fdmouse, (void*)buf, sizeof(buf));
+
     while (!terminate)
       {
 	update_model(state);
 	redraw_scene(state);
 	
 	// If there is an input event from keyboard or mouse, stop now
-	n = read(fdkbd, (void*)buf, 255);
+	n = read(fdkbd, (void*)buf, sizeof(buf));
 	if (n > 0) {
 	  terminate = 1;
 	}
 	else {
-	  n = read(fdmouse, (void*)buf, 255);
+	  n = read(fdmouse, (void*)buf, sizeof(buf));
 	  if (n > 0) {
 	    terminate = 1;
 	  }
@@ -582,4 +614,3 @@ int main ()
     exit_func();
     return 0;
 }
-
