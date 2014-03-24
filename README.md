@@ -1,9 +1,9 @@
-==Kano Desktop manager - kDesk
+## Kano Desktop manager - kDesk
 
 Kano desktop manager is an app specifically designed to work on KanuxOS.
 It is responsible for presenting the Kano desktop background image and Kano Make icons.
 
-===Introduction
+### Introduction
 
 It is based on idesk and vdesk but it is rewritten from scratch.
 
@@ -19,7 +19,7 @@ It comes with the following additional features:
  * cost effective screen saver mechanism
  * a screen saver based on native RaspberryPI openGL in the GPU
 
-====Configuration
+#### Configuration
 
 Configuration is handled by the file /usr/share/kano-desktop/kdesk/kdeskrc.
 The syntax is compatible with that of kdesk, but it also offers additional
@@ -29,7 +29,7 @@ Icons are defined in independent files located under /usr/share/kano-desktop/kde
 directory, and also under homedir/.kdesktop. The syntax of the icon files format
 is also compatible with kdesk but also provides for additional features.
 
-====Kdesk Configuration file parameters
+#### Kdesk Configuration file parameters
 
 The following keywords allow for extra functionalities in kDesk itself.
 
@@ -41,14 +41,14 @@ The following keywords allow for extra functionalities in kDesk itself.
  * SoundLLaunchApp - Path to an mp3 sound file to be played when the user double clicks on a disabled icon
  * SoundDisabledIcon - Path to an mp3 sound file to be played when the user double clicks and starts an app
 
-====Icons Configuration file parameters
+#### Icons Configuration file parameters
 
 The following keywords allow for additional functionalities to each icon on the desktop
 
  * Singleton - When this flag is set to true, kdesk will only allow a single running instance of this app
  * AppID - Unique pattern to the icon program command line used to decide if the application is running for Singleton icons
 
-====Kdesk-eglsaver Screen saver
+#### Kdesk-eglsaver Screen saver
 
 This app is Kdesk's default screen saver. It renders three bitmaps on a black background screen which are rotated
 on a 3D effect in slow motion. It uses the native RaspberryPI Opengl GPU features thus it looks very comfortable to
@@ -57,7 +57,7 @@ case with Minecraft and omxplayer used in Kano-Video.
 
 If you want to develop your own screen saver, please read the file src/kdesk-eglsaver/README.md
 
-====kfbsaver
+#### kfbsaver
 
 Kfbsaver is a framebuffer based screen saver showing a fixed color on top of the desktop.
 It was developed as a first approach for integrating into Kanus but it is no optimally fitted as it causes
@@ -65,7 +65,7 @@ flickering effects with framebuffer based apps like Minecraft and omxplayer. It 
 
 You should use kdesk-eglsaver instead.
 
-===Building kdesk and Kdesk-eglsaver
+### Building kdesk and Kdesk-eglsaver
 
 From the base directory you can invoke make to build a release version:
 
