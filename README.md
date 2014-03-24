@@ -5,10 +5,10 @@ It is responsible for presenting the Kano desktop background image and Kano Make
 
 === Introduction
 
-It is based on kdesk and vdesk but it is rewritten from scratch.
+It is based on idesk and vdesk but it is rewritten from scratch.
 
- * kdesk url
- * vdesk url
+ * https://github.com/neagix/idesk
+ * http://xvnkb.sourceforge.net/?menu=vdesk&lang=en
 
 It also provides a connection with the notifiy library for Openbox window manager
 and others, so the hourglass start-up feature works seamlessly.

@@ -7,7 +7,7 @@
 // An app to show and bring life to Kano-Make Desktop Icons.
 //
 
-#define POLL_INTERVAL 60*1000         // milliseconds between each system idle query
+#define POLL_INTERVAL 10*1000         // milliseconds between each system idle query
 #define XREFRESH     "xrefresh"       // called after the screen saver to redraw the desktop
 
 typedef struct _ksaver_data {
