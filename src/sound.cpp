@@ -25,10 +25,7 @@ Sound::Sound (Configuration *loaded_conf)
   mh = NULL;
   set_enabled(false);
   mpg123_outblock_buffer = (unsigned char *) NULL;
-
-  if (load_chimes() == true) {
-    init();
-  }
+  load_chimes();
 }
 
 Sound::~Sound (void)
