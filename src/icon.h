@@ -22,6 +22,7 @@ class Icon
   int icontitlegap;
   Imlib_Updates updates;
   Imlib_Image image;
+  Imlib_Image backsafe;
   Visual *vis;
   Colormap cmap;
   XftFont *font;
@@ -43,6 +44,7 @@ class Icon
 
   void draw(Display *display, XEvent ev);
   bool blink_icon(Display *display, XEvent ev);
+  bool unblink_icon(Display *display, XEvent ev);
   bool double_click(Display *display, XEvent ev);
   bool motion(Display *display, XEvent ev);
 

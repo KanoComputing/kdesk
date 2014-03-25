@@ -26,6 +26,7 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   iconid = iconidx;
   iconx=icony=iconw=iconh=0;
   shadowx=shadowy=0;
+  iconMapNone = iconMapGlow = (unsigned char *) NULL;
   win = 0;
 
   // create icon color mappings for glow effect (mouse hover during blink_icon class method)
@@ -202,6 +203,9 @@ Window Icon::create (Display *display)
     XSelectInput(display, win, ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | EnterWindowMask | LeaveWindowMask);
     XMapWindow(display, win);
   }
+
+  // this will hold a copy of the current icon rendered space
+  backsafe = imlib_create_image (iconw, iconh);
   
   return win;
 }
@@ -254,29 +258,54 @@ void Icon::draw(Display *display, XEvent ev)
   XftDrawStringUtf8 (xftdraw1, &xftcolor, font, 
 		     fx, fy + icontitlegap,
 		     (XftChar8 *) caption.c_str(), caption.size());
+
+  // save the current icon render so we can restore when mouse hovers out
+  imlib_context_set_image(backsafe);
+  imlib_context_set_drawable(win);
+  imlib_copy_drawable_to_image (0, 0, 0, iconw, iconh, 0, 0, 1);
+
 }
 
 bool Icon::blink_icon(Display *display, XEvent ev)
 {
   bool bsuccess = false;
   string ficon = configuration->get_icon_string (iconid, "icon");
+  string hovericon = configuration->get_icon_string (iconid, "iconhover");
   Imlib_Image transformed = imlib_load_image(ficon.c_str());
-  imlib_context_set_image(transformed);
 
-  if (iconMapGlow && iconMapNone) {
-    imlib_set_color_modifier_tables (iconMapGlow, iconMapGlow, iconMapGlow, iconMapNone);
+  // Provide a visual effect when mouse moves over the icon (hover effect)
+  // Drawing a second texture on the icon box
+  if (hovericon.length() > 0) {
+
+    // obfuscate the previous icon
+    XClearArea (display,win, 0,0,iconw,iconh,0);
+
+    // draw the second texture icon
+    log1 ("drawing second texture icon", hovericon);
+    Imlib_Image imghover = imlib_load_image (hovericon.c_str());
+    imlib_context_set_image(imghover);
+    imlib_context_set_drawable(win);
+
     imlib_context_set_anti_alias(1);
     imlib_context_set_blend(1);
-    imlib_context_set_drawable(win);
+
     imlib_render_image_on_drawable(0, 0);
     imlib_free_image();
     bsuccess = true;
   }
-  else {
-    log ("This icon does not have an allocated color map");
-  }
 
   return bsuccess;
+}
+
+bool Icon::unblink_icon(Display *display, XEvent ev)
+{
+  // Mouse is moving out of the icon
+  // smoothly restore the original rendered icon.
+  log ("smoothly restoring original rendered icon");
+  imlib_context_set_image(backsafe);
+  imlib_context_set_drawable(win);
+  imlib_render_image_on_drawable(0, 0);
+  return true;
 }
 
 bool Icon::motion(Display *display, XEvent ev)
