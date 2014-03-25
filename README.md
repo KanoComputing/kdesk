@@ -47,6 +47,7 @@ The following keywords allow for additional functionalities to each icon on the 
 
  * Singleton - When this flag is set to true, kdesk will only allow a single running instance of this app
  * AppID - Unique pattern to the icon program command line used to decide if the application is running for Singleton icons
+ * IconHover - Path and filename to a second texture icon that will be drawn when the mouse moves over the icon
 
 #### Kdesk-eglsaver Screen saver
 

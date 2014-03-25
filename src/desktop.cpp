@@ -195,7 +195,7 @@ bool Desktop::process_and_dispatch(Display *display)
 
 	case LeaveNotify:
 	  log1 ("LeaveNotify event to window", wtarget);
-	  iconHandlers[wtarget]->draw(display, ev);
+	  iconHandlers[wtarget]->unblink_icon(display, ev);
 	  break;
 
 	case Expose:
