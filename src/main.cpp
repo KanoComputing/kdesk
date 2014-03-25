@@ -18,7 +18,7 @@
 #include <X11/Xutil.h>
 #include <X11/Xft/Xft.h>
 
-#include <Imlib2.h>
+#include "X11/extensions/scrnsaver.h"
 
 #include "version.h"
 #include "main.h"
@@ -102,6 +102,9 @@ int main(int argc, char *argv[])
     cout << "DISPLAY=" << (env_display ? env_display : "null") << endl << endl;
     exit (1);
   }
+  else {
+    cout << "Connected to display: " << DisplayString(display) << endl;
+  }
 
   // Create and draw the desktop background
   Background bg(&conf);
@@ -110,8 +113,16 @@ int main(int argc, char *argv[])
   bg.draw(display);
 
   // Play sound once the background is displayed
+  // Only if we are running on the first available display,
+  // Otherwise disable sound - VNC remote sessions
   Sound ksound(&conf);
-  ksound.play_sound("soundwelcome");
+  if (!(strcmp (DisplayString(display), DEFAULT_DISPLAY))) {
+    ksound.init();
+    ksound.play_sound("soundwelcome");
+  }
+  else {
+    cout << "This allocated display is not primary, disabling sound" << DEFAULT_DISPLAY << endl;
+  }      
 
   // Delay desktop startup if requested
   unsigned long startup_delay=0L;
@@ -124,11 +135,19 @@ int main(int argc, char *argv[])
 
   // Starting screen saver thread
   if (conf.get_config_int("screensavertimeout") > 0) {
-    KSAVER_DATA ksaver_data;
-    ksaver_data.display_name  = display_name;
-    ksaver_data.idle_timeout  = conf.get_config_int("screensavertimeout");
-    ksaver_data.saver_program = conf.get_config_string("screensaverprogram").c_str();
-    setup_ssaver (&ksaver_data);
+
+    int rc=0, event_base=0, error_base=0;
+    rc = XScreenSaverQueryExtension (display, &event_base, &error_base);
+    if (rc == 0) {
+      cout << "This XServer does not provide Screen Saver extensions - disabling" << endl;
+    }
+    else {
+      KSAVER_DATA ksaver_data;
+      ksaver_data.display_name  = display_name;
+      ksaver_data.idle_timeout  = conf.get_config_int("screensavertimeout");
+      ksaver_data.saver_program = conf.get_config_string("screensaverprogram").c_str();
+      setup_ssaver (&ksaver_data);
+    }
   }
 
   // Create and draw desktop icons, then attend user interaction  
