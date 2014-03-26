@@ -250,26 +250,27 @@ void Icon::draw(Display *display, XEvent ev)
   updates = imlib_update_append_rect(updates, 0, 0, w, h);
   imlib_free_image();
 
-  // We render the icon name below it, twice to create a shadow effec
-  int fx = (iconw - fontInfo.width) / 2;
-  int fy = iconh;
+  // We render the icon name below it, twice to create a shadow effect
   string caption = configuration->get_icon_string (iconid, "caption");
-  if (configuration->get_config_string("shadow") == "true")
-    {
-      XftDrawStringUtf8( xftdraw1, &xftcolor_shadow, font, 
-			 fx + shadowx, fy + shadowy + icontitlegap, 
-			 (XftChar8 *) caption.c_str(), caption.size());
-    }
-
-  XftDrawStringUtf8 (xftdraw1, &xftcolor, font, 
-		     fx, fy + icontitlegap,
-		     (XftChar8 *) caption.c_str(), caption.size());
+  if (caption.length() > 0) {
+    int fx = (iconw - fontInfo.width) / 2;
+    int fy = iconh;
+    if (configuration->get_config_string("shadow") == "true")
+      {
+	XftDrawStringUtf8( xftdraw1, &xftcolor_shadow, font, 
+			   fx + shadowx, fy + shadowy + icontitlegap, 
+			   (XftChar8 *) caption.c_str(), caption.size());
+      }
+    
+    XftDrawStringUtf8 (xftdraw1, &xftcolor, font, 
+		       fx, fy + icontitlegap,
+		       (XftChar8 *) caption.c_str(), caption.size());
+  }
 
   // save the current icon render so we can restore when mouse hovers out
   imlib_context_set_image(backsafe);
   imlib_context_set_drawable(win);
   imlib_copy_drawable_to_image (0, 0, 0, iconw, iconh, 0, 0, 1);
-
 }
 
 bool Icon::blink_icon(Display *display, XEvent ev)
