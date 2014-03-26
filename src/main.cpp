@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
   // Only if we are running on the first available display,
   // Otherwise disable sound - VNC remote sessions
   Sound ksound(&conf);
-  if (!(strcmp (DisplayString(display), DEFAULT_DISPLAY))) {
+  if (!(strncmp (DisplayString(display), DEFAULT_DISPLAY, strlen (DEFAULT_DISPLAY)))) {
     ksound.init();
     ksound.play_sound("soundwelcome");
   }

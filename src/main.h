@@ -7,4 +7,5 @@
 #define DIR_KDESKTOP_USER  ".kdesktop"
 
 // Primary physical display, used to discern when to play sounds
-#define DEFAULT_DISPLAY    ":0.0"
+// :0 alone means the first display on the local system.
+#define DEFAULT_DISPLAY    ":0"
