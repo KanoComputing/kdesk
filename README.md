@@ -48,6 +48,21 @@ The following keywords allow for additional functionalities to each icon on the 
  * Singleton - When this flag is set to true, kdesk will only allow a single running instance of this app
  * AppID - Unique pattern to the icon program command line used to decide if the application is running for Singleton icons
  * IconHover - Path and filename to a second texture icon that will be drawn when the mouse moves over the icon
+ * HoverTransparent - Wether the second texture icon is rendered withouth clearing the original icon (true / false), default is false
+ * HoverXOffest - Number of pixels to displace the second texture icon to the right of the original icon position
+ * HoverYOffest - Number of pixels to displace the second texture icon to the bottom from the original icon position
+
+#### Manual installation
+
+To replace the default desktop icon manager in LXDE, edit this file
+
+  * /etc/xdg/lxsession/LXDE/autostart
+
+to add "@kdesk".
+
+In debug mode, you can save a log of the progress replacing the above line with this:
+
+  * /bin/bash -c "kdesk > /tmp/kdesk.log 2>&1"
 
 #### Kdesk-eglsaver Screen saver
 

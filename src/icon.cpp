@@ -29,6 +29,9 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   iconMapNone = iconMapGlow = (unsigned char *) NULL;
   win = 0;
 
+  // default font details should be zero
+  fontInfo.height = fontInfo.width = 0;
+
   // create icon color mappings for glow effect (mouse hover during blink_icon class method)
   //
   // - iconMapNone is used to not disturb transparency of the icon
@@ -120,36 +123,39 @@ Window Icon::create (Display *display)
   vis = DefaultVisual(display, DefaultScreen(display));
   cmap = DefaultColormap(display, DefaultScreen(display));
 
-  int fontsize = configuration->get_config_int ("fontsize");
-  string fontname = configuration->get_config_string ("fontname");
-  string fontbold = configuration->get_config_string ("bold");
+  if (caption.length() > 0) {
+    log ("allocating font resources for icon title");
+    int fontsize = configuration->get_config_int ("fontsize");
+    string fontname = configuration->get_config_string ("fontname");
+    string fontbold = configuration->get_config_string ("bold");
 
-  // Collect font details: shadow offsets and caption screen space occupied, used for centering
-  int shadowx = configuration->get_icon_int (iconid, "shadowx");
-  int shadowy = configuration->get_icon_int (iconid, "shadowy");
+    // Collect font details: shadow offsets and caption screen space occupied, used for centering
+    int shadowx = configuration->get_icon_int (iconid, "shadowx");
+    int shadowy = configuration->get_icon_int (iconid, "shadowy");
 
-  if (fontbold.size()) {
-    fontname += " bold";
-  }
+    if (fontbold.size()) {
+      fontname += " bold";
+    }
 
-  log2 ("opening font name and point size", fontname, fontsize);
-  font = XftFontOpen (display, DefaultScreen(display),
-  		      XFT_FAMILY, XftTypeString, fontname.c_str(),
-  		      XFT_SIZE, XftTypeDouble, (float) 14,
-  		      NULL);
-
-  if (!font) {
-    log("Could not create font!");
-  }
-  else{
-    log("font loaded");
-    rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0), "white", &xftcolor);
-    rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0), "black", &xftcolor_shadow);
-    log1 ("XftColorAllocName bool", rc);
-
-    // Find out the extend of icon caption on the rendering surface
-    // The window containing the icon will be enlarged vertically to accomodate this space
-    XftTextExtentsUtf8 (display, font, (XftChar8*) caption.c_str(), caption.length(), &fontInfo);
+    log2 ("opening font name and point size", fontname, fontsize);
+    font = XftFontOpen (display, DefaultScreen(display),
+			XFT_FAMILY, XftTypeString, fontname.c_str(),
+			XFT_SIZE, XftTypeDouble, (float) 14,
+			NULL);
+    
+    if (!font) {
+      log("Could not create font!");
+    }
+    else{
+      log("font loaded");
+      rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0), "white", &xftcolor);
+      rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0), "black", &xftcolor_shadow);
+      log1 ("XftColorAllocName bool", rc);
+      
+      // Find out the extend of icon caption on the rendering surface
+      // The window containing the icon will be enlarged vertically to accomodate this space
+      XftTextExtentsUtf8 (display, font, (XftChar8*) caption.c_str(), caption.length(), &fontInfo);
+    }
   }
 
   XSetWindowAttributes attr;
@@ -277,8 +283,10 @@ bool Icon::blink_icon(Display *display, XEvent ev)
   // Drawing a second texture on the icon box
   if (hovericon.length() > 0) {
 
-    // obfuscate the previous icon
-    XClearArea (display,win, 0,0,iconw,iconh,0);
+    // obfuscate the previous icon unless the icon wants to overlap
+    if (configuration->get_icon_string (iconid, "hovertransparent") != string("true")) {
+      XClearArea (display,win, 0,0,iconw,iconh,0);
+    }
 
     // draw the second texture icon
     log1 ("drawing second texture icon", hovericon);
@@ -289,7 +297,10 @@ bool Icon::blink_icon(Display *display, XEvent ev)
     imlib_context_set_anti_alias(1);
     imlib_context_set_blend(1);
 
-    imlib_render_image_on_drawable(0, 0);
+    int xoffset = configuration->get_icon_int (iconid, "hoverxoffset");
+    int yoffset = configuration->get_icon_int (iconid, "hoveryoffset");
+
+    imlib_render_image_on_drawable (xoffset, yoffset);
     imlib_free_image();
     bsuccess = true;
   }

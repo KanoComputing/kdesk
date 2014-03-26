@@ -196,6 +196,18 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	  icons[iconid]["iconhover"] = value;
 	}
 	
+	if (token == "HoverTransparent:") {
+	  icons[iconid]["hovertransparent"] = value;
+	}
+
+	if (token == "HoverXOffset:") {
+	  icons[iconid]["hoverxoffset"] = value;
+	}
+
+	if (token == "HoverYOffset:") {
+	  icons[iconid]["hoveryoffset"] = value;
+	}
+
 	if (token == "Caption:") {
 	  
 	  // caption supports environment variable expansion
