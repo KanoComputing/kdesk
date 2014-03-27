@@ -32,10 +32,10 @@ bitmap_homefolder.h: bitmap_homefolder.raw
 
 
 $(APP): $(APP).o
-	$(CC) -o $@ -Wl,--whole-archive $(APP).o $(LDFLAGS) -Wl,--no-whole-archive -rdynamic
+	gcc -o $@ -Wl,--whole-archive $(APP).o $(LDFLAGS) -Wl,--no-whole-archive -rdynamic
 
 $(APP).o: $(APP).c bitmap_minecraft.h bitmap_pong.h bitmap_homefolder.h
-	$(CC) $(CFLAGS) $(INCLUDES) -g -c $< -o $@ -Wno-deprecated-declarations
+	gcc $(CFLAGS) $(INCLUDES) -g -c $< -o $@ -Wno-deprecated-declarations
 
 
 
