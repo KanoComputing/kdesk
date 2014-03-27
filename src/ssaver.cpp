@@ -32,6 +32,7 @@ int get_current_console (void)
   if (rc >= 0) {
     current_tty = vtstat.v_active;
   }
+  return current_tty;
 }
 
 bool setup_ssaver (KSAVER_DATA *kdata)
