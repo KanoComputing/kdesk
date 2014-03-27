@@ -7,8 +7,10 @@
 // An app to show and bring life to Kano-Make Desktop Icons.
 //
 
-#define POLL_INTERVAL 10*1000         // milliseconds between each system idle query
-#define XREFRESH     "xrefresh"       // called after the screen saver to redraw the desktop
+#define POLL_INTERVAL    1000            // milliseconds between each system idle query
+#define XREFRESH         "xrefresh"      // called after the screen saver to redraw the desktop
+#define TTY_QUERY        "/dev/tty1"     // name of the tty device to use as a trampoline to know who has the focus
+#define GUI_TTY_DEVICE   7               // tty device number where the GUI XServer is running, normally tty7
 
 typedef struct _ksaver_data {
 
