@@ -15,6 +15,26 @@
 #include "logging.h"
 #include "ssaver.h"
 
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <linux/vt.h>
+
+// Returns the currently active tty on the local system
+// If 0 is returned this info could not be obtained
+int get_current_console (void)
+{
+  int current_tty = 0;
+  struct vt_stat vtstat = {0,0,0};
+
+  int fd = open (TTY_QUERY, O_RDONLY);
+  int rc = ioctl (fd, VT_GETSTATE, &vtstat);
+  close(fd);
+  if (rc >= 0) {
+    current_tty = vtstat.v_active;
+  }
+  return current_tty;
+}
+
 bool setup_ssaver (KSAVER_DATA *kdata)
 {
   pthread_t *tssaver = new pthread_t();
@@ -47,8 +67,8 @@ void *idle_time (void *p)
       rc = XScreenSaverQueryInfo(display, DefaultRootWindow(display), info);
       if (rc)
 	{
-	  // If idle timeout expires, launch the screen saver
-	  if (info->idle > (pdata->idle_timeout * 1000)) {
+	  // If idle timeout expires, and focus is on the GUI tty device, then launch the screen saver
+	  if (info->idle > (pdata->idle_timeout * 1000) && get_current_console() == GUI_TTY_DEVICE) {
 	    log2 ("Starting the Screen Saver (idle, timeout)", info->idle, pdata->idle_timeout * 1000);
 	    rc = system (pdata->saver_program);
 	    log1 ("Screen saver finished with rc", rc);
