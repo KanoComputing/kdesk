@@ -563,7 +563,7 @@ int main ()
    // Open access to input devices (keyboard / mouse)
    int fdkbd, fdmouse, n;
    char buf[128];
-   const char *chkbd="/dev/input/event0", *chmouse="/dev/input/mouse0";
+   const char *chkbd="/dev/input/event1", *chmouse="/dev/input/mouse0";
 
     fdkbd = open(chkbd, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fdkbd == -1) {
