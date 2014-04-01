@@ -515,7 +515,7 @@ static void load_tex_images(CUBE_STATE_T *state)
       bytes_read=fread(state->tex_buf3, 1, image_sz, tex_file3);
       //assert(bytes_read == image_sz);  // some problem with file?
       fclose(tex_file3);
-   }   
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -561,17 +561,40 @@ int main ()
    init_textures(state);
 
    // Open access to input devices (keyboard / mouse)
-   int fdkbd, fdmouse, n;
    char buf[128];
-   const char *chkbd="/dev/input/event1", *chmouse="/dev/input/mouse0";
+   int fdkbd0, fdkbd1, fdkbd2, fdmouse, n;
+   const char *chkbd0="/dev/input/event0",
+     *chkbd1="/dev/input/event1",
+     *chkbd2="/dev/input/event2",
+     *chmouse="/dev/input/mouse0";
 
-    fdkbd = open(chkbd, O_RDWR | O_NOCTTY | O_NDELAY);
-    if (fdkbd == -1) {
-      printf("open_port: Unable to open %s\n", chkbd);
+    fdkbd0 = open(chkbd0, O_RDWR | O_NOCTTY | O_NDELAY);
+    if (fdkbd0 == -1) {
+      printf("open_port: Unable to open %s\n", chkbd0);
     }
     else {
       // Turn off blocking for reads, use (fd, F_SETFL, FNDELAY) if you want that
-      fcntl(fdkbd, F_SETFL, O_NONBLOCK);
+      // And empty the buffer in case the user presses a key as we are loading
+      fcntl(fdkbd0, F_SETFL, O_NONBLOCK);
+      n = read(fdkbd0, (void*)buf, sizeof(buf));
+    }
+
+    fdkbd1 = open(chkbd1, O_RDWR | O_NOCTTY | O_NDELAY);
+    if (fdkbd1 == -1) {
+      printf("open_port: Unable to open %s\n", chkbd1);
+    }
+    else {
+      fcntl(fdkbd1, F_SETFL, O_NONBLOCK);
+      n = read(fdkbd1, (void*)buf, sizeof(buf));
+    }
+
+    fdkbd2 = open(chkbd2, O_RDWR | O_NOCTTY | O_NDELAY);
+    if (fdkbd2 == -1) {
+      printf("open_port: Unable to open %s\n", chkbd2);
+    }
+    else {
+      fcntl(fdkbd2, F_SETFL, O_NONBLOCK);
+      n = read(fdkbd2, (void*)buf, sizeof(buf));
     }
     
     fdmouse = open(chmouse, O_RDWR | O_NOCTTY | O_NDELAY);
@@ -579,19 +602,12 @@ int main ()
       printf("open_port: Unable to open %s\n", chmouse);
     }
     else {
-      // Turn off blocking for reads, use (fd, F_SETFL, FNDELAY) if you want that
       fcntl(fdmouse, F_SETFL, O_NONBLOCK);
+      n = read(fdmouse, (void*)buf, sizeof(buf));
     }
 
     // Initial startup delay to settle relax XServer events
     usleep (1000 * 1000);
-
-    // empty initial input type-ahead buffers
-    // this is understood as a "grace period" in case the user types or moves the mouse
-    // at the exact same moment the screen saver is loading
-    //
-    n = read(fdkbd, (void*)buf, sizeof(buf));
-    n = read(fdmouse, (void*)buf, sizeof(buf));
 
     while (!terminate)
       {
@@ -599,18 +615,30 @@ int main ()
 	redraw_scene(state);
 	
 	// If there is an input event from keyboard or mouse, stop now
-	n = read(fdkbd, (void*)buf, sizeof(buf));
+	n = read(fdkbd0, (void*)buf, sizeof(buf));
 	if (n > 0) {
 	  terminate = 1;
 	}
 	else {
-	  n = read(fdmouse, (void*)buf, sizeof(buf));
+	  n = read(fdkbd1, (void*)buf, sizeof(buf));
 	  if (n > 0) {
 	    terminate = 1;
 	  }
+	  else {
+	    n = read(fdkbd2, (void*)buf, sizeof(buf));
+	    if (n > 0) {
+	      terminate = 1;
+	    }
+	    else {
+	      n = read(fdmouse, (void*)buf, sizeof(buf));
+	      if (n > 0) {
+		terminate = 1;
+	      }
+	    }
+	  }
 	}
-
       }
+
     exit_func();
     return 0;
 }
