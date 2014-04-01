@@ -562,11 +562,12 @@ int main ()
 
    // Open access to input devices (keyboard / mouse)
    char buf[128];
-   int fdkbd0, fdkbd1, fdkbd2, fdmouse, n;
+   int fdkbd0, fdkbd1, fdkbd2, fdmouse, fdmice, n;
    const char *chkbd0="/dev/input/event0",
      *chkbd1="/dev/input/event1",
      *chkbd2="/dev/input/event2",
-     *chmouse="/dev/input/mouse0";
+     *chmouse="/dev/input/mouse0",
+     *chmice="/dev/input/mice";
 
     fdkbd0 = open(chkbd0, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fdkbd0 == -1) {
@@ -606,6 +607,15 @@ int main ()
       n = read(fdmouse, (void*)buf, sizeof(buf));
     }
 
+    fdmice = open(chmice, O_RDWR | O_NOCTTY | O_NDELAY);
+    if (fdmice == -1) {
+      printf("open_port: Unable to open %s\n", chmice);
+    }
+    else {
+      fcntl(fdmice, F_SETFL, O_NONBLOCK);
+      n = read(fdmice, (void*)buf, sizeof(buf));
+    }
+
     // Initial startup delay to settle relax XServer events
     usleep (1000 * 1000);
 
@@ -633,6 +643,12 @@ int main ()
 	      n = read(fdmouse, (void*)buf, sizeof(buf));
 	      if (n > 0) {
 		terminate = 1;
+	      }
+	      else {
+		n = read(fdmice, (void*)buf, sizeof(buf));
+		if (n > 0) {
+		  terminate = 1;
+		}
 	      }
 	    }
 	  }
