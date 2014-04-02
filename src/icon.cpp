@@ -206,8 +206,10 @@ Window Icon::create (Display *display)
   }
   else {
     XSelectInput(display, win, ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | EnterWindowMask | LeaveWindowMask);
-    XLowerWindow(display, win);
     XMapWindow(display, win);
+
+    // Lowering the window means putting it at the bottom of the overlapping windows
+    XLowerWindow(display, win);
   }
 
   // this will hold a copy of the current icon rendered space
@@ -222,8 +224,11 @@ void Icon::initialize (Display *display)  // to be removed!
 
 void Icon::draw(Display *display, XEvent ev)
 {
-  XLowerWindow(display, win);
+  // Reinforcing the window to stay at the bottom of all windows. From the docs on XLowerWindow...
+  // "Lowering a mapped window will generate Expose events on any windows it formerly obscured."
+  //
   XMapWindow(display, win);
+  XLowerWindow(display, win);
 
   imlib_context_set_display(display);
   imlib_context_set_visual(vis);
