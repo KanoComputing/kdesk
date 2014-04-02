@@ -199,7 +199,6 @@ Window Icon::create (Display *display)
 		       CWBackPixmap|CWBackingStore|CWOverrideRedirect|CWEventMask,
 		       &attr );
 
-  XLowerWindow(display, win);
   xftdraw1 = XftDrawCreate(display, win, DefaultVisual(display,0),DefaultColormap(display,0));
   log1("xftdraw1 is", xftdraw1);
   if( win == None ) {
@@ -207,6 +206,7 @@ Window Icon::create (Display *display)
   }
   else {
     XSelectInput(display, win, ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | EnterWindowMask | LeaveWindowMask);
+    XLowerWindow(display, win);
     XMapWindow(display, win);
   }
 
@@ -222,6 +222,9 @@ void Icon::initialize (Display *display)  // to be removed!
 
 void Icon::draw(Display *display, XEvent ev)
 {
+  XLowerWindow(display, win);
+  XMapWindow(display, win);
+
   imlib_context_set_display(display);
   imlib_context_set_visual(vis);
   imlib_context_set_colormap(cmap);
