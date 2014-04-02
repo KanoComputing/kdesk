@@ -53,7 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define PATH "./"
 
-#define IMAGE_SIZE 128
+#define IMAGE_SIZE 512
 
 #ifndef M_PI
    #define M_PI 3.141592654
@@ -192,7 +192,7 @@ static void init_ogl(CUBE_STATE_T *state)
 
    // This mode will set desktop a black desktop background
    // causing no corners around the box
-   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+   glClearColor (0.0f, 0.0f, 0.0f, 1.0f);
 
    // Enable back face culling.
    glEnable(GL_CULL_FACE);
