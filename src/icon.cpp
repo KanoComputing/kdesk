@@ -184,6 +184,14 @@ Window Icon::create (Display *display)
     iconx = w / 2 + iconx;
     icony = h + icony;
   }
+  else if (configuration->get_icon_string(iconid, "relative-to") == "top-left") {
+    // no coordinate transformation necessary. 0,0 is already top-left
+    ;
+  }
+  else if (configuration->get_icon_string(iconid, "relative-to") == "top-right") {
+    // icon horizontal position decreases from the right to the left
+    iconx = w - (iconx + iconw);
+  }
 
   // In debug version, icons are drawn with a black frame
   #ifdef DEBUG
