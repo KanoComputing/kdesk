@@ -188,7 +188,6 @@ Window Icon::create (Display *display)
 		       CWBackPixmap|CWBackingStore|CWOverrideRedirect|CWEventMask,
 		       &attr );
 
-  XLowerWindow(display, win);
   xftdraw1 = XftDrawCreate(display, win, DefaultVisual(display,0),DefaultColormap(display,0));
   log1("xftdraw1 is", xftdraw1);
   if( win == None ) {
@@ -197,6 +196,7 @@ Window Icon::create (Display *display)
   else {
     XSelectInput(display, win, ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | EnterWindowMask | LeaveWindowMask);
     XMapWindow(display, win);
+    XLowerWindow(display, win);
   }
 
   // this will hold a copy of the current icon rendered space
@@ -219,6 +219,13 @@ void Icon::draw(Display *display, XEvent ev)
   string ficon1 = configuration->get_icon_string (iconid, "icon");
 
   log5 ("drawing icon (name @coords)", ficon1, iconx, icony, iconw, iconh);
+
+
+  // Reinforcing the window to stay at the bottom of all windows. From the docs on XLowerWindow...
+  // "Lowering a mapped window will generate Expose events on any windows it formerly obscured."
+  //
+  XMapWindow(display, win);
+  XLowerWindow(display, win);
 
   imlib_context_set_drawable(win);
   image = imlib_load_image(ficon1.c_str());
