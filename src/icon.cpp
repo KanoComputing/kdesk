@@ -32,12 +32,6 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   // default font details should be zero
   fontInfo.height = fontInfo.width = 0;
 
-  // create icon color mappings for glow effect (mouse hover during blink_icon class method)
-  //
-  // - iconMapNone is used to not disturb transparency of the icon
-  // - iconMapGlow is a modified version of original rgb colors enhanced according to "transparency"
-  //   setting in the configuration file.
-  //
   iconMapNone = (unsigned char *) calloc (sizeof(unsigned char), 256);
   if (iconMapNone) {
     for (int c=0; c < 256; c++) {
@@ -49,22 +43,17 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   }
 
   iconMapGlow = (unsigned char *) calloc (sizeof(unsigned char), 256);
+  if (!iconMapGlow) {
+    log ("Error allocating memory for iconMapGlow");
+  }
+
+  // FIXME: We are not using transparency at all, superseeded by icon blending?
+  // I will be conservative and keep it here.
   unsigned int transparency = configuration->get_config_int("transparency");
   if (!transparency) {
     // Setting transparency to 1 has no visual effect
     transparency = 1;
   }
-
-  if (iconMapGlow) {
-    // raise the color's strenght based on transparency setting
-    for (int c=0; c < 256; c++) {
-      iconMapGlow[c] = (c - transparency > 0) ? (unsigned char) c - transparency : 0;
-    }
-  }
-  else {
-    log ("Error allocating memory for iconMapGlow");
-  }
-  
 }
 
 Icon::~Icon (void)
@@ -184,14 +173,6 @@ Window Icon::create (Display *display)
     iconx = w / 2 + iconx;
     icony = h + icony;
   }
-  else if (configuration->get_icon_string(iconid, "relative-to") == "top-left") {
-    // no coordinate transformation necessary. 0,0 is already top-left
-    ;
-  }
-  else if (configuration->get_icon_string(iconid, "relative-to") == "top-right") {
-    // icon horizontal position decreases from the right to the left
-    iconx = w - (iconx + iconw);
-  }
 
   // In debug version, icons are drawn with a black frame
   #ifdef DEBUG
@@ -215,8 +196,6 @@ Window Icon::create (Display *display)
   else {
     XSelectInput(display, win, ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | EnterWindowMask | LeaveWindowMask);
     XMapWindow(display, win);
-
-    // Lowering the window means putting it at the bottom of the overlapping windows
     XLowerWindow(display, win);
   }
 
@@ -232,12 +211,6 @@ void Icon::initialize (Display *display)  // to be removed!
 
 void Icon::draw(Display *display, XEvent ev)
 {
-  // Reinforcing the window to stay at the bottom of all windows. From the docs on XLowerWindow...
-  // "Lowering a mapped window will generate Expose events on any windows it formerly obscured."
-  //
-  XMapWindow(display, win);
-  XLowerWindow(display, win);
-
   imlib_context_set_display(display);
   imlib_context_set_visual(vis);
   imlib_context_set_colormap(cmap);
@@ -246,6 +219,13 @@ void Icon::draw(Display *display, XEvent ev)
   string ficon1 = configuration->get_icon_string (iconid, "icon");
 
   log5 ("drawing icon (name @coords)", ficon1, iconx, icony, iconw, iconh);
+
+
+  // Reinforcing the window to stay at the bottom of all windows. From the docs on XLowerWindow...
+  // "Lowering a mapped window will generate Expose events on any windows it formerly obscured."
+  //
+  XMapWindow(display, win);
+  XLowerWindow(display, win);
 
   imlib_context_set_drawable(win);
   image = imlib_load_image(ficon1.c_str());
@@ -294,30 +274,67 @@ bool Icon::blink_icon(Display *display, XEvent ev)
   bool bsuccess = false;
   string ficon = configuration->get_icon_string (iconid, "icon");
   string hovericon = configuration->get_icon_string (iconid, "iconhover");
-  Imlib_Image transformed = imlib_load_image(ficon.c_str());
+  Imlib_Image original = imlib_load_image(ficon.c_str());
+  Imlib_Color_Modifier colorMod=NULL;
 
-  // Provide a visual effect when mouse moves over the icon (hover effect)
-  // Drawing a second texture on the icon box
+  // If a second texture is provided, create a visual effect when mouse moves over the icon (hover effect)
   if (hovericon.length() > 0) {
 
-    // obfuscate the previous icon unless the icon wants to overlap
-    if (configuration->get_icon_string (iconid, "hovertransparent") != string("true")) {
-      XClearArea (display,win, 0,0,iconw,iconh,0);
-    }
-
-    // draw the second texture icon
+    // start by laoding the second texture icon
     log1 ("drawing second texture icon", hovericon);
     Imlib_Image imghover = imlib_load_image (hovericon.c_str());
-    imlib_context_set_image(imghover);
-    imlib_context_set_drawable(win);
+    
+    // if blending is also requested (HoverTransparent) mix original icon with the second texture
+    // with a transparency percentage specified by this same flag (0 will blend with desktop, 255 full opaque blend)
+    if (configuration->get_icon_int (iconid, "hovertransparent") > 0) {
 
-    imlib_context_set_anti_alias(1);
-    imlib_context_set_blend(1);
+      // Set drawing operations using the original icon
+      imlib_context_set_drawable(win);
+      imlib_context_set_image(original);
+      imlib_context_set_anti_alias(1);
+      imlib_context_set_blend(1);
+      
+      // Create a color modifier which we'll use to blend both images
+      colorMod = imlib_create_color_modifier();
+      imlib_context_set_color_modifier(colorMod);
 
+      if (iconMapNone && iconMapGlow) {
+	imlib_get_color_modifier_tables(iconMapNone, iconMapNone, iconMapNone, iconMapGlow);
+	imlib_reset_color_modifier();
+
+	for (int n=0; n < 256; n++) {
+	  if (iconMapGlow[n] > 127) {
+	    // The value 127 shows me it smoothly blends both images without distorting their alphas
+	    // The higher the value (hovertransparent), the more the textures blend.
+	    iconMapGlow[n] = configuration->get_icon_int (iconid, "hovertransparent");
+	  }
+	}
+      }
+      else {
+	log ("iconMapNone / iconMapGlow have not been allocated, no blending possible");
+      }
+
+      // Use the new modified color mapping, and blend the second texture on top of the original icon
+      imlib_set_color_modifier_tables (iconMapNone, iconMapNone, iconMapNone, iconMapGlow);
+      imlib_blend_image_onto_image (imghover, 1, 0, 0, iconw, iconh, 0, 0, iconw, iconh);
+      
+    } // if HoverTransparent
+    else {
+
+      // If there is no blending requested, just draw the second texture as the icon representation
+      imlib_context_set_drawable(win);
+      imlib_context_set_image(imghover);
+    }
+    
     int xoffset = configuration->get_icon_int (iconid, "hoverxoffset");
     int yoffset = configuration->get_icon_int (iconid, "hoveryoffset");
-
     imlib_render_image_on_drawable (xoffset, yoffset);
+
+    if (colorMod) {
+      // The color modifier might have been used during texture blending
+      imlib_free_color_modifier();
+    }
+
     imlib_free_image();
     bsuccess = true;
   }
