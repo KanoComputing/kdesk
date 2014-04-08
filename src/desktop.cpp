@@ -152,7 +152,7 @@ bool Desktop::process_and_dispatch(Display *display)
 	  // And a grace time period to protect nested double clicks: "clickgrace"
 	  // Note we are listening for both left and right mouse click events.
 	  log3 ("ButtonPress event: window, time, last click", wtarget, ev.xbutton.time, last_click);
-	  if (ev.xbutton.time - last_click < pconf->get_config_int("clickdelay")) 
+	  if (ev.xbutton.time - last_click < pconf->get_config_int("clickdelay") || pconf->get_config_string("oneclick") == "true")
 	    {
 	      // Protect the UI experience by disallowing a new app startup if one is in progress
 	      if (bstarted == true && (ev.xbutton.time - last_dblclick < pconf->get_config_int("iconstartdelay"))) {
@@ -160,7 +160,7 @@ bool Desktop::process_and_dispatch(Display *display)
 		psound->play_sound("sounddisabledicon");
 	      }
 	      else {
-		log ("DOUBLE CLICK!");
+		log ("Processing mouse click startup event");
 		last_dblclick = ev.xbutton.time;
 		bstarted = false;
 

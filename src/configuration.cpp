@@ -133,6 +133,11 @@ bool Configuration::load_conf(const char *filename)
 	configuration["screensaverprogram"] = value;
       }
 
+      if (token == "OneClick:") {
+	ifile >> value;
+	configuration["oneclick"] = value;
+      }
+
     }
  
   ifile.close();
