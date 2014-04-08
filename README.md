@@ -40,6 +40,7 @@ The following keywords allow for extra functionalities in kDesk itself.
  * SoundWelcome - Path to an mp3 sound file to be played on kdesk startup
  * SoundLLaunchApp - Path to an mp3 sound file to be played when the user double clicks on a disabled icon
  * SoundDisabledIcon - Path to an mp3 sound file to be played when the user double clicks and starts an app
+ * OneClick - If this flag is set to true, one single mouse click will start the icon apps. Default is false.
 
 #### Icons Configuration file parameters
 
