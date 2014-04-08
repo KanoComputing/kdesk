@@ -41,6 +41,10 @@ The following keywords allow for extra functionalities in kDesk itself.
  * SoundLLaunchApp - Path to an mp3 sound file to be played when the user double clicks on a disabled icon
  * SoundDisabledIcon - Path to an mp3 sound file to be played when the user double clicks and starts an app
  * OneClick - If this flag is set to true, one single mouse click will start the icon apps. Default is false.
+ * Background.File-medium - Filename of the wallpaper image used for Medium resolution screens (see ScreenMedResWidth)
+ * ScreenMedResWidth - Minimal screen width of the screen in pixels to be considered as high resolution wallpaper mode.
+                       If the screen resolution falls below this width, the wallpaper "Background.File-medium" will be displayed.
+		       instead of the high resolution ones (background.file-4-3, background.file-16-9). The default is none, which means high resolution.
 
 #### Icons Configuration file parameters
 

@@ -74,14 +74,28 @@ bool Background::load (Display *display)
       dist43 = std::abs (ratio - 4.0/3.0);
       dist169 = std::abs (ratio - 16.0/9);
 
-      // Decide which image to load depending on screen aspect/ratio
-      if (dist43 < dist169) {
-	background_file = pconf->get_config_string ("background.file-4-3");
-	log1 ("loading 4:3 background image", background_file);
+      // Decide which image to load depending on screen resolution and aspect/ratio
+      unsigned int midreswidth=pconf->get_config_int ("screenmedreswidth");
+      if (midreswidth > 0 && deskw < midreswidth) {
+	// If a minimal medium resolution is specified, and
+	// the screen resolution falls below this setting, then
+	// Take the middle resolution wallpaper image
+	background_file = pconf->get_config_string ("background.file-medium");
+	log1 ("loading medium resolution wallpaper image", background_file);
       }
       else {
-	background_file = pconf->get_config_string ("background.file-16-9");
-	log1 ("loading 16:9 background image", background_file);
+	//
+	// Otherwise we are on a high resolution screen,
+	// display the appropiate wallpaper based on the screen aspect/ratio.
+	//
+	if (dist43 < dist169) {
+	  background_file = pconf->get_config_string ("background.file-4-3");
+	  log1 ("loading 4:3 wallpaper image", background_file);
+	}
+	else {
+	  background_file = pconf->get_config_string ("background.file-16-9");
+	  log1 ("loading 16:9 wallpaper image", background_file);
+	}
       }
 
       image = imlib_load_image_without_cache(background_file.c_str());
