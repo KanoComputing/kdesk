@@ -138,6 +138,16 @@ bool Configuration::load_conf(const char *filename)
 	configuration["oneclick"] = value;
       }
 
+      if (token == "ScreenMedResWidth:") {
+	ifile >> value;
+	configuration["screenmedreswidth"] = value;
+      }
+
+      if (token == "Background.File-medium:") {
+	ifile >> value;
+	configuration["background.file-medium"] = value;
+      }
+
     }
  
   ifile.close();
