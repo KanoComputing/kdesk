@@ -29,6 +29,9 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   iconMapNone = iconMapGlow = (unsigned char *) NULL;
   win = 0;
 
+  // Initially we don't know yet which display we are bound to until create()
+  icon_display = NULL;
+
   // default font details should be zero
   fontInfo.height = fontInfo.width = 0;
 
@@ -54,17 +57,21 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
     // Setting transparency to 1 has no visual effect
     transparency = 1;
   }
+
+  // Define the default cursor for the mouse pointer
+  // Or change to a custom one specified in the config file
+  cursor_id = configuration->get_config_int("mousehovericon");
+  if (cursor_id == 0) {
+    cursor_id = DEFAULT_ICON_CURSOR;
+  }
+
+  cursor = 0; // Set the initial cursor handle to nothing
 }
 
 Icon::~Icon (void)
 {
-  if (iconMapNone) {
-    free (iconMapNone);
-  }
-
-  if (iconMapGlow) {
-    free (iconMapGlow);
-  }
+  // Deallocate all X11 realted resources
+  destroy();
 }
 
 int Icon::get_iconid()
@@ -108,6 +115,9 @@ Window Icon::create (Display *display)
   unsigned int rc=0;
   string caption = configuration->get_icon_string (iconid, "caption");
   int border;
+
+  // save the display variable for later cleanup
+  icon_display = display;
 
   vis = DefaultVisual(display, DefaultScreen(display));
   cmap = DefaultColormap(display, DefaultScreen(display));
@@ -199,10 +209,34 @@ Window Icon::create (Display *display)
     XLowerWindow(display, win);
   }
 
+  // Set mouse cursor to "hand" when the mouse moves over the icon
+  // These are the standard icons defined here:
+  // http://tronche.com/gui/x/xlib/appendix/b/
+  // which can be replaced by system "themes".
+
+  cursor = XCreateFontCursor (display, cursor_id);
+  XDefineCursor(display, win, cursor);
+
   // this will hold a copy of the current icon rendered space
   backsafe = imlib_create_image (iconw, iconh);
   
   return win;
+}
+
+void Icon::destroy(void)
+{
+  // Deallocate resources to terminate the icon
+  if (iconMapNone) {
+    free (iconMapNone);
+  }
+
+  if (iconMapGlow) {
+    free (iconMapGlow);
+  }
+
+  if (cursor) {
+    XFreeCursor (icon_display, cursor);
+  }
 }
 
 void Icon::initialize (Display *display)  // to be removed!

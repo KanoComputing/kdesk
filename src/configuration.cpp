@@ -148,6 +148,10 @@ bool Configuration::load_conf(const char *filename)
 	configuration["background.file-medium"] = value;
       }
 
+      if (token == "MouseHoverIcon:") {
+	ifile >> value;
+	configuration["mousehovericon"] = value;
+      }
     }
  
   ifile.close();

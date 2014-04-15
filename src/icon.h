@@ -10,16 +10,24 @@
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 #include <Imlib2.h>
+#include <X11/cursorfont.h>
 #include "configuration.h"
+
+// Default icon cursor when mouse moves over the icon
+// 
+#define DEFAULT_ICON_CURSOR XC_hand1
 
 class Icon
 {
  private:
   Configuration *configuration;
+  Display *icon_display;
   Window win;
   int iconx, icony, iconw, iconh;
   int shadowx, shadowy;
   int icontitlegap;
+  Cursor cursor;
+  int cursor_id;
   Imlib_Updates updates;
   Imlib_Image image;
   Imlib_Image backsafe;
@@ -41,6 +49,7 @@ class Icon
   bool is_singleton_running (void);
   Window create(Display *display);
   void initialize(Display *display);
+  void destroy(void);
 
   void draw(Display *display, XEvent ev);
   bool blink_icon(Display *display, XEvent ev);
