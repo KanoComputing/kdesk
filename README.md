@@ -45,6 +45,9 @@ The following keywords allow for extra functionalities in kDesk itself.
  * ScreenMedResWidth - Minimal screen width of the screen in pixels to be considered as high resolution wallpaper mode.
                        If the screen resolution falls below this width, the wallpaper "Background.File-medium" will be displayed.
 		       instead of the high resolution ones (background.file-4-3, background.file-16-9). The default is none, which means high resolution.
+ * MouseHoverIcon - ID of a mouse pointer to display when mouse moves over each icon. The default is XC_hand1 (#58), a waiting hand icon
+                    as defined by the official font icon cursor table, which can be replaced by themes: http://tronche.com/gui/x/xlib/appendix/b/
+		    Please provide the constants in numerical form.
 
 #### Icons Configuration file parameters
 
