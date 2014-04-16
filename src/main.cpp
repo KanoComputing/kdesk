@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
   Display *display;
   Configuration conf;
   char *display_name = NULL;
-  string strKdeskRC, strKdeskDir, strKdeskUser;
+  string strKdeskRC, strHomeKdeskRC, strKdeskDir, strKdeskUser;
   bool test_mode = false, wallpaper_mode = false;
 
   cout << "Kano-Desktop - A desktop Icon Manager" << endl;
@@ -72,20 +72,23 @@ int main(int argc, char *argv[])
   cout << "initializing..." << endl;
   struct passwd *pw = getpwuid(getuid());
   const char *homedir = pw->pw_dir;
-  strKdeskRC   = FILE_KDESKRC;
-  strKdeskDir  = DIR_KDESKTOP;
-  strKdeskUser = homedir + string(DIR_KDESKTOP_USER);
+  strKdeskRC     = FILE_KDESKRC;
+  strHomeKdeskRC = homedir + string("/") + string(FILE_HOME_KDESKRC);
+  strKdeskDir    = DIR_KDESKTOP;
+  strKdeskUser   = homedir + string(DIR_KDESKTOP_USER);
 
-  log1 ("loading configuration file", strKdeskRC.c_str());
-  if (!conf.load_conf(strKdeskRC.c_str())) {
-    cout << "error reading configuration file" << endl;
-    exit(1);
+  log1 ("loading home configuration file", strHomeKdeskRC.c_str());
+  if (!conf.load_conf(strHomeKdeskRC.c_str())) {
+    log1 ("loading generic configuration file", strKdeskRC.c_str());
+    if (!conf.load_conf(strKdeskRC.c_str())) {
+      cout << "error reading configuration file" << endl;
+      exit(1);
+    }
   }
-  else {
-    log1 ("loading icons from directory", strKdeskDir.c_str());
-    conf.load_icons(strKdeskDir.c_str());
-    conf.dump();
-  }
+
+  log1 ("loading icons from directory", strKdeskDir.c_str());
+  conf.load_icons(strKdeskDir.c_str());
+  conf.dump();
 
   if (test_mode == true) {
     cout << "test mode - exiting" << endl;
