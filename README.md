@@ -25,7 +25,7 @@ Normal kdesk invocation is simply by running kdesk from the command line or thro
 Kdesk -h will give you a brief help along with 2 more options:
 
  -t to test and display your current configuration
- -w will draw the desktop wallpapaer and quit
+ -w will draw the desktop wallpaper and quit
 
 #### Configuration
 
