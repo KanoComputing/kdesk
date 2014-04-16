@@ -18,6 +18,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <linux/vt.h>
+#include <unistd.h>
 
 // Returns the currently active tty on the local system
 // If 0 is returned this info could not be obtained
