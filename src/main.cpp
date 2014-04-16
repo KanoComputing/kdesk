@@ -36,25 +36,31 @@ int main(int argc, char *argv[])
   Configuration conf;
   char *display_name = NULL;
   string strKdeskRC, strKdeskDir, strKdeskUser;
-  bool test_mode = false;
+  bool test_mode = false, wallpaper_mode = false;
 
   cout << "Kano-Desktop - A desktop Icon Manager" << endl;
   cout << "Version v" << VERSION << endl << endl;
 
   int c;
-  while ((c = getopt(argc, argv, "ht")) != EOF)
+  while ((c = getopt(argc, argv, "htw")) != EOF)
     {
       switch (c)
         {
 	case 'h':
-	  cout << "kano-desktop [ -t | -h ]" << endl;
+	  cout << "kano-desktop [ -t | -h | -w ]" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
+	  cout << " -w set desktop wallpaper and exit"<< endl;
 	  cout << " -h help, this screen" << endl << endl;
 	  exit (1);
 
 	case 't':
 	  cout << "testing configuration" << endl;
 	  test_mode = true;
+	  break;
+
+	case 'w':
+	  cout << "setting wallpaper mode" << endl;
+	  wallpaper_mode = true;
 	  break;
 
 	case '?':
@@ -110,7 +116,11 @@ int main(int argc, char *argv[])
   Background bg(&conf);
   bg.setup(display);
   bg.load(display);
-  bg.draw(display);
+
+  // If wallpaper mode requested, exit now.
+  if (wallpaper_mode == true) {
+    exit (0);
+  }
 
   // Play sound once the background is displayed
   // Only if we are running on the first available display,
