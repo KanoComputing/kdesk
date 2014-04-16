@@ -6,7 +6,7 @@ Standards-Version: 1.1.0
 Build-Depends: libx11-dev, libxft-dev, libimlib2-dev, libstartup-notification0-dev, libao-dev, libmpg123-dev, libxss-dev, libraspberrypi-dev, debhelper (>=9.0.0)
 
 Package: kdesk
-Architecture: armhf
+Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends}, libao4, libmpg123-0, libxss1
 Provides: idesk
 Conflicts: idesk
