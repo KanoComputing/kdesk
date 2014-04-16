@@ -66,7 +66,7 @@ bool Background::load (Display *display)
   buffer = imlib_create_image (deskw, deskh);
   if (!buffer)
     {
-      log ("error creating an image surface for the backgroun");
+      log ("error creating an image surface for the background");
     }
   else
     {
@@ -102,67 +102,51 @@ bool Background::load (Display *display)
       if (!image) {
 	bsuccess = false;
 	log1 ("error loading background", background_file);
-      }
-
-      // Prepare imlib2 drawing spaces
-      imlib_context_set_image(buffer);
-      imlib_context_set_color(0,0,0,0);
-      imlib_image_fill_rectangle(0, 0, deskw, deskh);
-      imlib_context_set_blend(1);
-      
-      imlib_context_set_image(image);
-      w = imlib_image_get_width();
-      h = imlib_image_get_height();
-      if (!(tmpimg = imlib_clone_image())) {
+	cout << "error loading background image:" << background_file << endl;
 	bsuccess = false;
-	log ("error cloning the desktop background image");
       }
       else {
-	imlib_context_set_image(tmpimg);
+	// Prepare imlib2 drawing spaces
 	imlib_context_set_image(buffer);
+	imlib_context_set_color(0,0,0,0);
+	imlib_image_fill_rectangle(0, 0, deskw, deskh);
+	imlib_context_set_blend(1);
+      
+	imlib_context_set_image(image);
+	w = imlib_image_get_width();
+	h = imlib_image_get_height();
+	if (!(tmpimg = imlib_clone_image())) {
+	  bsuccess = false;
+	  log ("error cloning the desktop background image");
+	}
+	else {
+	  imlib_context_set_image(tmpimg);
+	  imlib_context_set_image(buffer);
+	  
+	  int screen_num = DefaultScreen(display);
+	  int nw = DisplayWidth(display, screen_num);
+	  int nh = DisplayHeight(display, screen_num);
 
-	int screen_num = DefaultScreen(display);
-	int nw = DisplayWidth(display, screen_num);
-	int nh = DisplayHeight(display, screen_num);
+	  imlib_blend_image_onto_image(tmpimg, 0, 0, 0, w, h, 0, 0, nw, nh);
+	  imlib_context_set_image(tmpimg);
+	  imlib_free_image();
+	  
+	  imlib_context_set_blend(0);
+	  imlib_context_set_image(buffer);
+	  imlib_context_set_drawable(root);
+	  imlib_render_image_on_drawable(0, 0);
+	  imlib_context_set_drawable(pmap);
+	  imlib_render_image_on_drawable(0, 0);
+	  XSetWindowBackgroundPixmap(display, root, pmap);
+	  imlib_context_set_image(buffer);
+	  imlib_free_image_and_decache();
+	  XFreePixmap(display, pmap);
 
-	imlib_blend_image_onto_image(tmpimg, 0, 0, 0, w, h, 0, 0, nw, nh);
-	imlib_context_set_image(tmpimg);
-	imlib_free_image();
-
-	imlib_context_set_blend(0);
-	imlib_context_set_image(buffer);
-	imlib_context_set_drawable(root);
-	imlib_render_image_on_drawable(0, 0);
-	imlib_context_set_drawable(pmap);
-	imlib_render_image_on_drawable(0, 0);
-	XSetWindowBackgroundPixmap(display, root, pmap);
-	imlib_context_set_image(buffer);
-	imlib_free_image_and_decache();
-	XFreePixmap(display, pmap);
-
-	bsuccess = true;
-	log1 ("desktop background created successfully", image);
+	  bsuccess = true;
+	  log1 ("desktop background created successfully", image);
+	}
       }
     }
 
   return bsuccess;
-}
-
-bool Background::draw(Display *display)
-{
-	XEvent ev;
-
-	for(;;) {
-	  //updategeom();
-	  //drawbg(display);
-	  if(!running)
-	    break;
-	  imlib_flush_loaders();
-	  XNextEvent(display, &ev);
-	  if(ev.type == ConfigureNotify) {
-	    deskw = ev.xconfigure.width;
-	    deskh = ev.xconfigure.height;
-	    imlib_flush_loaders();
-	  }
-	}
 }
