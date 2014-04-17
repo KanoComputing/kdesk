@@ -19,6 +19,8 @@ kano-debber:
 	cp doc/config/.kdeskrc /home/user/
 	cp doc/config/XEyes.lnk /home/user/.kdesktop/
 	cp doc/config/XCalc.lnk /home/user/.kdesktop/
+	sed -i.bak '/^@pcman/d' /etc/xdg/lxsession/LXDE/autostart
+	echo '@kdesk' >> /etc/xdg/lxsession/LXDE/autostart
 	chown -R user:user /home/user/.kdesk*
 	cd src && make all
 
