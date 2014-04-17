@@ -15,5 +15,9 @@ debug:
 	cd src/kdesk-eglsaver && make debug
 
 kano-debber:
+	mkdir -p /home/user/.kdesktop
+	cp doc/config/.kdeskrc /home/user/
+	cp doc/config/XEyes.lnk /home/user/.kdesktop/
+	cp doc/config/XCalc.lnk /home/user/.kdesktop/
 	cd src && make all
 
