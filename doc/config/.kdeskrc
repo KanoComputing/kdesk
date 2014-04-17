@@ -42,9 +42,9 @@ table Config
   Background.Source: /
 
   ScreenMedResWidth: 1900
-  Background.File-medium: /usr/share/lxde/wallpapers/kano.png
-  #Background.File-4-3: /usr/share/lxde/wallpapers/lxde_green.jpg
-  #Background.File-16-9: /usr/share/lxde/wallpapers/lxde_red.jpg
+  Background.File-medium: /usr/share/lxde/wallpapers/kanux-background-1024.png
+  Background.File-4-3: /usr/share/lxde/wallpapers/kanux-background-4-3.jpg
+  Background.File-16-9: /usr/share/lxde/wallpapers/kanux-background-16-9.jpg
   Background.Mode: scale
   Background.Color: #C2CCFF
 end
