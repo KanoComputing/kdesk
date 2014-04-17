@@ -10,6 +10,7 @@
 #include <dirent.h>
 #include <sstream>
 #include <stdlib.h>
+#include <sys/stat.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -28,9 +29,16 @@ Configuration::~Configuration()
 bool Configuration::load_conf(const char *filename)
 {
   string token, value;
+  struct stat file_status;
+
+  stat (filename, &file_status);
+  if (!S_ISREG(file_status.st_mode)) {
+      cout << "not a file" << endl;
+      return false;
+    }
 
   ifile.open (filename, std::ifstream::in);
-  if (!ifile.is_open()) {
+  if (ifile.fail()) {
     return false;
   }
 
