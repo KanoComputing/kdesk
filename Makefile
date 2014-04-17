@@ -13,3 +13,7 @@ kdesk:
 debug:
 	cd src && make debug
 	cd src/kdesk-eglsaver && make debug
+
+kano-debber:
+	cd src && make all
+
