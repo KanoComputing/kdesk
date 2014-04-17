@@ -1,5 +1,5 @@
 table Config
-  FontName: Bariol
+  #FontName: Bariol
   FontSize: 14
   FontColor: #FFFFFF
   ToolTip.FontSize: 10
@@ -11,12 +11,12 @@ table Config
   Locked: true
 
   EnableSound: false
-  SoundWelcome: /usr/share/kano-desktop/sounds/piano-kano.mp3
-  SoundLaunchApp: /usr/share/kano-desktop/sounds/start-app.mp3
-  SoundDisabledIcon: /usr/share/kano-desktop/sounds/plonk-short.mp3
+  #SoundWelcome: /usr/share/kano-desktop/sounds/piano-kano.mp3
+  #SoundLaunchApp: /usr/share/kano-desktop/sounds/start-app.mp3
+  #SoundDisabledIcon: /usr/share/kano-desktop/sounds/plonk-short.mp3
 
   ScreenSaverTimeout: 480
-  ScreenSaverProgram: /usr/bin/kdesk-eglsaver
+  #ScreenSaverProgram: /usr/bin/kdesk-eglsaver
 
   OneClick: true
 
@@ -42,9 +42,9 @@ table Config
   Background.Source: /
 
   ScreenMedResWidth: 1900
-  Background.File-medium: /usr/share/lxde/wallpapers/lxde_blue.jpg
-  Background.File-4-3: /usr/share/lxde/wallpapers/lxde_green.jpg
-  Background.File-16-9: /usr/share/lxde/wallpapers/lxde_red.jpg
+  Background.File-medium: /usr/share/lxde/wallpapers/kano.png
+  #Background.File-4-3: /usr/share/lxde/wallpapers/lxde_green.jpg
+  #Background.File-16-9: /usr/share/lxde/wallpapers/lxde_red.jpg
   Background.Mode: scale
   Background.Color: #C2CCFF
 end
