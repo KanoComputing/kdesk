@@ -1,0 +1,13 @@
+table Icon
+  Caption: Xeyes
+  AppID: xeye[s]
+  Command: xeyes
+  Singleton: true
+  Icon: /usr/share/icons/kano/snake.png
+  HoverXOffset: 0
+  Width: 128
+  Height: 128
+  Relative-To: top-left
+  X: 200
+  Y: 10
+end

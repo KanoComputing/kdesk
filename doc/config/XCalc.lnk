@@ -1,0 +1,13 @@
+table Icon
+  Caption: XCalc
+  AppID: xcal[c]
+  Command: xcalc
+  Singleton: true
+  Icon: /usr/share/icons/kano/updater.png
+  HoverXOffset: 0
+  Width: 70
+  Height: 90
+  Relative-To: top-left
+  X: 50
+  Y: 10
+end
