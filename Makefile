@@ -19,5 +19,6 @@ kano-debber:
 	cp doc/config/.kdeskrc /home/user/
 	cp doc/config/XEyes.lnk /home/user/.kdesktop/
 	cp doc/config/XCalc.lnk /home/user/.kdesktop/
+	chown -R user:user /home/user/.kdesk*
 	cd src && make all
 
