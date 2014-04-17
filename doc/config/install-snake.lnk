@@ -1,13 +1,12 @@
 table Icon
   Caption: Install snake
-  AppID: install-snak[e]
   Command: lxterminal -e "sudo /home/user/install-snake.sh"
   Singleton: true
   Icon: /usr/share/icons/kano/snake.png
   HoverXOffset: 0
-  Width: 138
-  Height: 128
-  Relative-To: top-centre
-  X: -339
-  Y: 221
+  Width: 64
+  Height: 64
+  Relative-To: top-left
+  X: 30
+  Y: 30
 end
