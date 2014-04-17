@@ -96,15 +96,13 @@ bool Icon::is_singleton_running (void)
       sprintf (cmdpgrep, "pgrep -fl '%s'", appid.c_str());
       rc = system (cmdpgrep);
       exitstatus = WEXITSTATUS(rc);
-      cout << "pgrep: system rc=" << rc << " exitstatus=" << exitstatus << endl;
-
       if (exitstatus == 0) {
 	bAppRunning = true;
-	cout << "app " << appid << " is running" << endl;
+	log1 ("Application is running", appid);
       }
       else {
 	bAppRunning = false;
-	cout << "app " << appid << " is NOT running" << endl;
+	log1 ("Application is NOT running", appid);
       }
     }
   return bAppRunning;

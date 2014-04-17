@@ -539,7 +539,6 @@ static void exit_func(void)
    //free(state->tex_buf2);
    //free(state->tex_buf3);
 
-   printf("\ncube closed\n");
 } // exit_func()
 
 //==============================================================================
