@@ -1,0 +1,13 @@
+table Icon
+  Caption: Shell
+  Command: lxterminal
+  AppID: lxtermina[l]
+  Singleton: true
+  Icon: /usr/share/icons/gnome/48x48/apps/terminal.png
+  HoverXOffset: 0
+  Width: 50
+  Height: 50
+  Relative-To: top-left
+  X: 220
+  Y: 30
+end
