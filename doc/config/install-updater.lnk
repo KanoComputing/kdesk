@@ -1,11 +1,11 @@
 table Icon
-  Caption: Install updater
+  Caption: Updater
   Command: lxterminal -e "sudo /home/user/install-updater.sh"
   Singleton: true
   Icon: /usr/share/icons/kano/updater.png
   HoverXOffset: 0
-  Width: 64
-  Height: 64
+  Width: 65
+  Height: 65
   Relative-To: top-left
   X: 120
   Y: 30

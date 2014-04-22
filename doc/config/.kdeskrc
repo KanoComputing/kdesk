@@ -1,6 +1,7 @@
 table Config
-  #FontName: Bariol
-  FontSize: 14
+  
+  FontName: Bariol
+  FontSize: 10
   FontColor: #FFFFFF
   ToolTip.FontSize: 10
   ToolTip.FontName: Bariol
@@ -29,7 +30,7 @@ table Config
   ClickDelay: 300
   IconStartDelay: 5000
   IconSnap: true
-  IconTitleGap: 0
+  IconTitleGap: 20
   SnapWidth: 10
   SnapHeight: 10
   SnapOrigin: BottomRight
