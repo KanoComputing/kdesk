@@ -19,8 +19,7 @@ kano-debber:
 	cp doc/config/.kdeskrc /home/user/
 	cp doc/config/*.lnk /home/user/.kdesktop/
 
-	cp /etc/xdg/lxsession/LXDE/autostart /etc/xdg/lxsession/LXDE/autostart-original
-	echo "@kdesk" > /etc/xdg/lxsession/LXDE/autostart
+	sed -i.bak 's/@pcmanfm --desktop --profile LXDE/@kdesk/' /etc/xdg/lxsession/LXDE/autostart
 
 	chown -R user:user /home/user/.kdesk*
 	cd src && make all
