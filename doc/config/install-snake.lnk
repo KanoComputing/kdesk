@@ -1,5 +1,5 @@
 table Icon
-  Caption: Install snake
+  Caption: Snake
   Command: lxterminal -e "sudo /home/user/install-snake.sh"
   Singleton: true
   Icon: /usr/share/icons/kano/snake.png
