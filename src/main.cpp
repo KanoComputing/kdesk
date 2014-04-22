@@ -146,6 +146,11 @@ int main(int argc, char *argv[])
     usleep(ms);   // 1000 microseconds in a millisecond.
   }
 
+  // Create and draw desktop icons, then attend user interaction  
+  Desktop dsk(&conf, &ksound);
+  bool bicons = dsk.create_icons(display);
+  log1 ("desktop icons created", (bicons == true ? "successfully" : "errors found"));
+
   // Starting screen saver thread
   if (conf.get_config_int("screensavertimeout") > 0) {
 
@@ -162,11 +167,6 @@ int main(int argc, char *argv[])
       setup_ssaver (&ksaver_data);
     }
   }
-
-  // Create and draw desktop icons, then attend user interaction  
-  Desktop dsk(&conf, &ksound);
-  bool bicons = dsk.create_icons(display);
-  log1 ("desktop icons created", (bicons == true ? "successfully" : "errors found"));
 
   cout << "processing events..." << endl;
   dsk.process_and_dispatch(display);
