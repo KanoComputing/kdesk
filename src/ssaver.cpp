@@ -52,6 +52,9 @@ void *idle_time (void *p)
   unsigned long ultimeout=0L;
   PKSAVER_DATA pdata=(PKSAVER_DATA) p;
 
+  // Initial X11 connection delay
+  usleep(ms);
+
   Display *display = XOpenDisplay(pdata->display_name);
   if (!display) {
     log ("Ssaver cannot connect to X Display! No screen saver available");
@@ -61,17 +64,11 @@ void *idle_time (void *p)
     log2 ("Setting screen saver - T/O (secs) and program", pdata->idle_timeout, pdata->saver_program);
   }
 
-  XLockDisplay(display);
   XScreenSaverInfo *info = XScreenSaverAllocInfo();
-  XUnlockDisplay(display);
-
   while (running)
     {
       log1 ("asking for system idle time on display", display);
-      XLockDisplay(display);
       rc = XScreenSaverQueryInfo(display, DefaultRootWindow(display), info);
-      XUnlockDisplay(display);
-
       if (rc)
 	{
 	  // If idle timeout expires, and focus is on the GUI tty device, then launch the screen saver
@@ -91,7 +88,7 @@ void *idle_time (void *p)
       else {
 	log1 ("XScreenSaverQueryInfo failed with rc", rc);
       }
-      
+
       usleep(ms);
     }
 
