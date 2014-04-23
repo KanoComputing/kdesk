@@ -100,10 +100,8 @@ bool Background::load (Display *display)
 
       image = imlib_load_image_without_cache(background_file.c_str());
       if (!image) {
-	bsuccess = false;
 	log1 ("error loading background", background_file);
 	cout << "error loading background image:" << background_file << endl;
-	bsuccess = false;
       }
       else {
 	// Prepare imlib2 drawing spaces
@@ -116,7 +114,6 @@ bool Background::load (Display *display)
 	w = imlib_image_get_width();
 	h = imlib_image_get_height();
 	if (!(tmpimg = imlib_clone_image())) {
-	  bsuccess = false;
 	  log ("error cloning the desktop background image");
 	}
 	else {
@@ -138,6 +135,12 @@ bool Background::load (Display *display)
 	  imlib_context_set_drawable(pmap);
 	  imlib_render_image_on_drawable(0, 0);
 	  XSetWindowBackgroundPixmap(display, root, pmap);
+
+	  // Apply the background to the root window
+	  // so it stays permanently even if kdesk quits (-w parameter)
+	  XClearWindow (display, root);
+	  XFlush (display);
+
 	  imlib_context_set_image(buffer);
 	  imlib_free_image_and_decache();
 	  XFreePixmap(display, pmap);
