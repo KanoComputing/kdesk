@@ -146,9 +146,6 @@ bool Background::load (Display *display)
 	  imlib_free_image_and_decache();
 	  XFreePixmap(display, pmap);
 
-	  // Ask all top level windows to repaint
-	  refresh_background(display);
-
 	  bsuccess = true;
 	  log1 ("desktop background created successfully", image);
 	}

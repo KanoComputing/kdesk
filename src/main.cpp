@@ -129,6 +129,10 @@ int main(int argc, char *argv[])
   // If wallpaper mode requested, exit now.
   if (wallpaper_mode == true) {
     cout << "requested wallpaper mode, exiting" << endl;
+
+    // Ask all top level windows to repaint
+    bg.refresh_background(display);
+
     exit (0);
   }
 
