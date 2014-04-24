@@ -37,11 +37,18 @@ int main(int argc, char *argv[])
   char *display_name = NULL;
   string strKdeskRC, strHomeKdeskRC, strKdeskDir, strKdeskUser;
   bool test_mode = false, wallpaper_mode = false;
+  int c;
 
   cout << "Kano-Desktop - A desktop Icon Manager" << endl;
   cout << "Version v" << VERSION << endl << endl;
 
-  int c;
+  // We don't allow kdesk to run as the superuser
+  uid_t userid = getuid();
+  if (userid == 0) {
+    cout << "kdesk cannot run as root, please use sudo or login is a regular user" << endl;
+    exit(1);
+  }
+
   while ((c = getopt(argc, argv, "htw")) != EOF)
     {
       switch (c)
@@ -59,7 +66,6 @@ int main(int argc, char *argv[])
 	  break;
 
 	case 'w':
-	  cout << "setting wallpaper mode" << endl;
 	  wallpaper_mode = true;
 	  break;
 
@@ -77,9 +83,9 @@ int main(int argc, char *argv[])
   strKdeskDir    = DIR_KDESKTOP;
   strKdeskUser   = homedir + string(DIR_KDESKTOP_USER);
 
-  log1 ("loading home configuration file", strHomeKdeskRC.c_str());
+  cout << "loading home configuration file " << strHomeKdeskRC.c_str() << endl;
   if (!conf.load_conf(strHomeKdeskRC.c_str())) {
-    log1 ("loading generic configuration file", strKdeskRC.c_str());
+    cout << "loading generic configuration file " << strKdeskRC.c_str() << endl;
     if (!conf.load_conf(strKdeskRC.c_str())) {
       cout << "error reading configuration file" << endl;
       exit(1);
@@ -122,6 +128,7 @@ int main(int argc, char *argv[])
 
   // If wallpaper mode requested, exit now.
   if (wallpaper_mode == true) {
+    cout << "requested wallpaper mode, exiting" << endl;
     exit (0);
   }
 
