@@ -11,6 +11,7 @@
 #include <Imlib2.h>
 
 #include <cmath>
+#include <memory.h>
 
 #include "configuration.h"
 #include "background.h"
@@ -145,6 +146,9 @@ bool Background::load (Display *display)
 	  imlib_free_image_and_decache();
 	  XFreePixmap(display, pmap);
 
+	  // Ask all top level windows to repaint
+	  refresh_background(display);
+
 	  bsuccess = true;
 	  log1 ("desktop background created successfully", image);
 	}
@@ -152,4 +156,31 @@ bool Background::load (Display *display)
     }
 
   return bsuccess;
+}
+
+int Background::refresh_background(Display *display)
+{
+  Window root_return, parent_return, *children_return;
+  unsigned int nchildren_return=0;
+
+  // Enumerate all top level windows and request a repaint
+  // to refresh transparent areas with the new background.
+  if (XQueryTree(display, root, &root_return, &parent_return, &children_return, &nchildren_return))
+    {
+      for (int i=0; i < nchildren_return; i++)
+	{
+	  // clear the window area
+	  XClearWindow (display, children_return[i]);
+
+	  // repaint
+	  XEvent exppp;
+	  memset(&exppp, 0x00, sizeof(exppp));
+	  exppp.type = Expose;
+	  exppp.xexpose.window = children_return[i];
+	  XSendEvent(display,children_return[i],False,ExposureMask,&exppp);
+	  XFlush(display);
+	}
+    }
+
+  return nchildren_return;
 }
