@@ -78,18 +78,21 @@ int main(int argc, char *argv[])
   cout << "initializing..." << endl;
   struct passwd *pw = getpwuid(getuid());
   const char *homedir = pw->pw_dir;
+  bool bgeneric, buser = false;
   strKdeskRC     = FILE_KDESKRC;
   strHomeKdeskRC = homedir + string("/") + string(FILE_HOME_KDESKRC);
   strKdeskDir    = DIR_KDESKTOP;
   strKdeskUser   = homedir + string(DIR_KDESKTOP_USER);
 
-  cout << "loading home configuration file " << strHomeKdeskRC.c_str() << endl;
-  if (!conf.load_conf(strHomeKdeskRC.c_str())) {
-    cout << "loading generic configuration file " << strKdeskRC.c_str() << endl;
-    if (!conf.load_conf(strKdeskRC.c_str())) {
-      cout << "error reading configuration file" << endl;
-      exit(1);
-    }
+  // Load configuration file from world settings (/usr/share)
+  // And override any settings provided by the user's home dir configuration
+  cout << "loading generic configuration file " << strKdeskRC.c_str() << endl;
+  bgeneric = conf.load_conf(strKdeskRC.c_str());
+  cout << "overriding settings with home configuration file " << strHomeKdeskRC.c_str() << endl;
+  buser = conf.load_conf(strHomeKdeskRC.c_str());
+  if (!bgeneric && !buser) {
+    cout << "could not read generic or user configuration settings" << endl;
+    exit(1);
   }
 
   log1 ("loading icons from directory", strKdeskDir.c_str());
