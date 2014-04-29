@@ -14,6 +14,9 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#include <signal.h>
+#include <fcntl.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xft/Xft.h>
@@ -28,6 +31,47 @@
 #include "desktop.h"
 #include "logging.h"
 #include "ssaver.h"
+
+// The desktop object will be dynamically accessed to refresh the configuration
+static Desktop dsk;
+
+// local function prototypes
+void signal_callback_handler(int signum);
+void reload_configuration (Display *display);
+void finish_kdesk (Display *display);
+
+// Signal handler reached via a kill -USR
+void signal_callback_handler(int signum)
+{
+  Display *display=XOpenDisplay(NULL);
+
+  log1 ("Received signal", signum);
+  if (signum == SIGUSR1) {
+    cout << "Received signal to reload configuration" << endl;
+    reload_configuration(display);
+  }
+  else if (signum == SIGUSR2) {
+    cout << "Received custom signal" << endl;
+    finish_kdesk(display);
+  }
+  
+  XCloseDisplay (display);
+  return;
+}
+
+void reload_configuration (Display *display)
+{
+  log ("Reloading kdesk configuration");
+  dsk.send_signal (display, KDESK_SIGNAL_RELOAD);
+  return;
+}
+
+void finish_kdesk (Display *display)
+{
+  log ("Finishing Kdesk");
+  dsk.send_signal (display, KDESK_SIGNAL_FINISH);
+  return;
+}
 
 int main(int argc, char *argv[])
 {
@@ -49,15 +93,17 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  while ((c = getopt(argc, argv, "htw")) != EOF)
+  // Collect command-line parameters
+  while ((c = getopt(argc, argv, "htwr")) != EOF)
     {
       switch (c)
         {
 	case 'h':
-	  cout << "kano-desktop [ -t | -h | -w ]" << endl;
+	  cout << "kano-desktop [ -h | -t | -w | -r ]" << endl;
+	  cout << " -h help, this screen" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
-	  cout << " -w set desktop wallpaper and exit"<< endl;
-	  cout << " -h help, this screen" << endl << endl;
+	  cout << " -w set desktop wallpaper and exit" << endl;
+	  cout << " -r refresh configuration and exit" << endl << endl;
 	  exit (1);
 
 	case 't':
@@ -68,6 +114,13 @@ int main(int argc, char *argv[])
 	case 'w':
 	  wallpaper_mode = true;
 	  break;
+
+	case 'r':
+	  display = XOpenDisplay(display_name);
+	  // TODO: Find a way to send a signal to ourselves
+	  // so that we sit in the same address space
+	  //reload_configuration(display);
+	  XCloseDisplay(display);
 
 	case '?':
 	  exit(1);
@@ -94,7 +147,6 @@ int main(int argc, char *argv[])
 
   log1 ("loading icons from directory", strKdeskDir.c_str());
   conf.load_icons(strKdeskDir.c_str());
-  conf.dump();
 
   if (test_mode == true) {
     cout << "test mode - exiting" << endl;
@@ -128,7 +180,8 @@ int main(int argc, char *argv[])
 
   // If wallpaper mode requested, exit now.
   if (wallpaper_mode == true) {
-    cout << "requested wallpaper mode, exiting" << endl;
+    cout << "refreshing background and exiting" << endl;    
+    bg.refresh_background(display);
     exit (0);
   }
 
@@ -154,7 +207,7 @@ int main(int argc, char *argv[])
   }
 
   // Create and draw desktop icons, then attend user interaction  
-  Desktop dsk(&conf, &ksound);
+  dsk.initialize(display, &conf, &ksound);
   bool bicons = dsk.create_icons(display);
   log1 ("desktop icons created", (bicons == true ? "successfully" : "errors found"));
 
@@ -175,9 +228,43 @@ int main(int argc, char *argv[])
     }
   }
 
-  cout << "processing events..." << endl;
-  dsk.process_and_dispatch(display);
-  
-  cout << "finishing..." << endl;
+  // Register signal handlers to provide for external wake-ups
+  signal (SIGUSR1, signal_callback_handler);
+  signal (SIGUSR2, signal_callback_handler);
+
+  bool reload = false, running=true;
+  do {
+    cout << "processing events..." << endl;
+    reload = dsk.process_and_dispatch(display);
+    if (reload == true) {
+      // Discard configuration and reload everything again
+      conf.reset();      
+
+      cout << "loading generic configuration file " << strKdeskRC.c_str() << endl;
+      conf.load_conf(strKdeskRC.c_str());
+      cout << "overriding home configuration file " << strHomeKdeskRC.c_str() << endl;
+      conf.load_conf(strHomeKdeskRC.c_str());
+
+      log1 ("loading icons from directory", strKdeskDir.c_str());
+      conf.load_icons(strKdeskDir.c_str());
+      conf.dump();
+
+      // Destroy all icons and recreate them from the new reloaded configuration
+      dsk.destroy_icons(display);
+
+      // Reload the desktop wallpaper
+      bg.setup(display);
+      bg.load(display);
+
+      // Regenerate new icons
+      bool bicons = dsk.create_icons(display);
+    }
+    else {
+      cout << "Custom Signal" << endl;
+    }
+
+  } while (running == true);
+
+  cout << "kdesk is finishing..." << endl;
   exit (0);
 }

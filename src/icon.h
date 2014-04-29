@@ -47,9 +47,9 @@ class Icon
 
   int get_iconid();
   bool is_singleton_running (void);
+
   Window create(Display *display);
-  void initialize(Display *display);
-  void destroy(void);
+  void destroy(Display *display);
 
   void draw(Display *display, XEvent ev);
   bool blink_icon(Display *display, XEvent ev);

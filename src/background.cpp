@@ -146,9 +146,6 @@ bool Background::load (Display *display)
 	  imlib_free_image_and_decache();
 	  XFreePixmap(display, pmap);
 
-	  // Ask all top level windows to repaint
-	  refresh_background(display);
-
 	  bsuccess = true;
 	  log1 ("desktop background created successfully", image);
 	}
@@ -169,6 +166,14 @@ int Background::refresh_background(Display *display)
     {
       for (int i=0; i < nchildren_return; i++)
 	{
+	  // 
+	  XEvent xev;
+	  memset (&xev, 0x00, sizeof (xev));
+	  xev.type = Expose;
+	  xev.xexpose.window = children_return[i];
+	  XSendEvent (display, children_return[i], 0, ExposureMask, &xev);
+	  XFlush (display);
+
 	  // clear the window area
 	  XClearWindow (display, children_return[i]);
 

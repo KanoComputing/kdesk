@@ -15,9 +15,14 @@
 #define SN_API_NOT_YET_FROZEN
 #include <libsn/sn.h>
 
+#define KDESK_CONTROL_WINDOW_NAME "KdeskControlWindow"
+#define KDESK_SIGNAL_FINISH       "KSIG_FINISH"
+#define KDESK_SIGNAL_RELOAD       "KSIG_RELOAD"
+
 class Desktop
 {
  private:
+  Window wcontrol;
   std::map <Window, Icon *> iconHandlers;
   SnDisplay *sn_display;
   SnLauncherContext *sn_context;
@@ -25,18 +30,22 @@ class Desktop
   Sound *psound;
   bool finish;
   static int error_trap_depth;
+  int numicons;
+  Atom atom_finish, atom_reload;
 
  public:
-  Desktop(Configuration *loaded_conf, Sound *psound);
+  Desktop(void);
   virtual ~Desktop(void);
 
   bool create_icons (Display *display);
+  bool destroy_icons (Display *display);
 
   bool notify_startup_load (Display *display, int iconid, Time time);
   bool notify_startup_ready (Display *display);
   void notify_startup_event (Display *display, XEvent *pev);
 
+  bool initialize(Display *display, Configuration *loaded_conf, Sound *psound);
   bool process_and_dispatch(Display *display);
+  bool send_signal (Display *display, const char *signalName);
   bool finalize(void);
-
 };

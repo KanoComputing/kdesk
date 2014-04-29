@@ -7,6 +7,8 @@
 // An app to show and bring life to Kano-Make Desktop Icons.
 //
 
+#include <X11/Xatom.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xft/Xft.h>
@@ -29,11 +31,11 @@
 #include "desktop.h"
 #include "logging.h"
 
-Desktop::Desktop(Configuration *loaded_conf, Sound *ksound)
+Desktop::Desktop(void)
 {
-  pconf = loaded_conf;
-  psound = ksound;
-  finish = false;
+  atom_finish = atom_reload = 0L;
+  wcontrol = 0L;
+  numicons = 0;
 }
 
 Desktop::~Desktop(void)
@@ -50,6 +52,8 @@ Desktop::~Desktop(void)
     sn_display_unref (sn_display);
     sn_display = 0;
   }
+
+  // FIXME: Atoms are not meant to be freed, correct me if I'm wrong.
 }
 
 bool Desktop::create_icons (Display *display)
@@ -66,6 +70,7 @@ bool Desktop::create_icons (Display *display)
 	XEvent emptyev;
 	iconHandlers[wicon] = pico;
 	pico->draw(display, emptyev);
+	numicons++;
       }
       else {
 	log1 ("Warning: error creating icon", pconf->get_icon_string(nicon, "filename"));
@@ -79,9 +84,32 @@ bool Desktop::create_icons (Display *display)
   sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
 
   // returns true if at least one icon is available on the desktop
+  log1 ("Desktop icon classes have been allocated", nicon);
   return (bool) (nicon > 0);
 }
 
+bool Desktop::destroy_icons (Display *display)
+{
+  std::map <Window, Icon *>::iterator it;
+
+  // Ask every icon to close, deallocate, and disappear from the desktop
+  for (it=iconHandlers.begin(); it != iconHandlers.end(); ++it)
+    {
+      // The reason we check for icon handler validity here is because
+      // during close time, the previous icons can still get notification
+      // events which we are not dealing with anymore, they are defunct.
+      // This is the case with hover effects when the mouse is over them during refresh.
+      if (it->second) {
+	it->second->destroy(display);
+	delete it->second;
+	iconHandlers.erase(it);
+      }
+    }
+
+  // Then empty the list of icon handlers
+  iconHandlers.clear();
+  numicons = 0;
+}
 
 bool Desktop::notify_startup_load (Display *display, int iconid, Time time)
 {
@@ -138,13 +166,43 @@ bool Desktop::process_and_dispatch(Display *display)
 
   do 
     {
+      // This is the main X11 event processing loop
       XNextEvent(display, &ev);
       wtarget = ev.xany.window;
 
+      // The libnotify library likes to know what's happening
       if (sn_display != NULL) {
 	sn_display_process_event (sn_display, &ev);
       }
 
+      // If the event is sent to Kdesk's object control window,
+      // this means it's a special signal sent from external processes via kill SIG or an XSendEvent.
+      // It will allow us to give UIX visual feedback on-the-fly, reload configuration, or other useful async use cases.
+      if (wtarget == wcontrol)
+	{
+	  if (ev.type == ClientMessage) {
+	    cout << "Kdesk client message arriving to control window with atom" << ev.type << ev.xclient.data.l[0] << endl;
+	    if ((Atom) ev.xclient.data.l[0] == atom_reload) {
+	      log ("Kdesk object control window receives a RELOAD event");
+	      return true; // true means do whatever you need to, and come back to process_and_dispatch, we are ready.
+	    }
+	    else if ((Atom) ev.xclient.data.l[0] == atom_finish) {
+	      log ("Kdesk object control window receives a FINISH event");
+	      return false; // false means quit kdesk
+	    }
+	  }
+
+	  XFlush (display);
+	  continue;
+	}
+
+      // During Kdesk configuration refresh we might get events for now defunct icon windows
+      if (iconHandlers[wtarget] == NULL) {
+	XFlush (display);
+	continue;
+      }
+
+      // All events directed to the desktop icons we have created are processed here.
       switch (ev.type)
 	{
 	case ButtonPress:
@@ -214,7 +272,82 @@ bool Desktop::process_and_dispatch(Display *display)
   return true;
 }
 
+bool Desktop::initialize(Display *display, Configuration *loaded_conf, Sound *ksound)
+{
+  pconf = loaded_conf;
+  psound = ksound;
+  finish = false;
+
+  #ifdef DEBUG
+  int x=10,y=10,cw=100,ch=100,width=5;
+  #else
+  int x=10,y=10,cw=100,ch=100,width=5;
+  #endif
+
+  // Allocate Atoms used for signaling Kdesk's object window
+  atom_finish = XInternAtom(display, KDESK_SIGNAL_FINISH, False);
+  atom_reload = XInternAtom(display, KDESK_SIGNAL_RELOAD, False);
+
+  // Create a hidden Object Control window which will receive Kdesk external events
+  XSetWindowAttributes attr;
+  attr.background_pixmap = ParentRelative;
+  attr.backing_store = Always;
+  attr.event_mask = ExposureMask | EnterWindowMask | LeaveWindowMask;
+  attr.override_redirect = True;
+  wcontrol = XCreateWindow (display, DefaultRootWindow(display), x, y, cw, ch, width,
+			    CopyFromParent, CopyFromParent, CopyFromParent,
+			    CWEventMask,
+			    &attr);
+
+  XClearWindow(display, wcontrol);
+
+  // We'll give this window a meaningful name
+  XStoreName(display, wcontrol, KDESK_CONTROL_WINDOW_NAME);
+
+  #ifdef DEBUG
+  XMapWindow(display, wcontrol);
+  #endif
+
+  log1 ("Creating Kdesk control window, handle", wcontrol);
+  return (wcontrol ? true : false);
+}
+
 bool Desktop::finalize(void)
 {
   finish = true;
+}
+
+bool Desktop::send_signal (Display *display, const char *signalName)
+{
+  // TODO: Query the xserver to find the control window to send a client message.
+  // for now we are assuming the signal is fired by a system signal
+  // and so we are in the same process addres space.
+  // This method will do the clean magic of breaking the X11 event processing loop
+
+  Window root_return, parent_return, *children_return;
+  unsigned int nchildren_return=0;
+  int screen = DefaultScreen (display);
+  Window root = RootWindow (display, screen);
+
+  Atom atom_signal = XInternAtom(display, signalName, True);
+  if (!atom_signal) {
+    // The signal name is not recognized, must be some other system message
+    cout << "ups" << endl;
+    return false;
+  }
+
+  XEvent xev;
+  memset (&xev, 0x00, sizeof(xev));
+  xev.type                 = ClientMessage;
+  xev.xclient.window       = wcontrol;
+  xev.xclient.format       = 32;
+  xev.xclient.data.l[0]    = atom_signal;
+  xev.xclient.data.l[1]    = atom_signal;
+
+  cout << "haw" << endl;
+
+  int rc = XSendEvent (display, wcontrol, 1, NoEventMask, (XEvent *) &xev);
+  XFlush (display);
+  log2 ("Sending a client message event to kdesk control window (win, rc)", wcontrol, rc);
+  return (rc == Success ? true : false);
 }

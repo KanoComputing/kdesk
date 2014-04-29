@@ -27,6 +27,7 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   iconx=icony=iconw=iconh=0;
   shadowx=shadowy=0;
   iconMapNone = iconMapGlow = (unsigned char *) NULL;
+  backsafe = NULL;
   win = 0;
 
   // Initially we don't know yet which display we are bound to until create()
@@ -70,8 +71,6 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
 
 Icon::~Icon (void)
 {
-  // Deallocate all X11 realted resources
-  destroy();
 }
 
 int Icon::get_iconid()
@@ -221,7 +220,7 @@ Window Icon::create (Display *display)
   return win;
 }
 
-void Icon::destroy(void)
+void Icon::destroy(Display *display)
 {
   // Deallocate resources to terminate the icon
   if (iconMapNone) {
@@ -235,10 +234,8 @@ void Icon::destroy(void)
   if (cursor) {
     XFreeCursor (icon_display, cursor);
   }
-}
 
-void Icon::initialize (Display *display)  // to be removed!
-{
+  XDestroyWindow (display, win);
 }
 
 void Icon::draw(Display *display, XEvent ev)
@@ -251,7 +248,6 @@ void Icon::draw(Display *display, XEvent ev)
   string ficon1 = configuration->get_icon_string (iconid, "icon");
 
   log5 ("drawing icon (name @coords)", ficon1, iconx, icony, iconw, iconh);
-
 
   // Reinforcing the window to stay at the bottom of all windows. From the docs on XLowerWindow...
   // "Lowering a mapped window will generate Expose events on any windows it formerly obscured."

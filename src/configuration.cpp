@@ -23,7 +23,6 @@ Configuration::Configuration()
 
 Configuration::~Configuration()
 {
-  ifile.close();
 }
 
 bool Configuration::load_conf(const char *filename)
@@ -200,7 +199,7 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	// Collect the key name aka "token"
 	iss >> token;
 	
-	// Then collec the token's value, up to EOL
+	// Then collect the token's value, up to EOL
 	while (!iss.eof()) {
 	  iss >> temp;
 	  value += temp;
@@ -356,6 +355,23 @@ void Configuration::dump()
       {
 	log2 ("icon key", it->first, it->second);
       }
-
   }
+}
+
+void Configuration::reset(void)
+{
+  std::map<string,string>::iterator it;
+  for (it=configuration.begin(); it != configuration.end(); ++it)
+    {
+      configuration.erase(it);
+    }
+
+  for (int c=0; c < numicons; c++) {
+    for (it=icons[c].begin(); it != icons[c].end(); ++it)
+      {
+	icons[c].erase (it);
+      }
+  }
+
+  numicons = 0;
 }
