@@ -44,6 +44,9 @@ void finish_kdesk (Display *display);
 void signal_callback_handler(int signum)
 {
   Display *display=XOpenDisplay(NULL);
+  if (!display) {
+    return;
+  }
 
   log1 ("Received signal", signum);
   if (signum == SIGUSR1) {
@@ -94,13 +97,14 @@ int main(int argc, char *argv[])
   }
 
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "htwr")) != EOF)
+  while ((c = getopt(argc, argv, "?htwr")) != EOF)
     {
       switch (c)
         {
+	case '?':
 	case 'h':
 	  cout << "kano-desktop [ -h | -t | -w | -r ]" << endl;
-	  cout << " -h help, this screen" << endl;
+	  cout << " -h help, or -? this screen" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
 	  cout << " -r refresh configuration and exit" << endl << endl;
@@ -117,13 +121,16 @@ int main(int argc, char *argv[])
 
 	case 'r':
 	  display = XOpenDisplay(display_name);
-	  // TODO: Find a way to send a signal to ourselves
-	  // so that we sit in the same address space
-	  //reload_configuration(display);
-	  XCloseDisplay(display);
+	  if (!display) {
+	    cout << "Could not connect to the XServer" << endl;
+	    cout << "Is the DISPLAY variable correctly set?" << endl << endl;
+	    exit (1);
+	  }
 
-	case '?':
-	  exit(1);
+	  cout << "Sending a refresh signal to Kdesk" << endl;
+	  reload_configuration(display);
+	  XCloseDisplay(display);
+	  exit (0);
         }
     }
 
@@ -263,7 +270,7 @@ int main(int argc, char *argv[])
       bool bicons = dsk.create_icons(display);
     }
     else {
-      cout << "Custom Signal" << endl;
+      cout << "Custom Signal - not yet implemented" << endl;
     }
 
   } while (running == true);
