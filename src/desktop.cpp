@@ -373,7 +373,7 @@ bool Desktop::send_signal (Display *display, const char *signalName)
     }
 
     if(subchildren) {
-      XFree(children);
+      XFree(subchildren);
     }
 
     if (!wsig) {
