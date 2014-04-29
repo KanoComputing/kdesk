@@ -181,7 +181,7 @@ bool Desktop::process_and_dispatch(Display *display)
       if (wtarget == wcontrol)
 	{
 	  if (ev.type == ClientMessage) {
-	    cout << "Kdesk client message arriving to control window with atom" << ev.type << ev.xclient.data.l[0] << endl;
+	    log2 ("Kdesk client message arriving to control window with atom", ev.type, ev.xclient.data.l[0]);
 	    if ((Atom) ev.xclient.data.l[0] == atom_reload) {
 	      log ("Kdesk object control window receives a RELOAD event");
 	      return true; // true means do whatever you need to, and come back to process_and_dispatch, we are ready.
@@ -319,35 +319,80 @@ bool Desktop::finalize(void)
 
 bool Desktop::send_signal (Display *display, const char *signalName)
 {
-  // TODO: Query the xserver to find the control window to send a client message.
-  // for now we are assuming the signal is fired by a system signal
-  // and so we are in the same process addres space.
-  // This method will do the clean magic of breaking the X11 event processing loop
+  Window wsig = wcontrol; // Kdesk control window, either found by instantiation or enumarated.
 
-  Window root_return, parent_return, *children_return;
-  unsigned int nchildren_return=0;
-  int screen = DefaultScreen (display);
-  Window root = RootWindow (display, screen);
-
+  // The signal name has been allocated by kdesk, if it's not there, kdesk is not running.
   Atom atom_signal = XInternAtom(display, signalName, True);
   if (!atom_signal) {
-    // The signal name is not recognized, must be some other system message
-    cout << "ups" << endl;
+    log1 ("Atom signal name not defined. Perhaps kdesk is not running?", signalName);
     return false;
   }
 
+  if (!wsig) {
+    // Highly suggests kdesk is instantiated from a new process,
+    // we need to get Kdesk's control window by querying the XServer hierarchy
+    // or find out that it is not running
+
+    Window returnedroot, returnedparent, root = DefaultRootWindow(display);
+    char *windowname=NULL;
+    Window *children=NULL, *subchildren=NULL;
+    unsigned int numchildren, numsubchildren;
+
+    // Tell us the top-most level windows
+    XQueryTree (display, root, &returnedroot, &returnedparent, &children, &numchildren);
+    XWindowAttributes w;
+    int i;
+    for (int i=numchildren-1; i>=0 && !wsig; i--) {
+      
+      if (XFetchName (display, children[i], &windowname)) {
+	if (!strncmp (windowname, KDESK_CONTROL_WINDOW_NAME, strlen (KDESK_CONTROL_WINDOW_NAME))) {
+	  wsig = children[i];
+	  log1 ("Kdesk control window found", wsig);
+	  XFree (windowname);
+	  break;
+	}
+      }
+
+      // Kdesk might sit a little deeper in the tree hierarchy, let's step in
+      XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);
+
+      for (int k=numsubchildren-1; k>=0; k--) {
+	if (XFetchName (display, subchildren[k], &windowname)) {
+	  if (!strncmp (windowname, KDESK_CONTROL_WINDOW_NAME, strlen (KDESK_CONTROL_WINDOW_NAME))) {
+	    wsig = subchildren[k];
+	    log1 ("Kdesk control window found", wsig);
+	    XFree (windowname);
+	    break;
+	  }
+	}
+      }
+    }
+
+    if(children) {
+      XFree(children);
+    }
+
+    if(subchildren) {
+      XFree(children);
+    }
+
+    if (!wsig) {
+      cout << "Could not find Kdesk control window - perhaps it is not running on this Display?" << endl;
+      return false;
+    }
+  }
+
+  // Finally send the event to the control window to unfold the job
   XEvent xev;
   memset (&xev, 0x00, sizeof(xev));
   xev.type                 = ClientMessage;
-  xev.xclient.window       = wcontrol;
+  xev.xclient.window       = wsig;
   xev.xclient.format       = 32;
   xev.xclient.data.l[0]    = atom_signal;
   xev.xclient.data.l[1]    = atom_signal;
 
-  cout << "haw" << endl;
-
-  int rc = XSendEvent (display, wcontrol, 1, NoEventMask, (XEvent *) &xev);
+  int rc = XSendEvent (display, wsig, 1, NoEventMask, (XEvent *) &xev);
   XFlush (display);
-  log2 ("Sending a client message event to kdesk control window (win, rc)", wcontrol, rc);
+  log2 ("Sending a client message event to kdesk control window (win, rc)", wsig, rc);
   return (rc == Success ? true : false);
 }
