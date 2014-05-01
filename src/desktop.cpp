@@ -33,7 +33,7 @@
 
 Desktop::Desktop(void)
 {
-  atom_finish = atom_reload = 0L;
+  atom_finish = atom_reload = atom_icon_alert = 0L;
   wcontrol = 0L;
   numicons = 0;
 }
@@ -190,6 +190,16 @@ bool Desktop::process_and_dispatch(Display *display)
 	      log ("Kdesk object control window receives a FINISH event");
 	      return false; // false means quit kdesk
 	    }
+	    else if ((Atom) ev.xclient.data.l[0] == atom_icon_alert) {
+
+	      // This event comes with a message string (the icon name) - Extract it now
+	      // The icon name can be 16 bytes maximum. This comes from 20 bytes for X11 CientMessage data buffer minus 4 bytes
+	      // the actual Atom message ID.
+	      char alert_iconname[17];
+	      memcpy (alert_iconname, &ev.xclient.data.l[1], 16);
+	      alert_iconname[16] = 0x00; // Truncate it - this is not a nullified string
+	      log1 ("Icon Alert signal received for icon", alert_iconname);
+	    }
 	  }
 
 	  XFlush (display);
@@ -287,6 +297,7 @@ bool Desktop::initialize(Display *display, Configuration *loaded_conf, Sound *ks
   // Allocate Atoms used for signaling Kdesk's object window
   atom_finish = XInternAtom(display, KDESK_SIGNAL_FINISH, False);
   atom_reload = XInternAtom(display, KDESK_SIGNAL_RELOAD, False);
+  atom_icon_alert = XInternAtom(display, KDESK_SIGNAL_ICON_ALERT, False);
 
   // Create a hidden Object Control window which will receive Kdesk external events
   XSetWindowAttributes attr;
@@ -317,7 +328,7 @@ bool Desktop::finalize(void)
   finish = true;
 }
 
-bool Desktop::send_signal (Display *display, const char *signalName)
+bool Desktop::send_signal (Display *display, const char *signalName, char *message)
 {
   Window wsig = wcontrol; // Kdesk control window, either found by instantiation or enumarated.
 
@@ -387,9 +398,16 @@ bool Desktop::send_signal (Display *display, const char *signalName)
   memset (&xev, 0x00, sizeof(xev));
   xev.type                 = ClientMessage;
   xev.xclient.window       = wsig;
-  xev.xclient.format       = 32;
+  xev.xclient.format       = 32;   // 32 means data is interpreted as consecutive set of unordered LONGs
+
+  // A Kdesk message data is encoded in the following way:
+  // 4-byte atom ID name + an optional 16 byte char icon name - the case for KDESK_SIGNAL_ICON_ALERT.
   xev.xclient.data.l[0]    = atom_signal;
-  xev.xclient.data.l[1]    = atom_signal;
+
+  if (message != NULL) {
+    // Append a message string to the event - This is a custom fixed lenght literal.
+    memcpy (&xev.xclient.data.l[1], message, (strlen(message) > 15 ? 16 : strlen(message)));
+  }
 
   int rc = XSendEvent (display, wsig, 1, NoEventMask, (XEvent *) &xev);
   XFlush (display);
