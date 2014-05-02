@@ -11,6 +11,9 @@
 #include <X11/Xft/Xft.h>
 #include <Imlib2.h>
 #include <X11/cursorfont.h>
+
+#include <string.h>
+
 #include "configuration.h"
 
 // Default icon cursor when mouse moves over the icon
@@ -45,7 +48,8 @@ class Icon
   Icon (Configuration *loaded_conf, int iconidx);
   virtual ~Icon (void);
 
-  int get_iconid();
+  int get_iconid(void);
+  std::string get_icon_filename(void);
   bool is_singleton_running (void);
 
   Window create(Display *display);

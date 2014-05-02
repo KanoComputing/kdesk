@@ -39,6 +39,7 @@ class Desktop
   virtual ~Desktop(void);
 
   bool create_icons (Display *display);
+  Icon *find_icon_filename (char *icon_filename);
   bool destroy_icons (Display *display);
 
   bool notify_startup_load (Display *display, int iconid, Time time);

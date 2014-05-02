@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
         {
 	case '?':
 	case 'h':
-	  cout << "kano-desktop [ -h | -t | -w | -r ]" << endl;
+	  cout << "kano-desktop [ -h | -t | -w | -r | -a <icon name> ]" << endl;
 	  cout << " -h help, or -? this screen" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;

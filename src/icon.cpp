@@ -13,6 +13,7 @@
 
 #include <Imlib2.h>
 
+#include <string>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <errno.h>
@@ -73,9 +74,14 @@ Icon::~Icon (void)
 {
 }
 
-int Icon::get_iconid()
+int Icon::get_iconid(void)
 {
   return iconid;
+}
+
+std::string Icon::get_icon_filename(void)
+{
+  return configuration->get_icon_string (iconid, "filename");
 }
 
 bool Icon::is_singleton_running (void)

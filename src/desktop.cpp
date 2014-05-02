@@ -4,7 +4,9 @@
 // Copyright (C) 2013-2014 Kano Computing Ltd.
 // License: http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
 //
-// An app to show and bring life to Kano-Make Desktop Icons.
+// This module is the backbone of the desktop icons presentation.
+// It dispatches all user interaction events to the icons, is responsible for the reload,
+// redraws the icons when necessary, and also sends user defined signals.
 //
 
 #include <X11/Xatom.h>
@@ -12,6 +14,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xft/Xft.h>
+
+#include <string.h>
 
 #include "sn_callbacks.cpp"
 
@@ -86,6 +90,27 @@ bool Desktop::create_icons (Display *display)
   // returns true if at least one icon is available on the desktop
   log1 ("Desktop icon classes have been allocated", nicon);
   return (bool) (nicon > 0);
+}
+
+Icon *Desktop::find_icon_filename (char *icon_filename)
+{
+  // Search through the icon dispatcher table for the icon filename
+  std::map <Window, Icon *>::iterator it;
+
+  // We make it easy to the user, the .lnk extension is not needed
+  string strfilename = string(icon_filename);
+  strfilename += ".lnk";
+  
+  for (it=iconHandlers.begin(); it != iconHandlers.end(); ++it)
+    {
+      string theicon = it->second->get_icon_filename();
+      if (!strcasecmp (theicon.c_str(), strfilename.c_str())) {
+	log2 ("Icon filename found (name, instance)", icon_filename, it->second);
+	return it->second;
+      }
+    }
+
+  return NULL;
 }
 
 bool Desktop::destroy_icons (Display *display)
@@ -192,13 +217,46 @@ bool Desktop::process_and_dispatch(Display *display)
 	    }
 	    else if ((Atom) ev.xclient.data.l[0] == atom_icon_alert) {
 
-	      // This event comes with a message string (the icon name) - Extract it now
+	      // Kdesk Icon Exit alert is manager here.
+	      // This event comes with a message string (the icon name)
 	      // The icon name can be 16 bytes maximum. This comes from 20 bytes for X11 CientMessage data buffer minus 4 bytes
 	      // the actual Atom message ID.
-	      char alert_iconname[17];
-	      memcpy (alert_iconname, &ev.xclient.data.l[1], 16);
-	      alert_iconname[16] = 0x00; // Truncate it - this is not a nullified string
-	      log1 ("Icon Alert signal received for icon", alert_iconname);
+	      // An Icon user exit is fired so the icon look&feel can be dynamically changed.
+
+	      // Is there a Kdesk Icon Exit defined?
+	      string iconexit_script = pconf->get_config_string("iconexit");
+	      if (iconexit_script.length() == 0) {
+		log ("No kdesk icon exit defined - ignoring alert");
+	      }
+	      else {
+		// Collect the icon name to which the exit alert needs to be sent
+		char alert_iconname[17];
+		memcpy (alert_iconname, &ev.xclient.data.l[1], 16);
+		alert_iconname[16] = 0x00; // Truncate it - this is not a nullified string
+		log1 ("Icon Alert signal received for icon", alert_iconname);
+
+		// Is the icon name on the desktop? Can we send him a signal?
+		Icon *pico_exit = find_icon_filename (alert_iconname);
+		if (!pico_exit) {
+		  log ("Could not find this icon on the desktop, ignoring");
+		}
+		else {
+		  // The icon is here, call the Icon Exit, collect parameters and send update signal
+		  FILE *fp_iconexit=NULL;
+		  char chcmdline[1024];
+		  char chline[1024];
+
+		  // Execute the Icon Exit, parse the stdout, and communicate with the icon to refresh changes
+		  sprintf (chcmdline, "/bin/bash -c \"%s %s\"", iconexit_script.c_str(), alert_iconname);
+		  fp_iconexit = popen (chcmdline, "r");
+		  while (fgets (chline, sizeof (chline), fp_iconexit) != NULL)
+		    {
+		      // TODO: Parse and pass changes to the icon -> pico_exit instance
+		      log1 ("IconExit stdout line", chline);
+		      memset (chline, 0x00, sizeof(chline));
+		    }
+		}
+	      }
 	    }
 	  }
 
