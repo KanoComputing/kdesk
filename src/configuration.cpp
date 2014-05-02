@@ -159,6 +159,11 @@ bool Configuration::load_conf(const char *filename)
 	ifile >> value;
 	configuration["mousehovericon"] = value;
       }
+
+      if (token == "IconExit:") {
+	ifile >> value;
+	configuration["iconexit"] = value;
+      }
     }
  
   ifile.close();
@@ -242,6 +247,14 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	  }
 	  
 	  icons[iconid]["caption"] = value;
+	}
+
+	if (token == "Message:") {
+	  icons[iconid]["message"] = value;
+	}
+
+	if (token == "HAlign:") {
+	  icons[iconid]["halign"] = value;
 	}
 	
 	if (token == "X:") {

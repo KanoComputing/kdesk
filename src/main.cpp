@@ -38,6 +38,7 @@ static Desktop dsk;
 // local function prototypes
 void signal_callback_handler(int signum);
 void reload_configuration (Display *display);
+void trigger_icon_alert (Display *display, char *message);
 void finish_kdesk (Display *display);
 
 // Signal handler reached via a kill -USR
@@ -65,14 +66,21 @@ void signal_callback_handler(int signum)
 void reload_configuration (Display *display)
 {
   log ("Reloading kdesk configuration");
-  dsk.send_signal (display, KDESK_SIGNAL_RELOAD);
+  dsk.send_signal (display, KDESK_SIGNAL_RELOAD, NULL);
+  return;
+}
+
+void trigger_icon_alert (Display *display, char *message)
+{
+  log ("Trigger an icon altert signal");
+  dsk.send_signal (display, KDESK_SIGNAL_ICON_ALERT, message);
   return;
 }
 
 void finish_kdesk (Display *display)
 {
   log ("Finishing Kdesk");
-  dsk.send_signal (display, KDESK_SIGNAL_FINISH);
+  dsk.send_signal (display, KDESK_SIGNAL_FINISH, NULL);
   return;
 }
 
@@ -97,17 +105,18 @@ int main(int argc, char *argv[])
   }
 
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwr")) != EOF)
+  while ((c = getopt(argc, argv, "?htwra:")) != EOF)
     {
       switch (c)
         {
 	case '?':
 	case 'h':
-	  cout << "kano-desktop [ -h | -t | -w | -r ]" << endl;
+	  cout << "kano-desktop [ -h | -t | -w | -r | -a <icon name> ]" << endl;
 	  cout << " -h help, or -? this screen" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
-	  cout << " -r refresh configuration and exit" << endl << endl;
+	  cout << " -r refresh configuration and exit" << endl;
+	  cout << " -a send a custom icon alert" << endl << endl;
 	  exit (1);
 
 	case 't':
@@ -129,6 +138,19 @@ int main(int argc, char *argv[])
 
 	  cout << "Sending a refresh signal to Kdesk" << endl;
 	  reload_configuration(display);
+	  XCloseDisplay(display);
+	  exit (0);
+
+	case 'a':
+	  display = XOpenDisplay(display_name);
+	  if (!display) {
+	    cout << "Could not connect to the XServer" << endl;
+	    cout << "Is the DISPLAY variable correctly set?" << endl << endl;
+	    exit (1);
+	  }
+
+	  cout << "Triggering icon alert with message:" << optarg << endl;
+	  trigger_icon_alert(display, optarg);
 	  XCloseDisplay(display);
 	  exit (0);
         }

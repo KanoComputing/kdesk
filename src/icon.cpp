@@ -13,6 +13,7 @@
 
 #include <Imlib2.h>
 
+#include <string>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <errno.h>
@@ -28,13 +29,23 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   shadowx=shadowy=0;
   iconMapNone = iconMapGlow = (unsigned char *) NULL;
   backsafe = NULL;
+  font = fontsmaller = NULL;
   win = 0;
+
+  // save the icon, icon hover image files
+  ficon = configuration->get_icon_string (iconid, "icon");
+  ficon_hover = configuration->get_icon_string (iconid, "iconhover");  
+  
+  // save the icon caption and message literals to be rendered around it
+  caption = configuration->get_icon_string (iconid, "caption");
+  message = configuration->get_icon_string (iconid, "message");
 
   // Initially we don't know yet which display we are bound to until create()
   icon_display = NULL;
 
   // default font details should be zero
-  fontInfo.height = fontInfo.width = 0;
+  fontInfoCaption.height = fontInfoCaption.width = 0;
+  fontInfoMessage.height = fontInfoMessage.width = 0;
 
   iconMapNone = (unsigned char *) calloc (sizeof(unsigned char), 256);
   if (iconMapNone) {
@@ -73,9 +84,29 @@ Icon::~Icon (void)
 {
 }
 
-int Icon::get_iconid()
+int Icon::get_iconid(void)
 {
   return iconid;
+}
+
+std::string Icon::get_icon_filename(void)
+{
+  return configuration->get_icon_string (iconid, "filename");
+}
+
+void Icon::set_caption (char *new_caption)
+{
+  caption = new_caption;
+}
+
+void Icon::set_message (char *new_message)
+{
+  message = new_message;
+}
+
+void Icon::set_icon (char *new_icon)
+{
+  ficon = new_icon;
 }
 
 bool Icon::is_singleton_running (void)
@@ -110,16 +141,15 @@ bool Icon::is_singleton_running (void)
 Window Icon::create (Display *display)
 {
   unsigned int rc=0;
-  string caption = configuration->get_icon_string (iconid, "caption");
   int border;
 
   // save the display variable for later cleanup
   icon_display = display;
-
   vis = DefaultVisual(display, DefaultScreen(display));
   cmap = DefaultColormap(display, DefaultScreen(display));
 
-  if (caption.length() > 0) {
+  // If there is an icon caption or message defined, allocate a font for it
+  if (caption.length() > 0 || message.length() > 0) {
     log ("allocating font resources for icon title");
     int fontsize = configuration->get_config_int ("fontsize");
     string fontname = configuration->get_config_string ("fontname");
@@ -136,9 +166,8 @@ Window Icon::create (Display *display)
     log2 ("opening font name and point size", fontname, fontsize);
     font = XftFontOpen (display, DefaultScreen(display),
 			XFT_FAMILY, XftTypeString, fontname.c_str(),
-			XFT_SIZE, XftTypeDouble, (float) 14,
-			NULL);
-    
+			XFT_SIZE, XftTypeDouble, (float) fontsize,
+			NULL);    
     if (!font) {
       log("Could not create font!");
     }
@@ -148,9 +177,17 @@ Window Icon::create (Display *display)
       rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0), "black", &xftcolor_shadow);
       log1 ("XftColorAllocName bool", rc);
       
-      // Find out the extend of icon caption on the rendering surface
+      fontsmaller = XftFontOpen (display, DefaultScreen(display),
+				 XFT_FAMILY, XftTypeString, fontname.c_str(),
+				 XFT_SIZE, XftTypeDouble, (float) fontsize - 2,
+				 NULL);
+      log1 ("creating a smaller font for messages", fontsmaller);
+
+      // Find out the extend of icon caption and message on the rendering surface
       // The window containing the icon will be enlarged vertically to accomodate this space
-      XftTextExtentsUtf8 (display, font, (XftChar8*) caption.c_str(), caption.length(), &fontInfo);
+      if (caption.length() > 0) {
+	XftTextExtentsUtf8 (display, font, (XftChar8*) caption.c_str(), caption.length(), &fontInfoCaption);
+      }
     }
   }
 
@@ -175,17 +212,17 @@ Window Icon::create (Display *display)
   icontitlegap = configuration->get_config_int("icontitlegap");
   log1 ("Icon gap for font title rendering", icontitlegap);
 
-  // Decide which icon positioning to use
-
-  if (configuration->get_icon_string(iconid, "relative-to") == "bottom-centre") {
+  // Decide which icon positioning to use on the desktop
+  string icon_placement = configuration->get_icon_string(iconid, "relative-to");
+  if (icon_placement == "bottom-centre") {
     iconx = w / 2 + iconx;
     icony = h + icony;
   }
-  else if (configuration->get_icon_string(iconid, "relative-to") == "top-left") {
+  else if (icon_placement == "top-left") {
     // no coordinate transformation necessary. 0,0 is already top-left
     ;
   }
-  else if (configuration->get_icon_string(iconid, "relative-to") == "top-right") {
+  else if (icon_placement == "top-right") {
     // icon horizontal position decreases from the right to the left
     iconx = w - (iconx + iconw);
   }
@@ -199,7 +236,7 @@ Window Icon::create (Display *display)
 
   log4 ("icon placement (x,y,w,h): @", iconx, icony, iconw, iconh);
   win = XCreateWindow (display, DefaultRootWindow(display), iconx, icony, 
-		       iconw, iconh + fontInfo.height + icontitlegap, border,
+		       iconw, iconh + fontInfoCaption.height + icontitlegap, border,
 		       CopyFromParent, CopyFromParent, CopyFromParent,
 		       CWBackPixmap|CWBackingStore|CWOverrideRedirect|CWEventMask,
 		       &attr );
@@ -220,6 +257,7 @@ Window Icon::create (Display *display)
   // http://tronche.com/gui/x/xlib/appendix/b/
   // which can be replaced by system "themes".
 
+  // TODO: Extract this iconid into .kdeskrc
   cursor = XCreateFontCursor (display, cursor_id);
   XDefineCursor(display, win, cursor);
 
@@ -247,6 +285,25 @@ void Icon::destroy(Display *display)
   XDestroyWindow (display, win);
 }
 
+int Icon::get_icon_horizontal_placement (int image_width)
+{
+  // The default is to render the icon to the left,
+  // But the HAlign attribute may override this with the "right" setting.
+  // This is useful so the "message" attribute is rendered to the left of the icon
+  //
+  int subx=0;
+  if (configuration->get_icon_string (iconid, "halign") == "right") {
+    subx = iconw - image_width;
+  }
+
+  return subx;
+}
+
+void Icon::clear(Display *display, XEvent ev)
+{
+  XClearWindow (display, win);
+}
+
 void Icon::draw(Display *display, XEvent ev)
 {
   imlib_context_set_display(display);
@@ -254,9 +311,7 @@ void Icon::draw(Display *display, XEvent ev)
   imlib_context_set_colormap(cmap);
   imlib_context_set_drawable(win);
 
-  string ficon1 = configuration->get_icon_string (iconid, "icon");
-
-  log5 ("drawing icon (name @coords)", ficon1, iconx, icony, iconw, iconh);
+  log5 ("drawing icon (name @coords)", ficon, iconx, icony, iconw, iconh);
 
   // Reinforcing the window to stay at the bottom of all windows. From the docs on XLowerWindow...
   // "Lowering a mapped window will generate Expose events on any windows it formerly obscured."
@@ -265,7 +320,7 @@ void Icon::draw(Display *display, XEvent ev)
   XLowerWindow(display, win);
 
   imlib_context_set_drawable(win);
-  image = imlib_load_image(ficon1.c_str());
+  image = imlib_load_image(ficon.c_str());
 
   Imlib_Color_Modifier cmHighlight;
   cmHighlight = imlib_create_color_modifier();
@@ -278,15 +333,16 @@ void Icon::draw(Display *display, XEvent ev)
   int w = imlib_image_get_width();
   int h = imlib_image_get_height();
 
-  /* the old position - so we wipe over where it used to be */
-  imlib_render_image_on_drawable(0, 0);
-  updates = imlib_update_append_rect(updates, 0, 0, w, h);
+  // Draw the icon on the surface window, default is top-left.
+  int subx = get_icon_horizontal_placement(w);
+  imlib_render_image_on_drawable (subx, 0);
+  updates = imlib_update_append_rect (updates, subx, 0, w, h);
   imlib_free_image();
 
-  // We render the icon name below it, twice to create a shadow effect
-  string caption = configuration->get_icon_string (iconid, "caption");
+  // Render the icon name below it, twice to create a shadow effect
   if (caption.length() > 0) {
-    int fx = (iconw - fontInfo.width) / 2;
+    log1 ("Drawing icon caption", caption);
+    int fx = (iconw - fontInfoCaption.width) / 2;
     int fy = iconh;
     if (configuration->get_config_string("shadow") == "true")
       {
@@ -300,6 +356,57 @@ void Icon::draw(Display *display, XEvent ev)
 		       (XftChar8 *) caption.c_str(), caption.size());
   }
 
+  // Render the message information area, default is on the right side of the icon
+  if (message.length() > 0) {
+
+    log1 ("Drawing icon message", message);
+
+    // If the message is dual-line (i.e. some\ntext), then split it in 2 messages
+    // and use a smaller font to render the text below the first line.
+    char *msg1 = strdup (message.c_str());
+    char *msg2 = NULL;
+    char *newline = NULL;
+
+    // If we find the newline magic mark ( OR sign ), this is a dual-line message. Split it.
+    newline = (char *) strstr (msg1, "|");
+    if (newline != NULL) {
+      *newline = 0x00;
+      msg2 = newline + sizeof (char);
+      log2 ("Message is dual-line (first, second)", msg1, msg2);
+    }
+
+    // Compute the message positioning
+    XftTextExtentsUtf8 (display, font, (XftChar8*) msg1, strlen (msg1), &fontInfoMessage);
+    int fx=0, fy=0;
+    fy = h / 2;     // FIXME: This is not pixel-accurate
+    if (subx > 0) {
+      // Icon is aligned to the right - Align the message to the left of the icon
+      fx = subx - fontInfoMessage.width;
+    }
+    else {
+      fx = w + icontitlegap;
+    }
+
+    // Render the first line
+    XftDrawStringUtf8 (xftdraw1, &xftcolor, font, fx, fy, (XftChar8 *) msg1, strlen (msg1));
+
+    // Render the second line - try using a smaller font
+    if (msg2 != NULL) {
+      XGlyphInfo fiSmaller;
+      XftTextExtentsUtf8 (display, fontsmaller, (XftChar8*) msg2, strlen(msg2), &fiSmaller);
+      if (subx) {
+	// The icon sits to the right, draw the text to the left.
+	fx = subx - fiSmaller.width;
+      }
+
+      XftDrawStringUtf8 (xftdraw1, &xftcolor, fontsmaller ? fontsmaller : font, 
+			 fx, fy + fontInfoMessage.height + 5,
+			 (XftChar8 *) msg2, strlen (msg2));
+    }
+
+    free (msg1);
+  }
+
   // save the current icon render so we can restore when mouse hovers out
   imlib_context_set_image(backsafe);
   imlib_context_set_drawable(win);
@@ -309,17 +416,15 @@ void Icon::draw(Display *display, XEvent ev)
 bool Icon::blink_icon(Display *display, XEvent ev)
 {
   bool bsuccess = false;
-  string ficon = configuration->get_icon_string (iconid, "icon");
-  string hovericon = configuration->get_icon_string (iconid, "iconhover");
   Imlib_Image original = imlib_load_image(ficon.c_str());
   Imlib_Color_Modifier colorMod=NULL;
 
   // If a second texture is provided, create a visual effect when mouse moves over the icon (hover effect)
-  if (hovericon.length() > 0) {
+  if (ficon_hover.length() > 0) {
 
     // start by laoding the second texture icon
-    log1 ("drawing second texture icon", hovericon);
-    Imlib_Image imghover = imlib_load_image (hovericon.c_str());
+    log1 ("drawing second texture icon", ficon_hover);
+    Imlib_Image imghover = imlib_load_image (ficon_hover.c_str());
     
     // if blending is also requested (HoverTransparent) mix original icon with the second texture
     // with a transparency percentage specified by this same flag (0 will blend with desktop, 255 full opaque blend)
@@ -365,7 +470,10 @@ bool Icon::blink_icon(Display *display, XEvent ev)
     
     int xoffset = configuration->get_icon_int (iconid, "hoverxoffset");
     int yoffset = configuration->get_icon_int (iconid, "hoveryoffset");
-    imlib_render_image_on_drawable (xoffset, yoffset);
+
+    // Account for icons with HAlign=right
+    int subx = get_icon_horizontal_placement(imlib_image_get_width());
+    imlib_render_image_on_drawable (xoffset + subx, yoffset);
 
     if (colorMod) {
       // The color modifier might have been used during texture blending

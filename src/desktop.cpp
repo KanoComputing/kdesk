@@ -4,7 +4,9 @@
 // Copyright (C) 2013-2014 Kano Computing Ltd.
 // License: http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
 //
-// An app to show and bring life to Kano-Make Desktop Icons.
+// This module is the backbone of the desktop icons presentation.
+// It dispatches all user interaction events to the icons, is responsible for the reload,
+// redraws the icons when necessary, and also sends user defined signals.
 //
 
 #include <X11/Xatom.h>
@@ -12,6 +14,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xft/Xft.h>
+
+#include <string.h>
 
 #include "sn_callbacks.cpp"
 
@@ -33,7 +37,7 @@
 
 Desktop::Desktop(void)
 {
-  atom_finish = atom_reload = 0L;
+  atom_finish = atom_reload = atom_icon_alert = 0L;
   wcontrol = 0L;
   numicons = 0;
 }
@@ -86,6 +90,27 @@ bool Desktop::create_icons (Display *display)
   // returns true if at least one icon is available on the desktop
   log1 ("Desktop icon classes have been allocated", nicon);
   return (bool) (nicon > 0);
+}
+
+Icon *Desktop::find_icon_filename (char *icon_filename)
+{
+  // Search through the icon dispatcher table for the icon filename
+  std::map <Window, Icon *>::iterator it;
+
+  // We make it easy to the user, the .lnk extension is not needed
+  string strfilename = string(icon_filename);
+  strfilename += ".lnk";
+  
+  for (it=iconHandlers.begin(); it != iconHandlers.end(); ++it)
+    {
+      string theicon = it->second->get_icon_filename();
+      if (!strcasecmp (theicon.c_str(), strfilename.c_str())) {
+	log2 ("Icon filename found (name, instance)", icon_filename, it->second);
+	return it->second;
+      }
+    }
+
+  return NULL;
 }
 
 bool Desktop::destroy_icons (Display *display)
@@ -190,6 +215,77 @@ bool Desktop::process_and_dispatch(Display *display)
 	      log ("Kdesk object control window receives a FINISH event");
 	      return false; // false means quit kdesk
 	    }
+	    else if ((Atom) ev.xclient.data.l[0] == atom_icon_alert) {
+
+	      // Kdesk Icon Exit alert is manager here.
+	      // This event comes with a message string (the icon name)
+	      // The icon name can be 16 bytes maximum. This comes from 20 bytes for X11 CientMessage data buffer minus 4 bytes
+	      // the actual Atom message ID.
+	      // An Icon user exit is fired so the icon look&feel can be dynamically changed.
+
+	      // Is there a Kdesk Icon Exit defined?
+	      string iconexit_script = pconf->get_config_string("iconexit");
+	      if (iconexit_script.length() == 0) {
+		log ("No kdesk icon exit defined - ignoring alert");
+	      }
+	      else {
+		// Collect the icon name to which the exit alert needs to be sent
+		char alert_iconname[17];
+		memcpy (alert_iconname, &ev.xclient.data.l[1], 16);
+		alert_iconname[16] = 0x00; // Truncate it - this is not a nullified string
+		log1 ("Icon Alert signal received for icon", alert_iconname);
+
+		// Is the icon name on the desktop? Can we send him a signal?
+		Icon *pico_exit = find_icon_filename (alert_iconname);
+		if (!pico_exit) {
+		  log ("Could not find this icon on the desktop, ignoring");
+		}
+		else {
+		  FILE *fp_iconexit=NULL;
+		  char chcmdline[1024];
+		  char chline[1024], key[64], value[900], word[64];
+
+		  // Execute the Icon Exit, parse the stdout, and communicate with the icon to refresh attributes
+		  // FIXME: Organize this code in a class method
+		  sprintf (chcmdline, "/bin/bash -c \"%s %s\"", iconexit_script.c_str(), alert_iconname);
+		  fp_iconexit = popen (chcmdline, "r");
+		  while (fgets (chline, sizeof (chline), fp_iconexit) != NULL)
+		    {
+		      char *toks=chline;
+		      memset (key, 0x00, sizeof(key));
+		      memset (value, 0x00, sizeof(value));
+		      int n=0;
+		      while (sscanf (toks, "%s%n", word, &n) == 1 ) {
+			if (word[strlen(word)-1] == ':') {
+			  strcpy (key, word);
+			}
+			else {
+			  strcat (value, word);
+			  strcat (value, " ");
+			}
+			toks += n;
+		      }
+
+		      // Parse the keys (attributes) that can be applied to the icon, pass them to the icon instance
+		      value[strlen(value)-1]=0x00;
+		      if (!strcmp (key, "Message:")) {
+			pico_exit->set_message (value);
+		      }
+		      else if (!strcmp (key, "Caption:")) {
+			pico_exit->set_caption (value);
+		      }
+		      else if (!strcmp (key, "Icon:")) {
+			pico_exit->set_icon (value);
+		      }
+		    }
+		  
+		  // Redraw the icon
+		  fclose (fp_iconexit);
+		  pico_exit->clear(display, ev);
+		  pico_exit->draw(display, ev);
+		}
+	      }
+	    }
 	  }
 
 	  XFlush (display);
@@ -287,6 +383,7 @@ bool Desktop::initialize(Display *display, Configuration *loaded_conf, Sound *ks
   // Allocate Atoms used for signaling Kdesk's object window
   atom_finish = XInternAtom(display, KDESK_SIGNAL_FINISH, False);
   atom_reload = XInternAtom(display, KDESK_SIGNAL_RELOAD, False);
+  atom_icon_alert = XInternAtom(display, KDESK_SIGNAL_ICON_ALERT, False);
 
   // Create a hidden Object Control window which will receive Kdesk external events
   XSetWindowAttributes attr;
@@ -317,7 +414,7 @@ bool Desktop::finalize(void)
   finish = true;
 }
 
-bool Desktop::send_signal (Display *display, const char *signalName)
+bool Desktop::send_signal (Display *display, const char *signalName, char *message)
 {
   Window wsig = wcontrol; // Kdesk control window, either found by instantiation or enumarated.
 
@@ -387,9 +484,16 @@ bool Desktop::send_signal (Display *display, const char *signalName)
   memset (&xev, 0x00, sizeof(xev));
   xev.type                 = ClientMessage;
   xev.xclient.window       = wsig;
-  xev.xclient.format       = 32;
+  xev.xclient.format       = 32;   // 32 means data is interpreted as consecutive set of unordered LONGs
+
+  // A Kdesk message data is encoded in the following way:
+  // 4-byte atom ID name + an optional 16 byte char icon name - the case for KDESK_SIGNAL_ICON_ALERT.
   xev.xclient.data.l[0]    = atom_signal;
-  xev.xclient.data.l[1]    = atom_signal;
+
+  if (message != NULL) {
+    // Append a message string to the event - This is a custom fixed lenght literal.
+    memcpy (&xev.xclient.data.l[1], message, (strlen(message) > 15 ? 16 : strlen(message)));
+  }
 
   int rc = XSendEvent (display, wsig, 1, NoEventMask, (XEvent *) &xev);
   XFlush (display);

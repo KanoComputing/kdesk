@@ -11,6 +11,9 @@
 #include <X11/Xft/Xft.h>
 #include <Imlib2.h>
 #include <X11/cursorfont.h>
+
+#include <string.h>
+
 #include "configuration.h"
 
 // Default icon cursor when mouse moves over the icon
@@ -34,10 +37,15 @@ class Icon
   Visual *vis;
   Colormap cmap;
   XftFont *font;
-  XGlyphInfo fontInfo;
+  XftFont *fontsmaller;
+  XGlyphInfo fontInfoCaption, fontInfoMessage;
   XftDraw *xftdraw1, *xftdraw2;
   XftColor xftcolor, xftcolor_shadow;
   unsigned char *iconMapNone, *iconMapGlow;
+  std::string ficon;
+  std::string ficon_hover;
+  std::string caption;
+  std::string message;
 
  public:
   int iconid;
@@ -45,16 +53,23 @@ class Icon
   Icon (Configuration *loaded_conf, int iconidx);
   virtual ~Icon (void);
 
-  int get_iconid();
+  int get_iconid(void);
+  std::string get_icon_filename(void);
+  int get_icon_horizontal_placement (int image_width);
   bool is_singleton_running (void);
 
   Window create(Display *display);
   void destroy(Display *display);
 
   void draw(Display *display, XEvent ev);
+  void clear(Display *display, XEvent ev);
   bool blink_icon(Display *display, XEvent ev);
   bool unblink_icon(Display *display, XEvent ev);
   bool double_click(Display *display, XEvent ev);
   bool motion(Display *display, XEvent ev);
+
+  void set_caption (char *new_caption);
+  void set_message (char *new_message);
+  void set_icon (char *new_icon);
 
 };
