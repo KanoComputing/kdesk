@@ -62,9 +62,14 @@ class Icon
   void destroy(Display *display);
 
   void draw(Display *display, XEvent ev);
+  void clear(Display *display, XEvent ev);
   bool blink_icon(Display *display, XEvent ev);
   bool unblink_icon(Display *display, XEvent ev);
   bool double_click(Display *display, XEvent ev);
   bool motion(Display *display, XEvent ev);
+
+  void set_caption (char *new_caption);
+  void set_message (char *new_message);
+  void set_icon (char *new_icon);
 
 };

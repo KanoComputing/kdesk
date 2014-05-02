@@ -38,7 +38,7 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   
   // save the icon caption and message literals to be rendered around it
   caption = configuration->get_icon_string (iconid, "caption");
-  message =  configuration->get_icon_string (iconid, "message");
+  message = configuration->get_icon_string (iconid, "message");
 
   // Initially we don't know yet which display we are bound to until create()
   icon_display = NULL;
@@ -92,6 +92,21 @@ int Icon::get_iconid(void)
 std::string Icon::get_icon_filename(void)
 {
   return configuration->get_icon_string (iconid, "filename");
+}
+
+void Icon::set_caption (char *new_caption)
+{
+  caption = new_caption;
+}
+
+void Icon::set_message (char *new_message)
+{
+  message = new_message;
+}
+
+void Icon::set_icon (char *new_icon)
+{
+  ficon = new_icon;
 }
 
 bool Icon::is_singleton_running (void)
@@ -282,6 +297,11 @@ int Icon::get_icon_horizontal_placement (int image_width)
   }
 
   return subx;
+}
+
+void Icon::clear(Display *display, XEvent ev)
+{
+  XClearWindow (display, win);
 }
 
 void Icon::draw(Display *display, XEvent ev)

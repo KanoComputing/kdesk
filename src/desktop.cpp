@@ -241,20 +241,48 @@ bool Desktop::process_and_dispatch(Display *display)
 		  log ("Could not find this icon on the desktop, ignoring");
 		}
 		else {
-		  // The icon is here, call the Icon Exit, collect parameters and send update signal
 		  FILE *fp_iconexit=NULL;
 		  char chcmdline[1024];
-		  char chline[1024];
+		  char chline[1024], key[64], value[900], word[64];
 
-		  // Execute the Icon Exit, parse the stdout, and communicate with the icon to refresh changes
+		  // Execute the Icon Exit, parse the stdout, and communicate with the icon to refresh attributes
+		  // FIXME: Organize this code in a class method
 		  sprintf (chcmdline, "/bin/bash -c \"%s %s\"", iconexit_script.c_str(), alert_iconname);
 		  fp_iconexit = popen (chcmdline, "r");
 		  while (fgets (chline, sizeof (chline), fp_iconexit) != NULL)
 		    {
-		      // TODO: Parse and pass changes to the icon -> pico_exit instance
-		      log1 ("IconExit stdout line", chline);
-		      memset (chline, 0x00, sizeof(chline));
+		      char *toks=chline;
+		      memset (key, 0x00, sizeof(key));
+		      memset (value, 0x00, sizeof(value));
+		      int n=0;
+		      while (sscanf (toks, "%s%n", word, &n) == 1 ) {
+			if (word[strlen(word)-1] == ':') {
+			  strcpy (key, word);
+			}
+			else {
+			  strcat (value, word);
+			  strcat (value, " ");
+			}
+			toks += n;
+		      }
+
+		      // Parse the keys (attributes) that can be applied to the icon, pass them to the icon instance
+		      value[strlen(value)-1]=0x00;
+		      if (!strcmp (key, "Message:")) {
+			pico_exit->set_message (value);
+		      }
+		      else if (!strcmp (key, "Caption:")) {
+			pico_exit->set_caption (value);
+		      }
+		      else if (!strcmp (key, "Icon:")) {
+			pico_exit->set_icon (value);
+		      }
 		    }
+		  
+		  // Redraw the icon
+		  fclose (fp_iconexit);
+		  pico_exit->clear(display, ev);
+		  pico_exit->draw(display, ev);
 		}
 	      }
 	    }
