@@ -130,7 +130,6 @@ Window Icon::create (Display *display)
 
   // save the display variable for later cleanup
   icon_display = display;
-
   vis = DefaultVisual(display, DefaultScreen(display));
   cmap = DefaultColormap(display, DefaultScreen(display));
 
@@ -174,9 +173,6 @@ Window Icon::create (Display *display)
       if (caption.length() > 0) {
 	XftTextExtentsUtf8 (display, font, (XftChar8*) caption.c_str(), caption.length(), &fontInfoCaption);
       }
-      if (message.length() > 0) {
-	XftTextExtentsUtf8 (display, font, (XftChar8*) message.c_str(), message.length(), &fontInfoMessage);
-      }
     }
   }
 
@@ -201,7 +197,7 @@ Window Icon::create (Display *display)
   icontitlegap = configuration->get_config_int("icontitlegap");
   log1 ("Icon gap for font title rendering", icontitlegap);
 
-  // Decide which icon positioning to use
+  // Decide which icon positioning to use on the desktop
   string icon_placement = configuration->get_icon_string(iconid, "relative-to");
   if (icon_placement == "bottom-centre") {
     iconx = w / 2 + iconx;
@@ -246,6 +242,7 @@ Window Icon::create (Display *display)
   // http://tronche.com/gui/x/xlib/appendix/b/
   // which can be replaced by system "themes".
 
+  // TODO: Extract this iconid into .kdeskrc
   cursor = XCreateFontCursor (display, cursor_id);
   XDefineCursor(display, win, cursor);
 
@@ -271,6 +268,20 @@ void Icon::destroy(Display *display)
   }
 
   XDestroyWindow (display, win);
+}
+
+int Icon::get_icon_horizontal_placement (int image_width)
+{
+  // The default is to render the icon to the left,
+  // But the HAlign attribute may override this with the "right" setting.
+  // This is useful so the "message" attribute is rendered to the left of the icon
+  //
+  int subx=0;
+  if (configuration->get_icon_string (iconid, "halign") == "right") {
+    subx = iconw - image_width;
+  }
+
+  return subx;
 }
 
 void Icon::draw(Display *display, XEvent ev)
@@ -302,9 +313,10 @@ void Icon::draw(Display *display, XEvent ev)
   int w = imlib_image_get_width();
   int h = imlib_image_get_height();
 
-  // Draw the icon on the surface window
-  imlib_render_image_on_drawable(0, 0);
-  updates = imlib_update_append_rect(updates, 0, 0, w, h);
+  // Draw the icon on the surface window, default is top-left.
+  int subx = get_icon_horizontal_placement(w);
+  imlib_render_image_on_drawable (subx, 0);
+  updates = imlib_update_append_rect (updates, subx, 0, w, h);
   imlib_free_image();
 
   // Render the icon name below it, twice to create a shadow effect
@@ -343,15 +355,32 @@ void Icon::draw(Display *display, XEvent ev)
       log2 ("Message is dual-line (first, second)", msg1, msg2);
     }
 
+    // Compute the message positioning
+    XftTextExtentsUtf8 (display, font, (XftChar8*) msg1, strlen (msg1), &fontInfoMessage);
+    int fx=0, fy=0;
+    fy = h / 2;     // FIXME: This is not pixel-accurate
+    if (subx > 0) {
+      // Icon is aligned to the right - Align the message to the left of the icon
+      fx = subx - fontInfoMessage.width;
+    }
+    else {
+      fx = w + icontitlegap;
+    }
+
     // Render the first line
-    int fx = w + icontitlegap;
-    int fy = h / 2;
     XftDrawStringUtf8 (xftdraw1, &xftcolor, font, fx, fy, (XftChar8 *) msg1, strlen (msg1));
 
     // Render the second line - try using a smaller font
     if (msg2 != NULL) {
-      cout << "font height: " << fontInfoMessage.height;
-      XftDrawStringUtf8 (xftdraw1, &xftcolor, fontsmaller ? fontsmaller : font, fx, fy + fontInfoMessage.height + 5,
+      XGlyphInfo fiSmaller;
+      XftTextExtentsUtf8 (display, fontsmaller, (XftChar8*) msg2, strlen(msg2), &fiSmaller);
+      if (subx) {
+	// The icon sits to the right, draw the text to the left.
+	fx = subx - fiSmaller.width;
+      }
+
+      XftDrawStringUtf8 (xftdraw1, &xftcolor, fontsmaller ? fontsmaller : font, 
+			 fx, fy + fontInfoMessage.height + 5,
 			 (XftChar8 *) msg2, strlen (msg2));
     }
 
@@ -421,7 +450,10 @@ bool Icon::blink_icon(Display *display, XEvent ev)
     
     int xoffset = configuration->get_icon_int (iconid, "hoverxoffset");
     int yoffset = configuration->get_icon_int (iconid, "hoveryoffset");
-    imlib_render_image_on_drawable (xoffset, yoffset);
+
+    // Account for icons with HAlign=right
+    int subx = get_icon_horizontal_placement(imlib_image_get_width());
+    imlib_render_image_on_drawable (xoffset + subx, yoffset);
 
     if (colorMod) {
       // The color modifier might have been used during texture blending

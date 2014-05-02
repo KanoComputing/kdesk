@@ -252,6 +252,10 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	if (token == "Message:") {
 	  icons[iconid]["message"] = value;
 	}
+
+	if (token == "HAlign:") {
+	  icons[iconid]["halign"] = value;
+	}
 	
 	if (token == "X:") {
 	  icons[iconid]["x"] = value;

@@ -55,6 +55,7 @@ class Icon
 
   int get_iconid(void);
   std::string get_icon_filename(void);
+  int get_icon_horizontal_placement (int image_width);
   bool is_singleton_running (void);
 
   Window create(Display *display);
