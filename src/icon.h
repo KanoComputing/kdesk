@@ -37,10 +37,15 @@ class Icon
   Visual *vis;
   Colormap cmap;
   XftFont *font;
-  XGlyphInfo fontInfo;
+  XftFont *fontsmaller;
+  XGlyphInfo fontInfoCaption, fontInfoMessage;
   XftDraw *xftdraw1, *xftdraw2;
   XftColor xftcolor, xftcolor_shadow;
   unsigned char *iconMapNone, *iconMapGlow;
+  std::string ficon;
+  std::string ficon_hover;
+  std::string caption;
+  std::string message;
 
  public:
   int iconid;
