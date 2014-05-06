@@ -103,10 +103,12 @@ Icon *Desktop::find_icon_filename (char *icon_filename)
   
   for (it=iconHandlers.begin(); it != iconHandlers.end(); ++it)
     {
-      string theicon = it->second->get_icon_filename();
-      if (!strcasecmp (theicon.c_str(), strfilename.c_str())) {
-	log2 ("Icon filename found (name, instance)", icon_filename, it->second);
-	return it->second;
+      if (it->second != NULL) {
+	string theicon = it->second->get_icon_filename();
+	if (!strcasecmp (theicon.c_str(), strfilename.c_str())) {
+	  log2 ("Icon filename found (name, instance)", icon_filename, it->second);
+	  return it->second;
+	}
       }
     }
 

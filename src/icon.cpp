@@ -378,10 +378,11 @@ void Icon::draw(Display *display, XEvent ev)
     // Compute the message positioning
     XftTextExtentsUtf8 (display, font, (XftChar8*) msg1, strlen (msg1), &fontInfoMessage);
     int fx=0, fy=0;
-    fy = h / 2;     // FIXME: This is not pixel-accurate
+    int xgap=5;      // used to avoid the text from blending with the icon when halign=right
+    fy = h / 2;      // FIXME: This is not pixel-accurate
     if (subx > 0) {
       // Icon is aligned to the right - Align the message to the left of the icon
-      fx = subx - fontInfoMessage.width;
+      fx = subx - fontInfoMessage.width - xgap;
     }
     else {
       fx = w + icontitlegap;
@@ -396,7 +397,7 @@ void Icon::draw(Display *display, XEvent ev)
       XftTextExtentsUtf8 (display, fontsmaller, (XftChar8*) msg2, strlen(msg2), &fiSmaller);
       if (subx) {
 	// The icon sits to the right, draw the text to the left.
-	fx = subx - fiSmaller.width;
+	fx = subx - fiSmaller.width - xgap;
       }
 
       XftDrawStringUtf8 (xftdraw1, &xftcolor, fontsmaller ? fontsmaller : font, 
