@@ -44,8 +44,8 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   icon_display = NULL;
 
   // default font details should be zero
-  fontInfoCaption.height = fontInfoCaption.width = 0;
-  fontInfoMessage.height = fontInfoMessage.width = 0;
+  memset (&fontInfoCaption, 0x00, sizeof (XGlyphInfo));
+  memset (&fontInfoMessage, 0x00, sizeof (XGlyphInfo));
 
   iconMapNone = (unsigned char *) calloc (sizeof(unsigned char), 256);
   if (iconMapNone) {
@@ -357,7 +357,7 @@ void Icon::draw(Display *display, XEvent ev)
   }
 
   // Render the message information area, default is on the right side of the icon
-  if (message.length() > 0) {
+  if (message.length() > 0 && font && fontsmaller) {
 
     log1 ("Drawing icon message", message);
 
