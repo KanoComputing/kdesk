@@ -38,7 +38,7 @@ static Desktop dsk;
 // local function prototypes
 void signal_callback_handler(int signum);
 void reload_configuration (Display *display);
-void trigger_icon_alert (Display *display, char *message);
+void trigger_icon_hook (Display *display, char *message);
 void finish_kdesk (Display *display);
 
 // Signal handler reached via a kill -USR
@@ -70,9 +70,9 @@ void reload_configuration (Display *display)
   return;
 }
 
-void trigger_icon_alert (Display *display, char *message)
+void trigger_icon_hook (Display *display, char *message)
 {
-  log ("Trigger an icon altert signal");
+  log ("Trigger an icon hook signal");
   dsk.send_signal (display, KDESK_SIGNAL_ICON_ALERT, message);
   return;
 }
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
 	  cout << " -r refresh configuration and exit" << endl;
-	  cout << " -a send a custom icon alert" << endl << endl;
+	  cout << " -a send an icon hook alert" << endl << endl;
 	  exit (1);
 
 	case 't':
@@ -149,8 +149,8 @@ int main(int argc, char *argv[])
 	    exit (1);
 	  }
 
-	  cout << "Triggering icon alert with message:" << optarg << endl;
-	  trigger_icon_alert(display, optarg);
+	  cout << "Triggering icon hook with message:" << optarg << endl;
+	  trigger_icon_hook(display, optarg);
 	  XCloseDisplay(display);
 	  exit (0);
         }

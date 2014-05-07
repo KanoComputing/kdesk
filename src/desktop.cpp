@@ -219,39 +219,39 @@ bool Desktop::process_and_dispatch(Display *display)
 	    }
 	    else if ((Atom) ev.xclient.data.l[0] == atom_icon_alert) {
 
-	      // Kdesk Icon Exit alert is manager here.
+	      // Kdesk Icon Hooks alert is managed here.
 	      // This event comes with a message string (the icon name)
 	      // The icon name can be 16 bytes maximum. This comes from 20 bytes for X11 CientMessage data buffer minus 4 bytes
 	      // the actual Atom message ID.
-	      // An Icon user exit is fired so the icon look&feel can be dynamically changed.
+	      // An Icon hook is fired so the icon look&feel can be dynamically changed.
 
-	      // Is there a Kdesk Icon Exit defined?
-	      string iconexit_script = pconf->get_config_string("iconexit");
-	      if (iconexit_script.length() == 0) {
-		log ("No kdesk icon exit defined - ignoring alert");
+	      // Is there a Kdesk Icon hook defined?
+	      string iconhook_script = pconf->get_config_string("iconhook");
+	      if (iconhook_script.length() == 0) {
+		log ("No kdesk icon hook defined - ignoring alert");
 	      }
 	      else {
-		// Collect the icon name to which the exit alert needs to be sent
+		// Collect the icon name to which the hook alert needs to be sent
 		char alert_iconname[17];
 		memcpy (alert_iconname, &ev.xclient.data.l[1], 16);
 		alert_iconname[16] = 0x00; // Truncate it - this is not a nullified string
-		log1 ("Icon Alert signal received for icon", alert_iconname);
+		log1 ("Icon Hook signal received for icon", alert_iconname);
 
 		// Is the icon name on the desktop? Can we send him a signal?
-		Icon *pico_exit = find_icon_filename (alert_iconname);
-		if (!pico_exit) {
+		Icon *pico_hook = find_icon_filename (alert_iconname);
+		if (!pico_hook) {
 		  log ("Could not find this icon on the desktop, ignoring");
 		}
 		else {
-		  FILE *fp_iconexit=NULL;
+		  FILE *fp_iconhooks=NULL;
 		  char chcmdline[1024];
 		  char chline[1024], key[64], value[900], word[64];
 
-		  // Execute the Icon Exit, parse the stdout, and communicate with the icon to refresh attributes
+		  // Execute the Icon Hook, parse the stdout, and communicate with the icon to refresh attributes
 		  // FIXME: Organize this code in a class method
-		  sprintf (chcmdline, "/bin/bash -c \"%s %s\"", iconexit_script.c_str(), alert_iconname);
-		  fp_iconexit = popen (chcmdline, "r");
-		  while (fgets (chline, sizeof (chline), fp_iconexit) != NULL)
+		  sprintf (chcmdline, "/bin/bash -c \"%s %s\"", iconhook_script.c_str(), alert_iconname);
+		  fp_iconhooks = popen (chcmdline, "r");
+		  while (fgets (chline, sizeof (chline), fp_iconhooks) != NULL)
 		    {
 		      char *toks=chline;
 		      memset (key, 0x00, sizeof(key));
@@ -271,20 +271,20 @@ bool Desktop::process_and_dispatch(Display *display)
 		      // Parse the keys (attributes) that can be applied to the icon, pass them to the icon instance
 		      value[strlen(value)-1]=0x00;
 		      if (!strcmp (key, "Message:")) {
-			pico_exit->set_message (value);
+			pico_hook->set_message (value);
 		      }
 		      else if (!strcmp (key, "Caption:")) {
-			pico_exit->set_caption (value);
+			pico_hook->set_caption (value);
 		      }
 		      else if (!strcmp (key, "Icon:")) {
-			pico_exit->set_icon (value);
+			pico_hook->set_icon (value);
 		      }
 		    }
 		  
 		  // Redraw the icon
-		  fclose (fp_iconexit);
-		  pico_exit->clear(display, ev);
-		  pico_exit->draw(display, ev);
+		  fclose (fp_iconhooks);
+		  pico_hook->clear(display, ev);
+		  pico_hook->draw(display, ev);
 		}
 	      }
 	    }
