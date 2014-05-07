@@ -47,6 +47,8 @@ class Desktop
   void notify_startup_event (Display *display, XEvent *pev);
 
   bool initialize(Display *display, Configuration *loaded_conf, Sound *psound);
+  bool is_kdesk_running (Display *display);
+  Window find_kdesk_control_window (Display *display);
   bool process_and_dispatch(Display *display);
   bool send_signal (Display *display, const char *signalName, char *message);
   bool finalize(void);

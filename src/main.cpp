@@ -227,7 +227,18 @@ int main(int argc, char *argv[])
   }
   else {
     cout << "This allocated display is not primary, disabling sound" << DEFAULT_DISPLAY << endl;
-  }      
+  }
+
+
+  // Initialize the desktop management class,
+  // stop here if there is already a Kdesk running on this display
+  if (dsk.find_kdesk_control_window (display)) {
+    cout << "Kdesk is already running on this Desktop - exiting" << endl;
+    exit (1);
+  }
+  else {
+    dsk.initialize(display, &conf, &ksound);
+  }
 
   // Delay desktop startup if requested
   unsigned long startup_delay=0L;
@@ -239,7 +250,6 @@ int main(int argc, char *argv[])
   }
 
   // Create and draw desktop icons, then attend user interaction  
-  dsk.initialize(display, &conf, &ksound);
   bool bicons = dsk.create_icons(display);
   log1 ("desktop icons created", (bicons == true ? "successfully" : "errors found"));
 

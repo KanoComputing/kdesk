@@ -416,6 +416,55 @@ bool Desktop::finalize(void)
   finish = true;
 }
 
+Window Desktop::find_kdesk_control_window (Display *display)
+{
+  Window kdesk_control_window=0L;
+  Window returnedroot, returnedparent, root = DefaultRootWindow(display);
+  char *windowname=NULL;
+  Window *children=NULL, *subchildren=NULL;
+  unsigned int numchildren, numsubchildren;
+  
+  // Enumarate top-level windows in search for Kdesk control window
+  XQueryTree (display, root, &returnedroot, &returnedparent, &children, &numchildren);
+  XWindowAttributes w;
+  int i;
+  for (int i=numchildren-1; i>=0 && !kdesk_control_window; i--) {
+    
+    if (XFetchName (display, children[i], &windowname)) {
+      if (!strncmp (windowname, KDESK_CONTROL_WINDOW_NAME, strlen (KDESK_CONTROL_WINDOW_NAME))) {
+	kdesk_control_window = children[i];
+	log1 ("Kdesk control window found", kdesk_control_window);
+	XFree (windowname);
+	break;
+      }
+    }
+    
+    // Kdesk might sit a little deeper in the tree hierarchy, let's step in
+    XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);
+    
+    for (int k=numsubchildren-1; k>=0; k--) {
+      if (XFetchName (display, subchildren[k], &windowname)) {
+	if (!strncmp (windowname, KDESK_CONTROL_WINDOW_NAME, strlen (KDESK_CONTROL_WINDOW_NAME))) {
+	  kdesk_control_window = subchildren[k];
+	  log1 ("Kdesk control window found", kdesk_control_window);
+	  XFree (windowname);
+	  break;
+	}
+      }
+    }
+  }
+  
+  if(children) {
+    XFree(children);
+  }
+  
+  if(subchildren) {
+    XFree(subchildren);
+  }
+
+  return kdesk_control_window;
+}
+
 bool Desktop::send_signal (Display *display, const char *signalName, char *message)
 {
   Window wsig = wcontrol; // Kdesk control window, either found by instantiation or enumarated.
@@ -427,58 +476,10 @@ bool Desktop::send_signal (Display *display, const char *signalName, char *messa
     return false;
   }
 
-  if (!wsig) {
-    // Highly suggests kdesk is instantiated from a new process,
-    // we need to get Kdesk's control window by querying the XServer hierarchy
-    // or find out that it is not running
-
-    Window returnedroot, returnedparent, root = DefaultRootWindow(display);
-    char *windowname=NULL;
-    Window *children=NULL, *subchildren=NULL;
-    unsigned int numchildren, numsubchildren;
-
-    // Tell us the top-most level windows
-    XQueryTree (display, root, &returnedroot, &returnedparent, &children, &numchildren);
-    XWindowAttributes w;
-    int i;
-    for (int i=numchildren-1; i>=0 && !wsig; i--) {
-      
-      if (XFetchName (display, children[i], &windowname)) {
-	if (!strncmp (windowname, KDESK_CONTROL_WINDOW_NAME, strlen (KDESK_CONTROL_WINDOW_NAME))) {
-	  wsig = children[i];
-	  log1 ("Kdesk control window found", wsig);
-	  XFree (windowname);
-	  break;
-	}
-      }
-
-      // Kdesk might sit a little deeper in the tree hierarchy, let's step in
-      XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);
-
-      for (int k=numsubchildren-1; k>=0; k--) {
-	if (XFetchName (display, subchildren[k], &windowname)) {
-	  if (!strncmp (windowname, KDESK_CONTROL_WINDOW_NAME, strlen (KDESK_CONTROL_WINDOW_NAME))) {
-	    wsig = subchildren[k];
-	    log1 ("Kdesk control window found", wsig);
-	    XFree (windowname);
-	    break;
-	  }
-	}
-      }
-    }
-
-    if(children) {
-      XFree(children);
-    }
-
-    if(subchildren) {
-      XFree(subchildren);
-    }
-
-    if (!wsig) {
-      cout << "Could not find Kdesk control window - perhaps it is not running on this Display?" << endl;
-      return false;
-    }
+  if (!wsig && !(wsig=find_kdesk_control_window(display))) {
+    // Kdesk control window cannot be found, most likely Kdesk is not running.
+    cout << "Could not find Kdesk control window - perhaps it is not running on this Display?" << endl;
+    return false;
   }
 
   // Finally send the event to the control window to unfold the job
