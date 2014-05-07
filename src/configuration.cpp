@@ -160,9 +160,9 @@ bool Configuration::load_conf(const char *filename)
 	configuration["mousehovericon"] = value;
       }
 
-      if (token == "IconExit:") {
+      if (token == "IconHook:") {
 	ifile >> value;
-	configuration["iconexit"] = value;
+	configuration["iconhook"] = value;
       }
     }
  

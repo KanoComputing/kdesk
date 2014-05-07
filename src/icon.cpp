@@ -525,6 +525,7 @@ bool Icon::double_click(Display *display, XEvent ev)
 	setsid ();
 	int rc = execl ("/bin/sh", "/bin/sh", "-c", command.c_str(), 0);
 	if (rc == -1)
+	  // We are in the child process
 	  {
 	    log2 ("error starting app (rc, command)", rc, command.c_str());
 	    exit(1);
