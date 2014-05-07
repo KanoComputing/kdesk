@@ -495,27 +495,27 @@ static void load_tex_images(CUBE_STATE_T *state)
    // TODO: Extract paths to these images into kdesk configuration file
    tex_file1 = fopen(PATH "make-minecraft.raw", "rb");
    if (tex_file1 && state->tex_buf1)
-   {
-      bytes_read=fread(state->tex_buf1, 1, image_sz, tex_file1);
-      //assert(bytes_read == image_sz);  // some problem with file?
-      fclose(tex_file1);
-   }
+     {
+       bytes_read=fread(state->tex_buf1, 1, image_sz, tex_file1);
+       assert(bytes_read == image_sz);  // some problem with file?
+       fclose(tex_file1);
+     }
 
    tex_file2 = fopen(PATH "kano-homefolder.raw", "rb");
    if (tex_file2 && state->tex_buf2)
-   {
-     bytes_read=fread(state->tex_buf2, 1, image_sz, tex_file2);
-     //assert(bytes_read == image_sz);  // some problem with file?
-     fclose(tex_file2);
-   }
-
+     {
+       bytes_read=fread(state->tex_buf2, 1, image_sz, tex_file2);
+       assert(bytes_read == image_sz);  // some problem with file?
+       fclose(tex_file2);
+     }
+   
    tex_file3 = fopen(PATH "pong.raw", "rb");
    if (tex_file3 && state->tex_buf3)
-   {
-      bytes_read=fread(state->tex_buf3, 1, image_sz, tex_file3);
-      //assert(bytes_read == image_sz);  // some problem with file?
-      fclose(tex_file3);
-   }
+     {
+       bytes_read=fread(state->tex_buf3, 1, image_sz, tex_file3);
+       assert(bytes_read == image_sz);  // some problem with file?
+       fclose(tex_file3);
+     }
 }
 
 //------------------------------------------------------------------------------
