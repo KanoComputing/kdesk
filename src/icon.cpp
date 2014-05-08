@@ -27,7 +27,8 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   iconid = iconidx;
   iconx=icony=iconw=iconh=0;
   shadowx=shadowy=0;
-  iconMapNone = iconMapGlow = (unsigned char *) NULL;
+  iconMapNone = iconMapGlow = iconMapTransparency = (unsigned char *) NULL;
+  transparency_value=0;
   backsafe = NULL;
   font = fontsmaller = NULL;
   win = 0;
@@ -62,12 +63,14 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
     log ("Error allocating memory for iconMapGlow");
   }
 
-  // FIXME: We are not using transparency at all, superseeded by icon blending?
-  // I will be conservative and keep it here.
-  unsigned int transparency = configuration->get_config_int("transparency");
-  if (!transparency) {
-    // Setting transparency to 1 has no visual effect
-    transparency = 1;
+  // Icon transparency can be specified for all icons in the kdeskrc file.
+  transparency_value = configuration->get_config_int("transparency");
+  if (transparency_value > 0) {
+    log1 ("Found icon transparency setting", transparency_value);
+    iconMapTransparency = (unsigned char *) calloc (sizeof(unsigned char), 256);
+    if (!iconMapTransparency) {
+      log ("Error allocating memory for iconMapTransparency");
+    }
   }
 
   // Define the default cursor for the mouse pointer
@@ -306,6 +309,8 @@ void Icon::clear(Display *display, XEvent ev)
 
 void Icon::draw(Display *display, XEvent ev)
 {
+  Imlib_Color_Modifier colorTrans=NULL;   // used if general icon transparency is requested
+
   imlib_context_set_display(display);
   imlib_context_set_visual(vis);
   imlib_context_set_colormap(cmap);
@@ -332,12 +337,33 @@ void Icon::draw(Display *display, XEvent ev)
   imlib_context_set_image(image);
   int w = imlib_image_get_width();
   int h = imlib_image_get_height();
+  int subx = get_icon_horizontal_placement(w);
+
+  // If Icon transparency is provided, apply the mapping now, before rendering the image
+  if (iconMapTransparency && transparency_value) {
+    colorTrans = imlib_create_color_modifier();
+    imlib_context_set_color_modifier(colorTrans);    
+    imlib_get_color_modifier_tables(iconMapNone, iconMapNone, iconMapNone, iconMapTransparency);
+    imlib_reset_color_modifier();
+
+    // Create a transparency mapping based on kdeskrc setting
+    for (int n=0; n < 256; n++) {
+      if (iconMapTransparency[n]) {
+	iconMapTransparency[n] = transparency_value;
+      }
+    }
+
+    imlib_set_color_modifier_tables (iconMapNone, iconMapNone, iconMapNone, iconMapTransparency);
+  }
 
   // Draw the icon on the surface window, default is top-left.
-  int subx = get_icon_horizontal_placement(w);
   imlib_render_image_on_drawable (subx, 0);
   updates = imlib_update_append_rect (updates, subx, 0, w, h);
   imlib_free_image();
+
+  if (colorTrans) {
+    imlib_free_color_modifier();
+  }
 
   // Render the icon name below it, twice to create a shadow effect
   if (caption.length() > 0) {

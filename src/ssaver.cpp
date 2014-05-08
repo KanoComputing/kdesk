@@ -67,22 +67,19 @@ void *idle_time (void *p)
   XScreenSaverInfo *info = XScreenSaverAllocInfo();
   while (running)
     {
-      log1 ("asking for system idle time on display", display);
       rc = XScreenSaverQueryInfo(display, DefaultRootWindow(display), info);
+      log3 ("asking for system idle time - rcsuccess, T/O, and idle time in secs", rc, info->idle / 1000, pdata->idle_timeout);
       if (rc)
 	{
 	  // If idle timeout expires, and focus is on the GUI tty device, then launch the screen saver
 	  if (info->idle > (pdata->idle_timeout * 1000) && get_current_console() == GUI_TTY_DEVICE) {
-	    log2 ("Starting the Screen Saver (idle, timeout)", info->idle, pdata->idle_timeout * 1000);
+	    log2 ("Starting the Screen Saver (idle, timeout in secs)", info->idle / 1000, pdata->idle_timeout);
 	    rc = system (pdata->saver_program);
 	    log1 ("Screen saver finished with rc", rc);
 	    if (rc == 0) {
 	      log1 ("Calling xrefresh: ", XREFRESH);
 	      rc = system (XREFRESH);
 	    }
-	  }
-	  else {
-	    log2 ("XScreenSaverQueryInfo rc - idle ms, not screen saver yet...", rc, info->idle);
 	  }
 	}
       else {

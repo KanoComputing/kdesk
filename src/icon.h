@@ -29,6 +29,7 @@ class Icon
   int iconx, icony, iconw, iconh;
   int shadowx, shadowy;
   int icontitlegap;
+  int transparency_value;
   Cursor cursor;
   int cursor_id;
   Imlib_Updates updates;
@@ -41,7 +42,7 @@ class Icon
   XGlyphInfo fontInfoCaption, fontInfoMessage;
   XftDraw *xftdraw1, *xftdraw2;
   XftColor xftcolor, xftcolor_shadow;
-  unsigned char *iconMapNone, *iconMapGlow;
+  unsigned char *iconMapNone, *iconMapGlow, *iconMapTransparency;
   std::string ficon;
   std::string ficon_hover;
   std::string caption;
