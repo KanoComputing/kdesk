@@ -32,7 +32,6 @@ bool Configuration::load_conf(const char *filename)
 
   stat (filename, &file_status);
   if (!S_ISREG(file_status.st_mode)) {
-      cout << "not a file" << endl;
       return false;
     }
 

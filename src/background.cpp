@@ -102,7 +102,6 @@ bool Background::load (Display *display)
       image = imlib_load_image_without_cache(background_file.c_str());
       if (!image) {
 	log1 ("error loading background", background_file);
-	cout << "error loading background image:" << background_file << endl;
       }
       else {
 	// Prepare imlib2 drawing spaces

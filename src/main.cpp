@@ -32,6 +32,11 @@
 #include "logging.h"
 #include "ssaver.h"
 
+// A printf macro sensitive to the -v (verbose) flag
+// Use kprintf for regular stdout messages instead of printf or cout
+bool verbose=false; // Kdesk is mute by default, no stdout messages unless in Debug build
+#define kprintf(fmt, ...) ( (verbose==false ? : printf(fmt, ##__VA_ARGS__) ))
+
 // The desktop object will be dynamically accessed to refresh the configuration
 static Desktop dsk;
 
@@ -51,11 +56,11 @@ void signal_callback_handler(int signum)
 
   log1 ("Received signal", signum);
   if (signum == SIGUSR1) {
-    cout << "Received signal to reload configuration" << endl;
+    kprintf ("Received signal to reload configuration\n");
     reload_configuration(display);
   }
   else if (signum == SIGUSR2) {
-    cout << "Received custom signal" << endl;
+    kprintf ("Received custom signal\n");
     finish_kdesk(display);
   }
   
@@ -94,18 +99,8 @@ int main(int argc, char *argv[])
   bool test_mode = false, wallpaper_mode = false;
   int c;
 
-  cout << "Kano-Desktop - A desktop Icon Manager" << endl;
-  cout << "Version v" << VERSION << endl << endl;
-
-  // We don't allow kdesk to run as the superuser
-  uid_t userid = getuid();
-  if (userid == 0) {
-    cout << "kdesk cannot run as root, please use sudo or login is a regular user" << endl;
-    exit(1);
-  }
-
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwra:")) != EOF)
+  while ((c = getopt(argc, argv, "?htwra:v")) != EOF)
     {
       switch (c)
         {
@@ -113,6 +108,7 @@ int main(int argc, char *argv[])
 	case 'h':
 	  cout << "kano-desktop [ -h | -t | -w | -r | -a <icon name> ]" << endl;
 	  cout << " -h help, or -? this screen" << endl;
+	  cout << " -v verbose mode with minimal progress messages" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
 	  cout << " -r refresh configuration and exit" << endl;
@@ -120,8 +116,12 @@ int main(int argc, char *argv[])
 	  exit (1);
 
 	case 't':
-	  cout << "testing configuration" << endl;
+	  kprintf ("testing configuration\n");
 	  test_mode = true;
+	  break;
+
+	case 'v':
+	  verbose = true;
 	  break;
 
 	case 'w':
@@ -131,12 +131,12 @@ int main(int argc, char *argv[])
 	case 'r':
 	  display = XOpenDisplay(display_name);
 	  if (!display) {
-	    cout << "Could not connect to the XServer" << endl;
-	    cout << "Is the DISPLAY variable correctly set?" << endl << endl;
+	    kprintf ("Could not connect to the XServer\n");
+	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
 	    exit (1);
 	  }
 
-	  cout << "Sending a refresh signal to Kdesk" << endl;
+	  kprintf ("Sending a refresh signal to Kdesk\n");
 	  reload_configuration(display);
 	  XCloseDisplay(display);
 	  exit (0);
@@ -144,20 +144,30 @@ int main(int argc, char *argv[])
 	case 'a':
 	  display = XOpenDisplay(display_name);
 	  if (!display) {
-	    cout << "Could not connect to the XServer" << endl;
-	    cout << "Is the DISPLAY variable correctly set?" << endl << endl;
+	    kprintf ("Could not connect to the XServer\n");
+	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
 	    exit (1);
 	  }
 
-	  cout << "Triggering icon hook with message:" << optarg << endl;
+	  kprintf ("Triggering icon hook with message: %s\n\n", optarg);
 	  trigger_icon_hook(display, optarg);
 	  XCloseDisplay(display);
 	  exit (0);
         }
     }
 
+  kprintf ("Kano-Desktop - A desktop Icon Manager\n");
+  kprintf ("Version v%s\n", VERSION);
+  
+  // We don't allow kdesk to run as the superuser
+  uid_t userid = getuid();
+  if (userid == 0) {
+    kprintf ("kdesk cannot run as root, please use sudo or login is a regular user\n");
+    exit(1);
+  }
+
   // Load configuration settings from user's home director
-  cout << "initializing..." << endl;
+  kprintf ("initializing...\n");
   struct passwd *pw = getpwuid(getuid());
   const char *homedir = pw->pw_dir;
   bool bgeneric, buser = false;
@@ -168,20 +178,19 @@ int main(int argc, char *argv[])
 
   // Load configuration file from world settings (/usr/share)
   // And override any settings provided by the user's home dir configuration
-  cout << "loading generic configuration file " << strKdeskRC.c_str() << endl;
+  kprintf ("loading generic configuration file: %s\n", strKdeskRC.c_str());
   bgeneric = conf.load_conf(strKdeskRC.c_str());
-  cout << "overriding settings with home configuration file " << strHomeKdeskRC.c_str() << endl;
+  kprintf ("overriding settings with home configuration file: %s\n", strHomeKdeskRC.c_str());
   buser = conf.load_conf(strHomeKdeskRC.c_str());
-  if (!bgeneric && !buser) {
-    cout << "could not read generic or user configuration settings" << endl;
+  if (bgeneric == false && buser == false) {
+    kprintf ("could not read generic or user configuration settings\n");
     exit(1);
   }
 
   log1 ("loading icons from directory", strKdeskDir.c_str());
   conf.load_icons(strKdeskDir.c_str());
-
   if (test_mode == true) {
-    cout << "test mode - exiting" << endl;
+    kprintf ("configuration test mode - exiting\n");
     exit(0);
   }
 
@@ -197,12 +206,12 @@ int main(int argc, char *argv[])
   display = XOpenDisplay(display_name);
   if (!display) {
     char *env_display = getenv ("DISPLAY");
-    cout << "could not connect to X display" << endl;
-    cout << "DISPLAY=" << (env_display ? env_display : "null") << endl << endl;
+    kprintf ("could not connect to X display\n");
+    kprintf ("DISPLAY=%s\n", (env_display ? env_display : "null"));
     exit (1);
   }
   else {
-    cout << "Connected to display: " << DisplayString(display) << endl;
+    kprintf ("Connected to display %s\n", DisplayString(display));
   }
 
   // Create and draw the desktop background
@@ -212,7 +221,7 @@ int main(int argc, char *argv[])
 
   // If wallpaper mode requested, exit now.
   if (wallpaper_mode == true) {
-    cout << "refreshing background and exiting" << endl;    
+    kprintf ("refreshing background and exiting\n");
     bg.refresh_background(display);
     exit (0);
   }
@@ -226,14 +235,14 @@ int main(int argc, char *argv[])
     ksound.play_sound("soundwelcome");
   }
   else {
-    cout << "This allocated display is not primary, disabling sound" << DEFAULT_DISPLAY << endl;
+    kprintf ("This allocated display is not primary, disabling sound (%s)\n", DEFAULT_DISPLAY);
   }
 
 
   // Initialize the desktop management class,
   // stop here if there is already a Kdesk running on this display
   if (dsk.find_kdesk_control_window (display)) {
-    cout << "Kdesk is already running on this Desktop - exiting" << endl;
+    kprintf ("Kdesk is already running on this Desktop - exiting\n");
     exit (1);
   }
   else {
@@ -259,7 +268,7 @@ int main(int argc, char *argv[])
     int rc=0, event_base=0, error_base=0;
     rc = XScreenSaverQueryExtension (display, &event_base, &error_base);
     if (rc == 0) {
-      cout << "This XServer does not provide Screen Saver extensions - disabling" << endl;
+      kprintf ("This XServer does not provide Screen Saver extensions - disabling\n");
     }
     else {
       KSAVER_DATA ksaver_data;
@@ -276,15 +285,15 @@ int main(int argc, char *argv[])
 
   bool reload = false, running=true;
   do {
-    cout << "processing events..." << endl;
+    kprintf ("processing X11 events...\n");
     reload = dsk.process_and_dispatch(display);
     if (reload == true) {
       // Discard configuration and reload everything again
       conf.reset();      
 
-      cout << "loading generic configuration file " << strKdeskRC.c_str() << endl;
+      kprintf ("loading generic configuration file: %s\n");
       conf.load_conf(strKdeskRC.c_str());
-      cout << "overriding home configuration file " << strHomeKdeskRC.c_str() << endl;
+      kprintf ("overriding home configuration file: %s\n", strHomeKdeskRC.c_str());
       conf.load_conf(strHomeKdeskRC.c_str());
 
       log1 ("loading icons from directory", strKdeskDir.c_str());
@@ -302,11 +311,11 @@ int main(int argc, char *argv[])
       bool bicons = dsk.create_icons(display);
     }
     else {
-      cout << "Custom Signal - not yet implemented" << endl;
+      kprintf ("Custom Signal - not yet implemented\n");
     }
 
   } while (running == true);
 
-  cout << "kdesk is finishing..." << endl;
+  kprintf ("kdesk is finishing...\n");
   exit (0);
 }

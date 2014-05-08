@@ -478,7 +478,6 @@ bool Desktop::send_signal (Display *display, const char *signalName, char *messa
 
   if (!wsig && !(wsig=find_kdesk_control_window(display))) {
     // Kdesk control window cannot be found, most likely Kdesk is not running.
-    cout << "Could not find Kdesk control window - perhaps it is not running on this Display?" << endl;
     return false;
   }
 
