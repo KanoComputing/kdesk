@@ -129,8 +129,8 @@ bool Desktop::destroy_icons (Display *display)
       if (it->second) {
 	it->second->destroy(display);
 	delete it->second;
-	iconHandlers.erase(it);
       }
+      iconHandlers.erase(it);
     }
 
   // Then empty the list of icon handlers
