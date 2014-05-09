@@ -317,6 +317,7 @@ void Icon::clear(Display *display, XEvent ev)
 void Icon::draw(Display *display, XEvent ev)
 {
   Imlib_Color_Modifier colorTrans=NULL;   // used if general icon transparency is requested
+  int h=0, w=0, subx=0;
   int stamp_w=0, stamp_h=0;
 
   imlib_context_set_display(display);
@@ -334,61 +335,64 @@ void Icon::draw(Display *display, XEvent ev)
 
   // Is there a s Stamp icon? If so, load it now
   if (ficon_stamp.length() > 0) {
-    image_stamp = imlib_load_image (ficon_stamp.c_str());
-    imlib_context_set_image(image_stamp);
-    stamp_w = imlib_image_get_width();
-    stamp_h = imlib_image_get_height();
     log3 ("loading stamp icon (icon, width, height)", ficon_stamp, stamp_w, stamp_h);
+    image_stamp = imlib_load_image (ficon_stamp.c_str());
+    if (image_stamp) {
+      imlib_context_set_image(image_stamp);
+      stamp_w = imlib_image_get_width();
+      stamp_h = imlib_image_get_height();
+    }
   }
 
-  imlib_context_set_drawable(win);
   image = imlib_load_image(ficon.c_str());
+  if (image != NULL) {
+    imlib_context_set_drawable(win);
+    Imlib_Color_Modifier cmHighlight;
+    cmHighlight = imlib_create_color_modifier();
+    imlib_context_set_color_modifier(cmHighlight);
+    imlib_modify_color_modifier_brightness(0);
 
-  Imlib_Color_Modifier cmHighlight;
-  cmHighlight = imlib_create_color_modifier();
-  imlib_context_set_color_modifier(cmHighlight);
-  imlib_modify_color_modifier_brightness(0);
+    imlib_context_set_anti_alias(1);
+    imlib_context_set_blend(1);
+    imlib_context_set_image(image);
+    w = imlib_image_get_width();
+    h = imlib_image_get_height();
+    subx = get_icon_horizontal_placement(w);
 
-  imlib_context_set_anti_alias(1);
-  imlib_context_set_blend(1);
-  imlib_context_set_image(image);
-  int w = imlib_image_get_width();
-  int h = imlib_image_get_height();
-  int subx = get_icon_horizontal_placement(w);
+    // If Icon transparency is provided, apply the mapping now, before rendering the image
+    if (iconMapTransparency && transparency_value) {
+      colorTrans = imlib_create_color_modifier();
+      imlib_context_set_color_modifier(colorTrans);    
+      imlib_get_color_modifier_tables(iconMapNone, iconMapNone, iconMapNone, iconMapTransparency);
+      imlib_reset_color_modifier();
 
-  // If Icon transparency is provided, apply the mapping now, before rendering the image
-  if (iconMapTransparency && transparency_value) {
-    colorTrans = imlib_create_color_modifier();
-    imlib_context_set_color_modifier(colorTrans);    
-    imlib_get_color_modifier_tables(iconMapNone, iconMapNone, iconMapNone, iconMapTransparency);
-    imlib_reset_color_modifier();
-
-    // Create a transparency mapping based on kdeskrc setting
-    for (int n=0; n < 256; n++) {
-      if (iconMapTransparency[n]) {
-	iconMapTransparency[n] = transparency_value;
+      // Create a transparency mapping based on kdeskrc setting
+      for (int n=0; n < 256; n++) {
+	if (iconMapTransparency[n]) {
+	  iconMapTransparency[n] = transparency_value;
+	}
       }
+
+      imlib_set_color_modifier_tables (iconMapNone, iconMapNone, iconMapNone, iconMapTransparency);
     }
 
-    imlib_set_color_modifier_tables (iconMapNone, iconMapNone, iconMapNone, iconMapTransparency);
-  }
+    // If we have a stamp icon, draw it on top of the icon
+    if (image_stamp != NULL) {
+      imlib_blend_image_onto_image (image_stamp, 1, 0, 0, stamp_w, stamp_h,
+				    (w - stamp_w) / 2,
+				    (h - stamp_h) / 2,
+				    stamp_w, stamp_h);
+    }
 
-  // If we have a stamp icon, draw it on top of the icon
-  if (image_stamp != NULL) {
-    imlib_blend_image_onto_image (image_stamp, 1, 0, 0, stamp_w, stamp_h,
-				  (w - stamp_w) / 2,
-				  (h - stamp_h) / 2,
-				  stamp_w, stamp_h);
-  }
-
-  // Draw the icon on the surface window, default is top-left.
-  imlib_render_image_on_drawable (subx, 0);
-  updates = imlib_update_append_rect (updates, subx, 0, w, h);
-  imlib_free_image();
-
-  if (colorTrans) {
-    imlib_free_color_modifier();
-  }
+    // Draw the icon on the surface window, default is top-left.
+    imlib_render_image_on_drawable (subx, 0);
+    updates = imlib_update_append_rect (updates, subx, 0, w, h);
+    imlib_free_image();
+    
+    if (colorTrans) {
+      imlib_free_color_modifier();
+    }
+  } // if icon image could be loaded
 
   // Render the icon name below it, twice to create a shadow effect
   if (caption.length() > 0) {

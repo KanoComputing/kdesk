@@ -245,7 +245,7 @@ bool Desktop::process_and_dispatch(Display *display)
 		else {
 		  FILE *fp_iconhooks=NULL;
 		  char chcmdline[1024];
-		  char chline[1024], key[64], value[900], word[64];
+		  char chline[1024], key[64], value[900], word[256];
 
 		  // Execute the Icon Hook, parse the stdout, and communicate with the icon to refresh attributes
 		  // FIXME: Organize this code in a class method
