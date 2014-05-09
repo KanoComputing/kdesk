@@ -73,5 +73,6 @@ class Icon
   void set_caption (char *new_caption);
   void set_message (char *new_message);
   void set_icon (char *new_icon);
+  void set_icon_stamp (char *new_icon);
 
 };

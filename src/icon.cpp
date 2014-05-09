@@ -36,7 +36,7 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
 
   // save the icon, icon hover image files
   ficon = configuration->get_icon_string (iconid, "icon");
-  ficon_hover = configuration->get_icon_string (iconid, "iconhover");  
+  ficon_hover = configuration->get_icon_string (iconid, "iconhover");
   ficon_stamp = configuration->get_icon_string (iconid, "iconstamp");
   
   // save the icon caption and message literals to be rendered around it
@@ -112,6 +112,11 @@ void Icon::set_message (char *new_message)
 void Icon::set_icon (char *new_icon)
 {
   ficon = new_icon;
+}
+
+void Icon::set_icon_stamp (char *new_icon)
+{
+  ficon_stamp = new_icon;
 }
 
 bool Icon::is_singleton_running (void)
