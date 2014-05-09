@@ -33,7 +33,7 @@ class Icon
   Cursor cursor;
   int cursor_id;
   Imlib_Updates updates;
-  Imlib_Image image;
+  Imlib_Image image, image_stamp;
   Imlib_Image backsafe;
   Visual *vis;
   Colormap cmap;
@@ -45,6 +45,7 @@ class Icon
   unsigned char *iconMapNone, *iconMapGlow, *iconMapTransparency;
   std::string ficon;
   std::string ficon_hover;
+  std::string ficon_stamp;
   std::string caption;
   std::string message;
 
@@ -72,5 +73,6 @@ class Icon
   void set_caption (char *new_caption);
   void set_message (char *new_message);
   void set_icon (char *new_icon);
+  void set_icon_stamp (char *new_icon);
 
 };

@@ -225,6 +225,10 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	if (token == "IconHover:") {
 	  icons[iconid]["iconhover"] = value;
 	}
+
+	if (token == "IconStamp:") {
+	  icons[iconid]["iconstamp"] = value;
+	}
 	
 	if (token == "HoverTransparent:") {
 	  icons[iconid]["hovertransparent"] = value;

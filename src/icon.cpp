@@ -31,11 +31,13 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   transparency_value=0;
   backsafe = NULL;
   font = fontsmaller = NULL;
+  image = image_stamp = NULL;
   win = 0;
 
   // save the icon, icon hover image files
   ficon = configuration->get_icon_string (iconid, "icon");
-  ficon_hover = configuration->get_icon_string (iconid, "iconhover");  
+  ficon_hover = configuration->get_icon_string (iconid, "iconhover");
+  ficon_stamp = configuration->get_icon_string (iconid, "iconstamp");
   
   // save the icon caption and message literals to be rendered around it
   caption = configuration->get_icon_string (iconid, "caption");
@@ -110,6 +112,11 @@ void Icon::set_message (char *new_message)
 void Icon::set_icon (char *new_icon)
 {
   ficon = new_icon;
+}
+
+void Icon::set_icon_stamp (char *new_icon)
+{
+  ficon_stamp = new_icon;
 }
 
 bool Icon::is_singleton_running (void)
@@ -310,6 +317,7 @@ void Icon::clear(Display *display, XEvent ev)
 void Icon::draw(Display *display, XEvent ev)
 {
   Imlib_Color_Modifier colorTrans=NULL;   // used if general icon transparency is requested
+  int stamp_w=0, stamp_h=0;
 
   imlib_context_set_display(display);
   imlib_context_set_visual(vis);
@@ -323,6 +331,15 @@ void Icon::draw(Display *display, XEvent ev)
   //
   XMapWindow(display, win);
   XLowerWindow(display, win);
+
+  // Is there a s Stamp icon? If so, load it now
+  if (ficon_stamp.length() > 0) {
+    image_stamp = imlib_load_image (ficon_stamp.c_str());
+    imlib_context_set_image(image_stamp);
+    stamp_w = imlib_image_get_width();
+    stamp_h = imlib_image_get_height();
+    log3 ("loading stamp icon (icon, width, height)", ficon_stamp, stamp_w, stamp_h);
+  }
 
   imlib_context_set_drawable(win);
   image = imlib_load_image(ficon.c_str());
@@ -354,6 +371,14 @@ void Icon::draw(Display *display, XEvent ev)
     }
 
     imlib_set_color_modifier_tables (iconMapNone, iconMapNone, iconMapNone, iconMapTransparency);
+  }
+
+  // If we have a stamp icon, draw it on top of the icon
+  if (image_stamp != NULL) {
+    imlib_blend_image_onto_image (image_stamp, 1, 0, 0, stamp_w, stamp_h,
+				  (w - stamp_w) / 2,
+				  (h - stamp_h) / 2,
+				  stamp_w, stamp_h);
   }
 
   // Draw the icon on the surface window, default is top-left.

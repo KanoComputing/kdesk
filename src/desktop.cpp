@@ -279,6 +279,9 @@ bool Desktop::process_and_dispatch(Display *display)
 		      else if (!strcmp (key, "Icon:")) {
 			pico_hook->set_icon (value);
 		      }
+		      else if (!strcmp (key, "IconStamp:")) {
+			pico_hook->set_icon_stamp (value);
+		      }
 		    }
 		  
 		  // Redraw the icon
