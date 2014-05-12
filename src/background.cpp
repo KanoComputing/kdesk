@@ -141,8 +141,12 @@ bool Background::load (Display *display)
 	  XClearWindow (display, root);
 	  XFlush (display);
 
+	  // Free imlib and Xlib image resources
 	  imlib_context_set_image(buffer);
-	  imlib_free_image_and_decache();
+	  imlib_free_image();
+	  imlib_context_set_image(image);
+	  imlib_free_image();
+
 	  XFreePixmap(display, pmap);
 
 	  bsuccess = true;
