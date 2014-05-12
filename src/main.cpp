@@ -304,8 +304,8 @@ int main(int argc, char *argv[])
       dsk.destroy_icons(display);
 
       // Reload the desktop wallpaper
-      bg.setup(display);
-      bg.load(display);
+      //bg.setup(display);
+      //bg.load(display);
 
       // Regenerate new icons
       bool bicons = dsk.create_icons(display);

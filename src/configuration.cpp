@@ -389,5 +389,6 @@ void Configuration::reset(void)
       }
   }
 
+  icons.clear();
   numicons = 0;
 }

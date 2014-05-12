@@ -32,7 +32,6 @@ class Icon
   int transparency_value;
   Cursor cursor;
   int cursor_id;
-  Imlib_Updates updates;
   Imlib_Image image, image_stamp;
   Imlib_Image backsafe;
   Visual *vis;
@@ -40,7 +39,7 @@ class Icon
   XftFont *font;
   XftFont *fontsmaller;
   XGlyphInfo fontInfoCaption, fontInfoMessage;
-  XftDraw *xftdraw1, *xftdraw2;
+  XftDraw *xftdraw1;
   XftColor xftcolor, xftcolor_shadow;
   unsigned char *iconMapNone, *iconMapGlow, *iconMapTransparency;
   std::string ficon;
