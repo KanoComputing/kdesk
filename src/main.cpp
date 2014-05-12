@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
       // Discard configuration and reload everything again
       conf.reset();      
 
-      kprintf ("loading generic configuration file: %s\n");
+      kprintf ("loading generic configuration file: %s\n", strKdeskRC.c_str());
       conf.load_conf(strKdeskRC.c_str());
       kprintf ("overriding home configuration file: %s\n", strHomeKdeskRC.c_str());
       conf.load_conf(strHomeKdeskRC.c_str());

@@ -23,6 +23,7 @@
 
 Icon::Icon (Configuration *loaded_conf, int iconidx)
 {
+  win = 0L;
   configuration = loaded_conf;
   iconid = iconidx;
   iconx=icony=iconw=iconh=0;
@@ -32,7 +33,7 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   backsafe = NULL;
   font = fontsmaller = NULL;
   image = image_stamp = NULL;
-  win = 0;
+  xftdraw1 = NULL;
 
   // save the icon, icon hover image files
   ficon = configuration->get_icon_string (iconid, "icon");
@@ -82,7 +83,7 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
     cursor_id = DEFAULT_ICON_CURSOR;
   }
 
-  cursor = 0; // Set the initial cursor handle to nothing
+  cursor = 0L; // Set the initial cursor handle to nothing
 }
 
 Icon::~Icon (void)
@@ -133,6 +134,7 @@ bool Icon::is_singleton_running (void)
       log1 ("searching for singleton app", appid);
       memset(cmdpgrep, 0, sizeof(cmdpgrep));
 
+      // TODO: Change pgrep to something more robust and fast
       sprintf (cmdpgrep, "pgrep -fl '%s'", appid.c_str());
       rc = system (cmdpgrep);
       exitstatus = WEXITSTATUS(rc);
@@ -282,14 +284,42 @@ void Icon::destroy(Display *display)
   // Deallocate resources to terminate the icon
   if (iconMapNone) {
     free (iconMapNone);
+    iconMapNone = NULL;
   }
 
   if (iconMapGlow) {
     free (iconMapGlow);
+    iconMapGlow = NULL;
+  }
+
+  if (iconMapTransparency) {
+    free (iconMapTransparency);
+    iconMapTransparency = NULL;
   }
 
   if (cursor) {
     XFreeCursor (icon_display, cursor);
+    cursor = 0L;
+  }
+
+  if (xftdraw1) {
+    XftDrawDestroy (xftdraw1);
+    xftdraw1 = NULL;
+  }
+
+  if (font) {
+    XftFontClose(display, font);
+    font = NULL;
+  }
+
+  if (fontsmaller) {
+    XftFontClose(display, fontsmaller);
+    fontsmaller = NULL;
+  }
+
+  if (backsafe != NULL) {
+    imlib_context_set_image(backsafe);
+    imlib_free_image();
   }
 
   XDestroyWindow (display, win);
@@ -382,16 +412,24 @@ void Icon::draw(Display *display, XEvent ev)
 				    (w - stamp_w) / 2,
 				    (h - stamp_h) / 2,
 				    stamp_w, stamp_h);
+
     }
 
     // Draw the icon on the surface window, default is top-left.
     imlib_render_image_on_drawable (subx, 0);
-    updates = imlib_update_append_rect (updates, subx, 0, w, h);
     imlib_free_image();
-    
+
+    // Set context to stamped image so we can free it.
+    if (image_stamp != NULL) {
+      imlib_context_set_image(image_stamp);
+      imlib_free_image();
+    }
+
+    // Free the color transformation if used
     if (colorTrans) {
       imlib_free_color_modifier();
     }
+
   } // if icon image could be loaded
 
   // Render the icon name below it, twice to create a shadow effect
