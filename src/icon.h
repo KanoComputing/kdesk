@@ -20,6 +20,8 @@
 // 
 #define DEFAULT_ICON_CURSOR XC_hand1
 
+class IconGrid;
+
 class Icon
 {
  private:
@@ -59,7 +61,7 @@ class Icon
   int get_icon_horizontal_placement (int image_width);
   bool is_singleton_running (void);
 
-  Window create(Display *display);
+  Window create(Display *display, IconGrid *icon_grid);
   void destroy(Display *display);
 
   void draw(Display *display, XEvent ev);
