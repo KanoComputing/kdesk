@@ -172,10 +172,9 @@ bool Background::blur(Display *display)
   deskw = DisplayWidth(display, screen);
   deskh = DisplayHeight(display, screen);
 
-  // Blur is a toggle effect method.  
-  // Fix
+  // Blur is a toggle effect method. If desktop is blurred, remove it. Otherwise blur it.
   if (winblur != 0L) {
-    // In order to be as visually fast as possible, first hide the blurring window
+    // Removing blur - In order to be as visually fast as possible, first hide the blurring window
     // revealing the real desktop image, then destroy the XWindow resource.
     XUnmapWindow (display, winblur);
     XDestroyWindow (display, winblur);
@@ -183,7 +182,7 @@ bool Background::blur(Display *display)
     success = true;
   }
   else {
-    // Remove blurring
+    // Creating a desktop blur effect.
     pmap_blur = XCreatePixmap (display, root, deskw, deskh, DefaultDepth (display, DefaultScreen (display)));
     img_blurred = imlib_create_image(deskw, deskh);
     if (!pmap_blur || !img_blurred) {
@@ -228,7 +227,10 @@ bool Background::blur(Display *display)
       attr.event_mask = 0; // no relevant events we want to care about, XServer will do it for us
       attr.override_redirect = True;
       winblur = XCreateWindow (display, DefaultRootWindow(display), 0, 0,
-			       // FIXME: int 41 number needs to be fit with the amount of over-space used by the decorations.
+			       //
+			       // FIXME: 
+			       // int 41 number needs to be fit with the amount of over-space used by the decorations.
+			       //
 			       deskw, deskh - 41, 0,
 			       CopyFromParent, CopyFromParent, CopyFromParent,
 			       CWEventMask, &attr);
