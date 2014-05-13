@@ -32,14 +32,22 @@
 
 #include "icon.h"
 #include "sound.h"
+#include "background.h"
 #include "desktop.h"
 #include "logging.h"
 
 Desktop::Desktop(void)
 {
-  atom_finish = atom_reload = atom_icon_alert = 0L;
+  atom_finish = atom_reload = atom_icon_alert = atom_blur = 0L;
   wcontrol = 0L;
   numicons = 0;
+  initialized = false;
+}
+
+void Desktop::initialize(Background *p)
+{
+  pbground = p;
+  initialized = true;
 }
 
 Desktop::~Desktop(void)
@@ -217,6 +225,17 @@ bool Desktop::process_and_dispatch(Display *display)
 	      log ("Kdesk object control window receives a FINISH event");
 	      return false; // false means quit kdesk
 	    }
+	    else if ((Atom) ev.xclient.data.l[0] == atom_blur) {
+	      log ("Kdesk object control window receives a Desktop BLUR event");
+	      if (initialized == true && pbground != NULL) {
+		// The blur method is a toggle, on/off method.
+		pbground->blur(display);
+	      }
+	      else {
+		log ("Desktop or Background class not initialized - cannot blur desktop");
+	      }
+	      return true;
+	    }
 	    else if ((Atom) ev.xclient.data.l[0] == atom_icon_alert) {
 
 	      // Kdesk Icon Hooks alert is managed here.
@@ -389,6 +408,7 @@ bool Desktop::initialize(Display *display, Configuration *loaded_conf, Sound *ks
   atom_finish = XInternAtom(display, KDESK_SIGNAL_FINISH, False);
   atom_reload = XInternAtom(display, KDESK_SIGNAL_RELOAD, False);
   atom_icon_alert = XInternAtom(display, KDESK_SIGNAL_ICON_ALERT, False);
+  atom_blur = XInternAtom(display, KDESK_BLUR_DESKTOP, False);
 
   // Create a hidden Object Control window which will receive Kdesk external events
   XSetWindowAttributes attr;

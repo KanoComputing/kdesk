@@ -19,11 +19,14 @@
 #define KDESK_SIGNAL_FINISH       "KSIG_FINISH"
 #define KDESK_SIGNAL_RELOAD       "KSIG_RELOAD"
 #define KDESK_SIGNAL_ICON_ALERT   "KSIG_ICON_ALERT"
+#define KDESK_BLUR_DESKTOP        "KSIG_BLUR_DESKTOP"
 
 class Desktop
 {
  private:
   Window wcontrol;
+  Background *pbground;
+  bool initialized;
   std::map <Window, Icon *> iconHandlers;
   SnDisplay *sn_display;
   SnLauncherContext *sn_context;
@@ -32,12 +35,13 @@ class Desktop
   bool finish;
   static int error_trap_depth;
   int numicons;
-  Atom atom_finish, atom_reload, atom_icon_alert;
+  Atom atom_finish, atom_reload, atom_icon_alert, atom_blur;
 
  public:
   Desktop(void);
   virtual ~Desktop(void);
 
+  void initialize(Background *p);
   bool create_icons (Display *display);
   Icon *find_icon_filename (char *icon_filename);
   bool destroy_icons (Display *display);

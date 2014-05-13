@@ -12,6 +12,7 @@ class Background
  private:
   Configuration *pconf;
   Window root;
+  Window winblur;
   Visual *vis;
   Colormap cm;
   Pixmap pmap;
