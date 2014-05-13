@@ -96,24 +96,29 @@ int main(int argc, char *argv[])
   Configuration conf;
   char *display_name = NULL;
   string strKdeskRC, strHomeKdeskRC, strKdeskDir, strKdeskUser;
-  bool test_mode = false, wallpaper_mode = false;
+  bool test_mode = false, wallpaper_mode = false, blur = false;
   int c;
 
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwra:v")) != EOF)
+  while ((c = getopt(argc, argv, "?htwra:vb")) != EOF)
     {
       switch (c)
         {
 	case '?':
 	case 'h':
-	  cout << "kano-desktop [ -h | -t | -w | -r | -a <icon name> ]" << endl;
+	  cout << "kano-desktop [ -h | -t | -w | -r | -a <icon name> | -b ]" << endl;
 	  cout << " -h help, or -? this screen" << endl;
 	  cout << " -v verbose mode with minimal progress messages" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
 	  cout << " -r refresh configuration and exit" << endl;
+	  cout << " -b blur desktop screen - this is a toggle ON/OFF flag)" << endl;
 	  cout << " -a send an icon hook alert" << endl << endl;
 	  exit (1);
+
+	case 'b':
+	  blur = true;
+	  break;
 
 	case 't':
 	  kprintf ("testing configuration\n");
@@ -223,6 +228,11 @@ int main(int argc, char *argv[])
   if (wallpaper_mode == true) {
     kprintf ("refreshing background and exiting\n");
     bg.refresh_background(display);
+    exit (0);
+  }
+
+  if (blur == true) {
+    bg.blur(display);
     exit (0);
   }
 

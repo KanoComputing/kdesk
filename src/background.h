@@ -28,6 +28,7 @@ class Background
   bool setup (Display *display);
   bool load (Display *display);
   bool draw (Display *display);
+  bool blur(Display *display);
   int refresh_background(Display *display);
 
 };

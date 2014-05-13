@@ -158,6 +158,117 @@ bool Background::load (Display *display)
   return bsuccess;
 }
 
+bool Background::blur(Display *display)
+{
+  Pixmap pmap_blur = 0L;
+  Imlib_Image img_blurred;
+  Imlib_Color_Modifier colorTrans=NULL;
+  Window win=0L, win1=0L;
+
+  // FIXME: Below variables will be accessed from the class instance via a signal
+  int screen = DefaultScreen (display);
+  root = RootWindow (display, screen);
+  deskw = DisplayWidth(display, screen);
+  deskh = DisplayHeight(display, screen);
+
+  // TODO: Is the blurred window here? If so, delete and go (the blur functionality works as a toggle switch)
+
+  pmap_blur = XCreatePixmap (display, root, deskw, deskh, DefaultDepth (display, DefaultScreen (display)));
+  if (!pmap_blur) {
+    cout << "error creating blurred pixmap" << endl;
+    return false;
+  }
+
+  img_blurred = imlib_create_image(deskw, deskh);
+  if (!img_blurred) {
+    cout << "buffer null" << endl;
+    return false;
+  }
+
+  // Take a screenshot from the desktop and save it in a Imblib2 object
+  // So we can use it's API to blur the image
+  imlib_context_set_image(img_blurred);
+  imlib_context_set_display(display);
+  imlib_context_set_visual(DefaultVisual(display, 0));
+  imlib_context_set_drawable(root);
+  imlib_copy_drawable_to_image(0, 0, 0, deskw, deskh, 0, 0, 1);
+
+  // Create RGB tables to blur the colors
+  unsigned char iconR[256], iconG[256], iconB[256], iconTR[256];
+  colorTrans = imlib_create_color_modifier();
+  imlib_context_set_color_modifier(colorTrans);    
+  imlib_get_color_modifier_tables(iconR, iconG, iconB, iconTR);
+  imlib_reset_color_modifier();
+
+  // Blur the RGB channels to a third of their intensities
+  for (int n=0; n < 256; n++) {
+    iconR[n] = iconR[n] / 3;
+    iconG[n] = iconG[n] / 3;
+    iconB[n] = iconB[n] / 3;
+  }
+
+  // At this point img_blurred contains a blurred copy of the desktop image
+  imlib_set_color_modifier_tables (iconR, iconG, iconB, iconR);
+
+  // create a top level window which will draw the blurred desktop on top
+  XSetWindowAttributes attr;
+  memset (&attr, 0x00, sizeof (attr));
+  attr.background_pixmap = ParentRelative;
+
+  // this will ensure the blurred image is repainted
+  // should the top level unblurred window move along the desktop.
+  attr.backing_store = Always;
+
+  attr.event_mask = 0; // no relevant events we want to care about, XServer will do it for us
+  attr.override_redirect = True;
+  win = XCreateWindow (display, DefaultRootWindow(display), 0, 0,
+		       // FIXME: int 41 number needs to be fit with the amount of over-space used by the decorations.
+		       deskw, deskh - 41, 0,
+		       CopyFromParent, CopyFromParent, CopyFromParent,
+		       CWEventMask, &attr);
+  if (!win) {
+    // TODO: Too bad... free resources and leave
+    return false;
+  }
+  else {
+    // The "Hints" code below is needed to remove the window decorations
+    // We don't want a title or border frames.
+    // TODO: Remove the taskbar icon associated to the window.
+    typedef struct Hints
+    {
+      unsigned long   flags;
+      unsigned long   functions;
+      unsigned long   decorations;
+      long            inputMode;
+      unsigned long   status;
+    } Hints;
+    
+    Hints hints;
+    Atom property_hints, property_icon;
+    hints.flags = 2;
+    hints.decorations = 0;
+    property_hints = XInternAtom(display, "_MOTIF_WM_HINTS", true);
+    property_icon = XInternAtom(display, "_NET_WM_ICON", true);
+    XChangeProperty (display, win, property_hints, property_hints, 32, PropModeReplace,(unsigned char *)&hints, 5);
+
+    // Give the blurred window a meaningful name and show it
+    XStoreName (display, win, "KdeskBlur");
+    XMapWindow(display, win);
+
+    // Draw the blurred image into the pixmap, then apply the pixmap to the window
+    // We do it this way so the XServer can have a copy for the backing store to repaint on Exposure events
+    imlib_context_set_drawable(pmap_blur);
+    imlib_render_image_on_drawable (0, 0);
+    XSetWindowBackgroundPixmap(display, win, pmap_blur);
+    XFlush (display);
+    imlib_free_image();
+  }
+
+  // TODO: Remove sleep, this is used for quick testing!
+  sleep (60);
+  return (true);
+}
+
 int Background::refresh_background(Display *display)
 {
   Window root_return, parent_return, *children_return;
