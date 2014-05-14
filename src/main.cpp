@@ -45,6 +45,7 @@ void signal_callback_handler(int signum);
 void reload_configuration (Display *display);
 void trigger_icon_hook (Display *display, char *message);
 void finish_kdesk (Display *display);
+void blur_desktop (Display *display);
 
 // Signal handler reached via a kill -USR
 void signal_callback_handler(int signum)
@@ -55,12 +56,12 @@ void signal_callback_handler(int signum)
   }
 
   log1 ("Received signal", signum);
-  if (signum == SIGUSR1) {
-    kprintf ("Received signal to reload configuration\n");
+  if (signum == SIGHUP) {
+    log ("Received signal to reload configuration");
     reload_configuration(display);
   }
-  else if (signum == SIGUSR2) {
-    kprintf ("Received custom signal\n");
+  else if (signum == SIGUSR1) {
+    log ("Received graceful kdesk quit signal");
     finish_kdesk(display);
   }
   
@@ -89,6 +90,13 @@ void finish_kdesk (Display *display)
   return;
 }
 
+void blur_desktop (Display *display)
+{
+  log ("Blurring the desktop");
+  dsk.send_signal (display, KDESK_BLUR_DESKTOP, NULL);
+  return;
+}
+
 int main(int argc, char *argv[])
 {
   Status rc;
@@ -100,18 +108,19 @@ int main(int argc, char *argv[])
   int c;
 
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwra:v")) != EOF)
+  while ((c = getopt(argc, argv, "?htwra:vb")) != EOF)
     {
       switch (c)
         {
 	case '?':
 	case 'h':
-	  cout << "kano-desktop [ -h | -t | -w | -r | -a <icon name> ]" << endl;
+	  cout << "kano-desktop [ -h | -t | -w | -r | -a <icon name> | -b ]" << endl;
 	  cout << " -h help, or -? this screen" << endl;
 	  cout << " -v verbose mode with minimal progress messages" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
 	  cout << " -r refresh configuration and exit" << endl;
+	  cout << " -b blur desktop screen - this is a toggle ON/OFF flag)" << endl;
 	  cout << " -a send an icon hook alert" << endl << endl;
 	  exit (1);
 
@@ -138,6 +147,19 @@ int main(int argc, char *argv[])
 
 	  kprintf ("Sending a refresh signal to Kdesk\n");
 	  reload_configuration(display);
+	  XCloseDisplay(display);
+	  exit (0);
+
+	case 'b':
+	  display = XOpenDisplay(display_name);
+	  if (!display) {
+	    kprintf ("Could not connect to the XServer\n");
+	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
+	    exit (1);
+	  }
+
+	  kprintf ("Triggering desktop blur effect\n\n");
+	  blur_desktop(display);
 	  XCloseDisplay(display);
 	  exit (0);
 
@@ -238,9 +260,9 @@ int main(int argc, char *argv[])
     kprintf ("This allocated display is not primary, disabling sound (%s)\n", DEFAULT_DISPLAY);
   }
 
-
   // Initialize the desktop management class,
   // stop here if there is already a Kdesk running on this display
+  dsk.initialize (&bg);
   if (dsk.find_kdesk_control_window (display)) {
     kprintf ("Kdesk is already running on this Desktop - exiting\n");
     exit (1);
@@ -311,7 +333,8 @@ int main(int argc, char *argv[])
       bool bicons = dsk.create_icons(display);
     }
     else {
-      kprintf ("Custom Signal - not yet implemented\n");
+      // This means a stop signal has been sent - quit kdesk
+      running = false;
     }
 
   } while (running == true);
