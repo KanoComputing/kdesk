@@ -23,12 +23,15 @@ debug:
 	make all DEBUGGING="-ggdb -O3 -DDEBUG"
 
 # the linkage
-$(TARGET): main.o icon.o background.o configuration.o desktop.o sound.o ssaver.o
+$(TARGET): main.o icon.o grid.o background.o configuration.o desktop.o sound.o ssaver.o
 	g++ $(LIBS) $^ -o $(TARGET)
 
 # the compilation
-icon.o: icon.cpp icon.h logging.h configuration.h
+icon.o: icon.cpp icon.h logging.h configuration.h grid.h
 	g++ -c $(DEBUGGING) $(XFTINC) icon.cpp
+
+grid.o: grid.cpp grid.h
+	g++ -c $(DEBUGGING) $(XFTINC) grid.cpp
 
 main.o: main.cpp main.h configuration.h logging.h version.h ssaver.h
 	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) main.cpp
@@ -39,7 +42,7 @@ background.o: background.cpp logging.h sound.h
 configuration.o: configuration.cpp configuration.h logging.h main.h
 	g++ -c $(DEBUGGING) configuration.cpp
 
-desktop.o: desktop.cpp desktop.h logging.h configuration.h sn_callbacks.cpp sound.h
+desktop.o: desktop.cpp desktop.h logging.h configuration.h sn_callbacks.cpp sound.h grid.h
 	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) desktop.cpp
 
 sound.o: sound.cpp sound.h

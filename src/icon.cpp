@@ -20,6 +20,7 @@
 
 #include "icon.h"
 #include "logging.h"
+#include "grid.h"
 
 Icon::Icon (Configuration *loaded_conf, int iconidx)
 {
@@ -39,7 +40,7 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   ficon = configuration->get_icon_string (iconid, "icon");
   ficon_hover = configuration->get_icon_string (iconid, "iconhover");
   ficon_stamp = configuration->get_icon_string (iconid, "iconstamp");
-  
+
   // save the icon caption and message literals to be rendered around it
   caption = configuration->get_icon_string (iconid, "caption");
   message = configuration->get_icon_string (iconid, "message");
@@ -150,7 +151,7 @@ bool Icon::is_singleton_running (void)
   return bAppRunning;
 }
 
-Window Icon::create (Display *display)
+Window Icon::create (Display *display, IconGrid *icon_grid)
 {
   unsigned int rc=0;
   int border;
@@ -179,7 +180,7 @@ Window Icon::create (Display *display)
     font = XftFontOpen (display, DefaultScreen(display),
 			XFT_FAMILY, XftTypeString, fontname.c_str(),
 			XFT_SIZE, XftTypeDouble, (float) fontsize,
-			NULL);    
+			NULL);
     if (!font) {
       log("Could not create font!");
     }
@@ -188,7 +189,7 @@ Window Icon::create (Display *display)
       rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0), "white", &xftcolor);
       rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0), "black", &xftcolor_shadow);
       log1 ("XftColorAllocName bool", rc);
-      
+
       fontsmaller = XftFontOpen (display, DefaultScreen(display),
 				 XFT_FAMILY, XftTypeString, fontname.c_str(),
 				 XFT_SIZE, XftTypeDouble, (float) fontsize - 2,
@@ -214,29 +215,57 @@ Window Icon::create (Display *display)
   int w = DisplayWidth(display, screen_num);
   int h = DisplayHeight(display, screen_num);
 
-  iconx = configuration->get_icon_int (iconid, "x");
-  icony = configuration->get_icon_int (iconid, "y");
-  iconw = configuration->get_icon_int (iconid, "width");
-  iconh = configuration->get_icon_int (iconid, "height");
-
   // Using this parameter we can control the space
   // between the icon and name rendered just below
   icontitlegap = configuration->get_config_int("icontitlegap");
   log1 ("Icon gap for font title rendering", icontitlegap);
 
-  // Decide which icon positioning to use on the desktop
   string icon_placement = configuration->get_icon_string(iconid, "relative-to");
-  if (icon_placement == "bottom-centre") {
-    iconx = w / 2 + iconx;
-    icony = h + icony;
-  }
-  else if (icon_placement == "top-left") {
-    // no coordinate transformation necessary. 0,0 is already top-left
-    ;
-  }
-  else if (icon_placement == "top-right") {
-    // icon horizontal position decreases from the right to the left
-    iconx = w - (iconx + iconw);
+  if (icon_placement == "grid") {
+    // Grid icons have fixed size
+    iconw = 128;
+    iconh = 128;
+
+    string iconx_tmp, icony_tmp;
+
+    iconx_tmp = configuration->get_icon_string (iconid, "x");
+    if (iconx_tmp == "auto") {
+      iconx = -1;
+    } else {
+      iconx = configuration->get_icon_int (iconid, "x");
+    }
+
+    icony_tmp = configuration->get_icon_string (iconid, "y");
+    if (icony_tmp == "auto") {
+      icony = -1;
+    } else {
+      icony = configuration->get_icon_int (iconid, "y");
+    }
+
+    if (!icon_grid->request_position(iconx, icony, &iconx, &icony)) {
+      /* Error! No more space available! */
+      log("No spaces available in the grid!");
+      return None;
+    }
+  } else {
+    iconx = configuration->get_icon_int (iconid, "x");
+    icony = configuration->get_icon_int (iconid, "y");
+    iconw = configuration->get_icon_int (iconid, "width");
+    iconh = configuration->get_icon_int (iconid, "height");
+
+    // Decide which icon positioning to use on the desktop
+    if (icon_placement == "bottom-centre") {
+      iconx = w / 2 + iconx;
+      icony = h + icony;
+    }
+    else if (icon_placement == "top-left") {
+      // no coordinate transformation necessary. 0,0 is already top-left
+      ;
+    }
+    else if (icon_placement == "top-right") {
+      // icon horizontal position decreases from the right to the left
+      iconx = w - (iconx + iconw);
+    }
   }
 
   // In debug version, icons are drawn with a black frame

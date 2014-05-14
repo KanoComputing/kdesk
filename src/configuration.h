@@ -12,7 +12,7 @@
 #include <map>
 #include <vector>
 
-#define MAX_ICONS 12
+#define MAX_ICONS 32
 
 class Configuration
 {
@@ -36,5 +36,5 @@ class Configuration
   unsigned int get_config_int(std::string item);
   std::string get_icon_string(int iconid, std::string key);
   int get_icon_int(int iconid, std::string key);
-  int get_numicons(void);  
+  int get_numicons(void);
 };

@@ -21,6 +21,8 @@
 #define KDESK_SIGNAL_ICON_ALERT   "KSIG_ICON_ALERT"
 #define KDESK_BLUR_DESKTOP        "KSIG_BLUR_DESKTOP"
 
+class IconGrid;
+
 class Desktop
 {
  private:
@@ -28,6 +30,7 @@ class Desktop
   Background *pbground;
   bool initialized;
   std::map <Window, Icon *> iconHandlers;
+  IconGrid *icon_grid;
   SnDisplay *sn_display;
   SnLauncherContext *sn_context;
   Configuration *pconf;

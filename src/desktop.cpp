@@ -35,6 +35,7 @@
 #include "background.h"
 #include "desktop.h"
 #include "logging.h"
+#include "grid.h"
 
 Desktop::Desktop(void)
 {
@@ -42,6 +43,7 @@ Desktop::Desktop(void)
   wcontrol = 0L;
   numicons = 0;
   initialized = false;
+  icon_grid = NULL;
 }
 
 void Desktop::initialize(Background *p)
@@ -66,29 +68,54 @@ Desktop::~Desktop(void)
   }
 
   // FIXME: Atoms are not meant to be freed, correct me if I'm wrong.
+
+  if (icon_grid) {
+    delete icon_grid;
+  }
 }
 
 bool Desktop::create_icons (Display *display)
 {
   int nicon=0;
 
+  icon_grid = new IconGrid(display);
+
   // Create and draw all icons, save a mapping of their window IDs -> handlers
   // so that we can dispatch events to each one in turn later on.
-  for (nicon=0; nicon < pconf->get_numicons(); nicon++)
-    {
-      Icon *pico = new Icon(pconf, nicon);
-      Window wicon = pico->create(display);
-      if (wicon) {
-	XEvent emptyev;
-	iconHandlers[wicon] = pico;
-	pico->draw(display, emptyev);
-	numicons++;
+  //
+  // The icons are created in two passes. The first one creates only grid
+  // icons with hints, so they get a priority over the other ones.
+  for (int pass = 0; pass < 2; pass++)
+   {
+    for (nicon=0; nicon < pconf->get_numicons(); nicon++)
+      {
+        string pos, x, y;
+	pos = pconf->get_icon_string(nicon, "relative-to");
+	x = pconf->get_icon_string(nicon, "x");
+	y = pconf->get_icon_string(nicon, "y");
+	if (pos == "grid" && (x == "auto" || y == "auto"))
+	  /* Has hints, skip in the second pass */
+	  if (pass == 1)
+	    continue;
+	else
+	  /* No hints, skip in the first pass */
+	  if (pass == 0)
+	    continue;
+
+        Icon *pico = new Icon(pconf, nicon);
+        Window wicon = pico->create(display, icon_grid);
+        if (wicon) {
+  	XEvent emptyev;
+  	iconHandlers[wicon] = pico;
+  	pico->draw(display, emptyev);
+  	numicons++;
+        }
+        else {
+  	log1 ("Warning: error creating icon", pconf->get_icon_string(nicon, "filename"));
+  	delete pico;
+        }
       }
-      else {
-	log1 ("Warning: error creating icon", pconf->get_icon_string(nicon, "filename"));
-	delete pico;
-      }
-    }
+   }
 
   // Setup a connection with startup notification library
   // error_trap_push, error_trap_pop ???
@@ -108,7 +135,7 @@ Icon *Desktop::find_icon_filename (char *icon_filename)
   // We make it easy to the user, the .lnk extension is not needed
   string strfilename = string(icon_filename);
   strfilename += ".lnk";
-  
+
   for (it=iconHandlers.begin(); it != iconHandlers.end(); ++it)
     {
       if (it->second != NULL) {
@@ -151,7 +178,7 @@ bool Desktop::notify_startup_load (Display *display, int iconid, Time time)
   bool bsuccess=false;
   string name = pconf->get_icon_string (iconid, "command");
   string command = pconf->get_icon_string (iconid, "command");
-  
+
   if (!sn_context || sn_launcher_context_get_initiated (sn_context)) {
     sn_launcher_context_unref (sn_context);
     sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
@@ -199,7 +226,7 @@ bool Desktop::process_and_dispatch(Display *display)
   XEvent ev;
   Window wtarget = 0;
 
-  do 
+  do
     {
       // This is the main X11 event processing loop
       XNextEvent(display, &ev);

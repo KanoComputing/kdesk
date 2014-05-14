@@ -164,7 +164,7 @@ bool Configuration::load_conf(const char *filename)
 	configuration["iconhook"] = value;
       }
     }
- 
+
   ifile.close();
   return true;
 }
