@@ -93,9 +93,9 @@ bool Desktop::create_icons (Display *display)
 	pos = pconf->get_icon_string(nicon, "relative-to");
 	x = pconf->get_icon_string(nicon, "x");
 	y = pconf->get_icon_string(nicon, "y");
-	if (pos == "grid" && (x == "auto" || y == "auto"))
+	if (pos == "grid" && x != "auto" && y != "auto")
 	  /* Has hints, skip in the second pass */
-	  if (pass == 1)
+	  if (pass > 1)
 	    continue;
 	else
 	  /* No hints, skip in the first pass */
