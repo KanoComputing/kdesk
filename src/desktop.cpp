@@ -93,26 +93,28 @@ bool Desktop::create_icons (Display *display)
 	pos = pconf->get_icon_string(nicon, "relative-to");
 	x = pconf->get_icon_string(nicon, "x");
 	y = pconf->get_icon_string(nicon, "y");
-	if (pos == "grid" && x != "auto" && y != "auto")
+	if (pos == "grid" && x != "auto" && y != "auto") {
 	  /* Has hints, skip in the second pass */
-	  if (pass > 1)
+	  if (pass == 1)
 	    continue;
-	else
+	}
+	else {
 	  /* No hints, skip in the first pass */
 	  if (pass == 0)
 	    continue;
+	}
 
         Icon *pico = new Icon(pconf, nicon);
         Window wicon = pico->create(display, icon_grid);
         if (wicon) {
-  	XEvent emptyev;
-  	iconHandlers[wicon] = pico;
-  	pico->draw(display, emptyev);
-  	numicons++;
+	  XEvent emptyev;
+	  iconHandlers[wicon] = pico;
+	  pico->draw(display, emptyev);
+	  numicons++;
         }
         else {
-  	log1 ("Warning: error creating icon", pconf->get_icon_string(nicon, "filename"));
-  	delete pico;
+	  log1 ("Warning: error creating icon", pconf->get_icon_string(nicon, "filename"));
+	  delete pico;
         }
       }
    }
