@@ -305,3 +305,51 @@ int Background::refresh_background(Display *display)
 
   return nchildren_return;
 }
+
+bool Background::is_blurred(Display *display)
+{
+  int screen = DefaultScreen (display);
+  Window root = RootWindow (display, screen);
+  Window root_return, parent_return, *children_return=NULL, *subchildren_return=NULL;
+  unsigned int nchildren_return=0, nsubchildren_return=0;
+  bool found = false;
+
+  // Enumerate all top level windows in search for the Kdesk's blurred window
+  if (XQueryTree(display, root, &root_return, &parent_return, &children_return, &nchildren_return))
+    {
+      char *windowname=NULL;
+      for (int i=0; i < nchildren_return; i++)
+	{
+	  if (XFetchName (display, children_return[i], &windowname)) {
+	    if (!strncmp (windowname, "KdeskBlur", strlen ("KdeskBlur"))) {
+	      found = true;
+	      XFree (windowname);
+	      break;
+	    }
+	  }
+
+	  XQueryTree (display, children_return[i], &root_return, &parent_return, &subchildren_return, &nsubchildren_return);
+
+	  for (int k=nsubchildren_return-1; k>=0; k--) {
+	    if (XFetchName (display, subchildren_return[k], &windowname)) {
+	      if (!strncmp (windowname, "KdeskBlur", strlen ("KdeskBlur"))) {
+		found=true;
+		XFree (windowname);
+		break;
+	      }
+	    }
+	  }
+
+	}
+    }
+
+  if (children_return) {
+    XFree(children_return);
+  }
+
+  if (subchildren_return) {
+    XFree(children_return);
+  }
+
+  return found;
+}
