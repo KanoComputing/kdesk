@@ -261,7 +261,7 @@ bool Desktop::process_and_dispatch(Display *display)
 	      else {
 		log ("Desktop or Background class not initialized - cannot blur desktop");
 	      }
-	      return true;
+	      return false;
 	    }
 	    else if ((Atom) ev.xclient.data.l[0] == atom_icon_alert) {
 

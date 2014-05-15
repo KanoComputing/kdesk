@@ -104,11 +104,13 @@ int main(int argc, char *argv[])
   Configuration conf;
   char *display_name = NULL;
   string strKdeskRC, strHomeKdeskRC, strKdeskDir, strKdeskUser;
-  bool test_mode = false, wallpaper_mode = false;
+  bool test_mode = false, wallpaper_mode = false, blurred = false;
+  Background bgblur(NULL);
+  int blurWaitTO = 3;
   int c;
 
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwra:vb")) != EOF)
+  while ((c = getopt(argc, argv, "?htwra:vb:")) != EOF)
     {
       switch (c)
         {
@@ -120,7 +122,7 @@ int main(int argc, char *argv[])
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
 	  cout << " -r refresh configuration and exit" << endl;
-	  cout << " -b blur desktop screen - this is a toggle ON/OFF flag)" << endl;
+	  cout << " -b blur desktop screen below app - this is a toggle ON/OFF flag)" << endl;
 	  cout << " -a send an icon hook alert" << endl << endl;
 	  exit (1);
 
@@ -152,16 +154,45 @@ int main(int argc, char *argv[])
 
 	case 'b':
 	  display = XOpenDisplay(display_name);
+	  blurred = bgblur.is_blurred(display);
 	  if (!display) {
 	    kprintf ("Could not connect to the XServer\n");
 	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
 	    exit (1);
 	  }
 
-	  kprintf ("Triggering desktop blur effect\n\n");
+	  if (blurred == true) {
+	    kprintf ("Desktop is already blurred - unblurring and quit!\n");
+	    blur_desktop(display);
+	    exit (-1);
+	  }
+
+	  kprintf ("Triggering desktop blur effect\n");
 	  blur_desktop(display);
-	  XCloseDisplay(display);
-	  exit (0);
+
+	  // wait for async blur signal to appear on the desktop
+	  while (!blurred && blurWaitTO-- > 0) {
+	    sleep (1);
+	    blurred = bgblur.is_blurred(display);	    
+	  }
+
+	  // Execute the requested app on top of the blurred desktop
+	  if (blurred == true) {
+	    kprintf ("Executing the blurred app: %s\n", optarg);
+	    rc =system(optarg);
+	    kprintf ("Blurred app finished rc=%d\n", rc);
+	    
+	    // remove the blurred desktop and finish
+	    blur_desktop(display);
+	    XCloseDisplay(display);
+
+	    // Set errorlevel to that of the blurred application
+	    exit (rc);
+	  }
+	  else {
+	    kprintf ("Could not blur the desktop\n");
+	    exit (-1);
+	  }
 
 	case 'a':
 	  display = XOpenDisplay(display_name);
@@ -306,8 +337,8 @@ int main(int argc, char *argv[])
   signal (SIGUSR2, signal_callback_handler);
 
   bool reload = false, running=true;
+  kprintf ("processing X11 events...\n");
   do {
-    kprintf ("processing X11 events...\n");
     reload = dsk.process_and_dispatch(display);
     if (reload == true) {
       // Discard configuration and reload everything again
@@ -333,8 +364,9 @@ int main(int argc, char *argv[])
       bool bicons = dsk.create_icons(display);
     }
     else {
-      // This means a stop signal has been sent - quit kdesk
-      running = false;
+      // This means we don't want to refresh settings
+      // TODO: We need to change this semantics the day we want a graceful kdesk stop
+      running = true;
     }
 
   } while (running == true);
