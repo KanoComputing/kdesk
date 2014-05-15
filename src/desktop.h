@@ -46,7 +46,7 @@ class Desktop
 
   void initialize(Background *p);
   bool create_icons (Display *display);
-  Icon *find_icon_filename (char *icon_filename);
+  Icon *find_icon_name (char *icon_name);
   bool destroy_icons (Display *display);
 
   bool notify_startup_load (Display *display, int iconid, Time time);
@@ -58,5 +58,6 @@ class Desktop
   Window find_kdesk_control_window (Display *display);
   bool process_and_dispatch(Display *display);
   bool send_signal (Display *display, const char *signalName, char *message);
+  bool call_icon_hook (Display *display, XEvent ev, std::string hookscript, Icon *pico_hook);
   bool finalize(void);
 };
