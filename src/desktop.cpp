@@ -110,6 +110,10 @@ bool Desktop::create_icons (Display *display)
 	  XEvent emptyev;
 	  iconHandlers[wicon] = pico;
 	  pico->draw(display, emptyev);
+
+	  // Invoke the icon hook so it is refreshed immediately
+	  // right after Kdesk startup and refresh signals
+	  call_icon_hook (display, emptyev, pconf->get_config_string("iconhook"), pico);
 	  numicons++;
         }
         else {
@@ -129,21 +133,15 @@ bool Desktop::create_icons (Display *display)
   return (bool) (nicon > 0);
 }
 
-Icon *Desktop::find_icon_filename (char *icon_filename)
+Icon *Desktop::find_icon_name (char *icon_name)
 {
   // Search through the icon dispatcher table for the icon filename
   std::map <Window, Icon *>::iterator it;
-
-  // We make it easy to the user, the .lnk extension is not needed
-  string strfilename = string(icon_filename);
-  strfilename += ".lnk";
-
   for (it=iconHandlers.begin(); it != iconHandlers.end(); ++it)
     {
       if (it->second != NULL) {
-	string theicon = it->second->get_icon_filename();
-	if (!strcasecmp (theicon.c_str(), strfilename.c_str())) {
-	  log2 ("Icon filename found (name, instance)", icon_filename, it->second);
+	if (!strcasecmp (icon_name, it->second->get_icon_name().c_str())) {
+	  log2 ("Icon name found (name, instance)", icon_name, it->second);
 	  return it->second;
 	}
       }
@@ -279,63 +277,21 @@ bool Desktop::process_and_dispatch(Display *display)
 		log ("No kdesk icon hook defined - ignoring alert");
 	      }
 	      else {
-		// Collect the icon name to which the hook alert needs to be sent
+		// Collect the icon name from the X11 event to which the hook alert needs to be sent
 		char alert_iconname[17];
+		memset (alert_iconname, 0x00, sizeof (alert_iconname));
 		memcpy (alert_iconname, &ev.xclient.data.l[1], 16);
 		alert_iconname[16] = 0x00; // Truncate it - this is not a nullified string
 		log1 ("Icon Hook signal received for icon", alert_iconname);
 
 		// Is the icon name on the desktop? Can we send him a signal?
-		Icon *pico_hook = find_icon_filename (alert_iconname);
+		Icon *pico_hook = find_icon_name (alert_iconname);
 		if (!pico_hook) {
 		  log ("Could not find this icon on the desktop, ignoring");
 		}
 		else {
-		  FILE *fp_iconhooks=NULL;
-		  char chcmdline[1024];
-		  char chline[1024], key[64], value[900], word[256];
-
-		  // Execute the Icon Hook, parse the stdout, and communicate with the icon to refresh attributes
-		  // FIXME: Organize this code in a class method
-		  sprintf (chcmdline, "/bin/bash -c \"%s %s\"", iconhook_script.c_str(), alert_iconname);
-		  fp_iconhooks = popen (chcmdline, "r");
-		  while (fgets (chline, sizeof (chline), fp_iconhooks) != NULL)
-		    {
-		      char *toks=chline;
-		      memset (key, 0x00, sizeof(key));
-		      memset (value, 0x00, sizeof(value));
-		      int n=0;
-		      while (sscanf (toks, "%s%n", word, &n) == 1 ) {
-			if (word[strlen(word)-1] == ':') {
-			  strcpy (key, word);
-			}
-			else {
-			  strcat (value, word);
-			  strcat (value, " ");
-			}
-			toks += n;
-		      }
-
-		      // Parse the keys (attributes) that can be applied to the icon, pass them to the icon instance
-		      value[strlen(value)-1]=0x00;
-		      if (!strcmp (key, "Message:")) {
-			pico_hook->set_message (value);
-		      }
-		      else if (!strcmp (key, "Caption:")) {
-			pico_hook->set_caption (value);
-		      }
-		      else if (!strcmp (key, "Icon:")) {
-			pico_hook->set_icon (value);
-		      }
-		      else if (!strcmp (key, "IconStamp:")) {
-			pico_hook->set_icon_stamp (value);
-		      }
-		    }
-		  
-		  // Redraw the icon
-		  fclose (fp_iconhooks);
-		  pico_hook->clear(display, ev);
-		  pico_hook->draw(display, ev);
+		  log2 ("Calling icon hook script (script, icon name)", iconhook_script, alert_iconname);
+		  call_icon_hook (display, ev, iconhook_script, pico_hook);
 		}
 	      }
 	    }
@@ -553,4 +509,69 @@ bool Desktop::send_signal (Display *display, const char *signalName, char *messa
   XFlush (display);
   log2 ("Sending a client message event to kdesk control window (win, rc)", wsig, rc);
   return (rc == Success ? true : false);
+}
+
+bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Icon *pico_hook)
+{
+  FILE *fp_iconhooks=NULL;
+  char chcmdline[1024];
+  char chline[1024], key[64], value[900], word[256];
+  int updates=0;
+
+  // Given a hook script name and an icon instance, call the script
+  // to update its attributes, then ask the icon instance to refresh them
+  if (!pico_hook) {
+    log ("Icon handler is empty");
+    return false;
+  }
+  
+  // Execute the Icon Hook, parse the stdout, and communicate with the icon to refresh attributes
+  sprintf (chcmdline, "/bin/bash -c \"%s %s\"", hookscript.c_str(), pico_hook->get_icon_name().c_str());
+  log1 ("Executing hook script:", chcmdline);
+  fp_iconhooks = popen (chcmdline, "r");
+  while (fgets (chline, sizeof (chline), fp_iconhooks) != NULL)
+    {
+      char *toks=chline;
+      memset (key, 0x00, sizeof(key));
+      memset (value, 0x00, sizeof(value));
+      int n=0;
+      while (sscanf (toks, "%s%n", word, &n) == 1 ) {
+	if (word[strlen(word)-1] == ':') {
+	  strcpy (key, word);
+	}
+	else {
+	  strcat (value, word);
+	  strcat (value, " ");
+	}
+	toks += n;
+      }
+	
+      // Parse the keys (attributes) that can be applied to the icon, pass them to the icon instance
+      value[strlen(value)-1]=0x00;
+      if (!strcmp (key, "Message:")) {
+	pico_hook->set_message (value);
+	updates++;
+      }
+      else if (!strcmp (key, "Caption:")) {
+	pico_hook->set_caption (value);
+	updates++;
+      }
+      else if (!strcmp (key, "Icon:")) {
+	pico_hook->set_icon (value);
+	updates++;
+      }
+      else if (!strcmp (key, "IconStamp:")) {
+	pico_hook->set_icon_stamp (value);
+	updates++;
+      }
+    }
+    
+  // Redraw the icon if attributes have been modified
+  fclose (fp_iconhooks);
+  if (updates) {
+    log1 ("Populating hook updates to icon (#updates)", updates);
+    pico_hook->clear(display, ev);
+    pico_hook->draw(display, ev);
+  }
+  return true;
 }

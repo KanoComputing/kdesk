@@ -101,6 +101,15 @@ std::string Icon::get_icon_filename(void)
   return configuration->get_icon_string (iconid, "filename");
 }
 
+std::string Icon::get_icon_name(void)
+{
+  // returns icon name without the LNK extension
+  string filename = get_icon_filename();
+
+  // FIXME: Upper/lowercase names for the extension
+  return filename.erase (filename.rfind(".lnk"), std::string::npos);
+}
+
 void Icon::set_caption (char *new_caption)
 {
   caption = new_caption;
