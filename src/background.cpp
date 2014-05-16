@@ -348,7 +348,7 @@ bool Background::is_blurred(Display *display)
   }
 
   if (subchildren_return) {
-    XFree(children_return);
+    XFree(subchildren_return);
   }
 
   return found;
