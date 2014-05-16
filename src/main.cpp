@@ -328,6 +328,7 @@ int main(int argc, char *argv[])
       ksaver_data.display_name  = display_name;
       ksaver_data.idle_timeout  = conf.get_config_int("screensavertimeout");
       ksaver_data.saver_program = conf.get_config_string("screensaverprogram").c_str();
+      ksaver_data.saver_hooks = conf.get_config_string("iconhook").c_str();
       setup_ssaver (&ksaver_data);
     }
   }

@@ -10,6 +10,7 @@
 #include "X11/extensions/scrnsaver.h"
 
 #include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "logging.h"
@@ -36,6 +37,44 @@ int get_current_console (void)
   return current_tty;
 }
 
+int execute_hook(const char *hook_script, const char *params)
+{
+  int rc=-1;
+  char *chcmdline = (char *) calloc (1024, sizeof(char));
+
+  if (chcmdline != NULL && hook_script != NULL) {
+    sprintf (chcmdline, "/bin/bash -c \"%s %s\"", hook_script, (params ? params : ""));
+    log1 ("Executing screen saver hook:", chcmdline);
+    rc = system (chcmdline);
+    log2 ("Screen saver hook returns with RC, WEXITSTATUS", rc, WEXITSTATUS(rc));
+    if (rc != -1) {
+      rc = WEXITSTATUS(rc);
+    }
+    free (chcmdline);
+  }
+
+  return rc;
+}
+
+int hook_ssaver_start(const char *hook_script)
+{
+  int rc = execute_hook (hook_script, SSAVER_HOOK_START);
+  if (rc == -1) {
+    // If the hook script cannot be executed, assume success, go forward
+    log ("Warning: Screen saver start hook returns -1, assuming 0=success");
+    rc = 0;
+  }
+
+  return rc;
+}
+
+int hook_ssaver_finish(const char *hook_script)
+{
+  int rc = execute_hook (hook_script, SSAVER_HOOK_FINISH);
+  // Screen saver finish hook cannot change the user session flow, assume success, go forward
+  return 0;
+}
+
 bool setup_ssaver (KSAVER_DATA *kdata)
 {
   pthread_t *tssaver = new pthread_t();
@@ -44,10 +83,16 @@ bool setup_ssaver (KSAVER_DATA *kdata)
   return true;
 }
 
+void fake_user_input (void)
+{
+  // TODO: We need to tell the XServer to restart counting user inactivity
+  // how to do that? send fake data to /dev/input?
+}
+
 void *idle_time (void *p)
 {
   bool running=true;
-  Status rc=0;
+  Status rc=0, rchook=0;
   unsigned long ms=1000 * POLL_INTERVAL;
   unsigned long ultimeout=0L;
   PKSAVER_DATA pdata=(PKSAVER_DATA) p;
@@ -73,12 +118,22 @@ void *idle_time (void *p)
 	{
 	  // If idle timeout expires, and focus is on the GUI tty device, then launch the screen saver
 	  if (info->idle > (pdata->idle_timeout * 1000) && get_current_console() == GUI_TTY_DEVICE) {
-	    log2 ("Starting the Screen Saver (idle, timeout in secs)", info->idle / 1000, pdata->idle_timeout);
-	    rc = system (pdata->saver_program);
-	    log1 ("Screen saver finished with rc", rc);
-	    if (rc == 0) {
-	      log1 ("Calling xrefresh: ", XREFRESH);
-	      rc = system (XREFRESH);
+	    rchook = hook_ssaver_start(pdata->saver_hooks);
+	    if (rchook == 0) {
+	      log2 ("Starting the Screen Saver (idle, timeout in secs)", info->idle / 1000, pdata->idle_timeout);
+	      rc = system (pdata->saver_program);
+	      log1 ("Screen saver finished with rc", rc);
+	      if (rc == 0) {
+		log1 ("Calling xrefresh: ", XREFRESH);
+		rc = system (XREFRESH);
+
+		// Tell kdesk hooks that the screen saver has finished
+		rchook = hook_ssaver_finish(pdata->saver_hooks);
+	      }
+	    }
+	    else {
+	      log1 ("Screen saver start hook not returning 0, cancelling the screen saver, rc=", rchook);
+	      fake_user_input();
 	    }
 	  }
 	}
