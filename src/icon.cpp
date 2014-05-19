@@ -383,7 +383,7 @@ void Icon::clear(Display *display, XEvent ev)
   XClearWindow (display, win);
 }
 
-void Icon::draw(Display *display, XEvent ev)
+void Icon::draw(Display *display, XEvent ev, bool fClear)
 {
   Imlib_Color_Modifier colorTrans=NULL;   // used if general icon transparency is requested
   int h=0, w=0, subx=0;
@@ -401,6 +401,12 @@ void Icon::draw(Display *display, XEvent ev)
   //
   XMapWindow(display, win);
   XLowerWindow(display, win);
+
+  if (fClear == true) {
+    // Clear the icon area completely
+    // This is needed when for example the transparent background has changed due to blur effect
+    XClearWindow (display, win);
+  }
 
   // Is there a s Stamp icon? If so, load it now
   if (ficon_stamp.length() > 0) {

@@ -65,7 +65,7 @@ class Icon
   Window create(Display *display, IconGrid *icon_grid);
   void destroy(Display *display);
 
-  void draw(Display *display, XEvent ev);
+  void draw(Display *display, XEvent ev, bool fClear);
   void clear(Display *display, XEvent ev);
   bool blink_icon(Display *display, XEvent ev);
   bool unblink_icon(Display *display, XEvent ev);

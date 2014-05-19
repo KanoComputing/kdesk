@@ -109,7 +109,7 @@ bool Desktop::create_icons (Display *display)
         if (wicon) {
 	  XEvent emptyev;
 	  iconHandlers[wicon] = pico;
-	  pico->draw(display, emptyev);
+	  pico->draw(display, emptyev, false);
 
 	  // Invoke the icon hook so it is refreshed immediately
 	  // right after Kdesk startup and refresh signals
@@ -148,6 +148,26 @@ Icon *Desktop::find_icon_name (char *icon_name)
     }
 
   return NULL;
+}
+
+bool Desktop::redraw_icons (Display *display, bool forceClear)
+{
+  // Search through the icon dispatcher table for the icon filename
+  XEvent ev;
+  std::map <Window, Icon *>::iterator it;
+  int redraws=0;
+
+  memset (&ev, 0x00, sizeof (ev));
+
+  for (it=iconHandlers.begin(); it != iconHandlers.end(); ++it)
+    {
+      if (it->second != NULL) {
+	it->second->draw (display, ev, forceClear);
+	redraws++;
+      }
+    }
+
+  return (redraws > 0);
 }
 
 bool Desktop::destroy_icons (Display *display)
@@ -256,7 +276,8 @@ bool Desktop::process_and_dispatch(Display *display)
 	      log ("Kdesk object control window receives a Desktop BLUR event");
 	      if (initialized == true && pbground != NULL) {
 		// The blur method is a toggle, on/off method.
-		pbground->blur(display);
+		pbground->blur (display);
+		redraw_icons (display, true);
 	      }
 	      else {
 		log ("Desktop or Background class not initialized - cannot blur desktop");
@@ -362,7 +383,7 @@ bool Desktop::process_and_dispatch(Display *display)
 	  break;
 
 	case Expose:
-	  iconHandlers[wtarget]->draw(display, ev);
+	  iconHandlers[wtarget]->draw(display, ev, false);
 	  break;
 	  
 	default:
@@ -571,7 +592,7 @@ bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Ic
   if (updates) {
     log1 ("Populating hook updates to icon (#updates)", updates);
     pico_hook->clear(display, ev);
-    pico_hook->draw(display, ev);
+    pico_hook->draw(display, ev, false);
   }
   return true;
 }
