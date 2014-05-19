@@ -47,6 +47,7 @@ class Desktop
   void initialize(Background *p);
   bool create_icons (Display *display);
   Icon *find_icon_name (char *icon_name);
+  bool redraw_icons (Display *display, bool forceClear);
   bool destroy_icons (Display *display);
 
   bool notify_startup_load (Display *display, int iconid, Time time);

@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <memory.h>
+#include <stdlib.h>
 
 #include "configuration.h"
 #include "background.h"
@@ -178,6 +179,7 @@ bool Background::blur(Display *display)
     // revealing the real desktop image, then destroy the XWindow resource.
     XUnmapWindow (display, winblur);
     XDestroyWindow (display, winblur);
+    XFlush (display);
     winblur = 0L;
     success = true;
   }
@@ -298,7 +300,7 @@ int Background::refresh_background(Display *display)
 	  memset(&exppp, 0x00, sizeof(exppp));
 	  exppp.type = Expose;
 	  exppp.xexpose.window = children_return[i];
-	  XSendEvent(display,children_return[i],False,ExposureMask,&exppp);
+	  XSendEvent (display, children_return[i], False, ExposureMask, &exppp);
 	  XFlush(display);
 	}
     }
