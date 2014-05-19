@@ -5,14 +5,38 @@
 // License: http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
 //
 
+#include "configuration.h"
 #include "grid.h"
+#include "logging.h"
+
+
+// Static non-const member variable need be defined at file scope
+int IconGrid::ICON_W;
+int IconGrid::ICON_H;
 
 /* IconGrid */
-IconGrid::IconGrid(Display *display)
+IconGrid::IconGrid(Display *display, Configuration *pconf)
 {
   int screen_num = DefaultScreen(display);
   int w = DisplayWidth(display, screen_num);
   int h = DisplayHeight(display, screen_num);
+
+  // Get the grid dimensions from kdeskrc file
+  if (pconf) {
+    ICON_W = pconf->get_config_int("gridwidth");
+    ICON_H = pconf->get_config_int("gridheight");
+  }
+
+  // Or set default values if they're not defined
+  if (!ICON_W) {
+    ICON_W = DEFAULT_GRID_WIDTH;
+  }
+
+  if (!ICON_H) {
+    ICON_H = DEFAULT_GRID_HEIGHT;
+  }
+
+  log2 ("Icon grid width and height", ICON_W, ICON_H);
 
   width = w / ICON_W;
   if (width > MAX_FIELDS_X)

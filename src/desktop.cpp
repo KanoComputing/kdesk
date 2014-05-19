@@ -78,7 +78,7 @@ bool Desktop::create_icons (Display *display)
 {
   int nicon=0;
 
-  icon_grid = new IconGrid(display);
+  icon_grid = new IconGrid(display, pconf);
 
   // Create and draw all icons, save a mapping of their window IDs -> handlers
   // so that we can dispatch events to each one in turn later on.

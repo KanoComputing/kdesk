@@ -232,8 +232,8 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
   string icon_placement = configuration->get_icon_string(iconid, "relative-to");
   if (icon_placement == "grid") {
     // Grid icons have fixed size
-    iconw = 128;
-    iconh = 128;
+    iconw = icon_grid->ICON_W;
+    iconh = icon_grid->ICON_H;
 
     string iconx_tmp, icony_tmp;
 
@@ -256,6 +256,7 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
       log("No spaces available in the grid!");
       return None;
     }
+
   } else {
     iconx = configuration->get_icon_int (iconid, "x");
     icony = configuration->get_icon_int (iconid, "y");

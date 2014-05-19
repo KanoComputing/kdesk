@@ -12,12 +12,12 @@
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 
+#define DEFAULT_GRID_WIDTH   128
+#define DEFAULT_GRID_HEIGHT  128
+
 class IconGrid
 {
   private:
-    static const int ICON_W = 128;
-    static const int ICON_H = 128;
-
     static const int VERT_SPC = 10;
     static const int HORZ_SPC = 10;
 
@@ -39,8 +39,11 @@ class IconGrid
     void get_real_position(int field_x, int field_y, int *real_x, int *real_y);
 
   public:
-    IconGrid(Display *display);
+    IconGrid(Display *display, Configuration *pconf);
     ~IconGrid(void);
+
+    static int ICON_W;
+    static int ICON_H;
 
     bool request_position(int field_hint_x, int field_hint_y, int *x, int *y);
 };

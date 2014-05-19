@@ -163,6 +163,17 @@ bool Configuration::load_conf(const char *filename)
 	ifile >> value;
 	configuration["iconhook"] = value;
       }
+
+      if (token == "GridWidth:") {
+	ifile >> value;
+	configuration["gridwidth"] = value;
+      }
+
+      if (token == "GridHeight:") {
+	ifile >> value;
+	configuration["gridheight"] = value;
+      }
+
     }
 
   ifile.close();
