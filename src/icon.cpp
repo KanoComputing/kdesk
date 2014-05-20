@@ -452,8 +452,8 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 	imlib_context_set_image(resized);
 
 	// change original image buffer to resized one, a.k.a. the joker card.
-	w = neww;
-	h = newh;
+	iconw = neww;
+	iconh = newh;
 	imlib_context_set_image(image);
 	imlib_free_image();
 	image = resized;
