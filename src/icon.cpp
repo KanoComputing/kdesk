@@ -314,7 +314,6 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
 
   // this will hold a copy of the current icon rendered space
   backsafe = imlib_create_image (iconw, iconh);
-  
   return win;
 }
 
@@ -386,6 +385,7 @@ void Icon::clear(Display *display, XEvent ev)
 void Icon::draw(Display *display, XEvent ev, bool fClear)
 {
   Imlib_Color_Modifier colorTrans=NULL;   // used if general icon transparency is requested
+  Imlib_Image resized = NULL;
   int h=0, w=0, subx=0;
   int stamp_w=0, stamp_h=0;
 
@@ -421,18 +421,54 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 
   image = imlib_load_image(ficon.c_str());
   if (image != NULL) {
+
+    imlib_context_set_image(image);
+    w = imlib_image_get_width();
+    h = imlib_image_get_height();
+    subx = get_icon_horizontal_placement(w);
+
+    // FIXME: This feature needs more work be done - Basically we want uniformed sized icons on the Grid
+    // So the way it works is:
+    //
+    // 1. add the settings GridIconWidth and GridIconHeight to .kdeskrc to set the *icon* size (the image rendered space)
+    // 2. for all icons set with "relative-to" = "grid" whose "icon" dimensions are *smaller* than GridIconWidth and GridIconHeigth,
+    //    kdesk will resize them to fit such dimensions - scaled up.
+    //    note: scale up for the moment, because our original icons are larger than they look to the eye (transparent borders?)
+    //
+    int neww = configuration->get_config_int ("gridiconwidth");
+    int newh = configuration->get_config_int ("gridiconheight");
+    if ((neww && newh) && (w < neww || h < newh) && configuration->get_icon_string(iconid, "relative-to") == "grid")
+      {
+	// TODO: Remove this log: information to make sure we are only changing grid icons with differents sizes
+	log3 ("WARN! Patching GRID ICON Dimensions (imagefile, iconfile, grid)",
+	      ficon,
+	      get_icon_filename(),
+	      configuration->get_icon_string(iconid, "relative-to"));
+
+	// create a new resized image buffer based off original icon, with new dimensions (resize)
+	// FYI: misteriously this API discards the alpha channel, so background becomes black: imlib_blend_image_onto_image ()
+	//
+	resized = imlib_create_cropped_scaled_image (0, 0, w, h, neww, newh);
+	imlib_context_set_image(resized);
+
+	// change original image buffer to resized one, a.k.a. the joker card.
+	w = neww;
+	h = newh;
+	imlib_context_set_image(image);
+	imlib_free_image();
+	image = resized;
+	imlib_context_set_image(image);
+      }
+
+    // Prepare the icon image for rendering
     imlib_context_set_drawable(win);
     Imlib_Color_Modifier cmHighlight;
     cmHighlight = imlib_create_color_modifier();
     imlib_context_set_color_modifier(cmHighlight);
     imlib_modify_color_modifier_brightness(0);
-
     imlib_context_set_anti_alias(1);
     imlib_context_set_blend(1);
-    imlib_context_set_image(image);
-    w = imlib_image_get_width();
-    h = imlib_image_get_height();
-    subx = get_icon_horizontal_placement(w);
+
 
     // If Icon transparency is provided, apply the mapping now, before rendering the image
     if (iconMapTransparency && transparency_value) {
@@ -462,7 +498,6 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 
     // Draw the icon on the surface window, default is top-left.
     imlib_render_image_on_drawable (subx, 0);
-    imlib_free_image();
 
     // Set context to stamped image so we can free it.
     if (image_stamp != NULL) {
@@ -476,6 +511,11 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     }
 
   } // if icon image could be loaded
+
+  // save the current icon render so we can restore when mouse hovers out
+  imlib_context_set_image (backsafe);
+  imlib_context_set_drawable (win);
+  imlib_copy_drawable_to_image (0, 0, 0, iconw, iconh, 0, 0, 1);
 
   // Render the icon name below it, twice to create a shadow effect
   if (caption.length() > 0) {
@@ -545,11 +585,6 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 
     free (msg1);
   }
-
-  // save the current icon render so we can restore when mouse hovers out
-  imlib_context_set_image(backsafe);
-  imlib_context_set_drawable(win);
-  imlib_copy_drawable_to_image (0, 0, 0, iconw, iconh, 0, 0, 1);
 }
 
 bool Icon::blink_icon(Display *display, XEvent ev)
