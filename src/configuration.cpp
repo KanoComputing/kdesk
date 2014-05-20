@@ -174,6 +174,15 @@ bool Configuration::load_conf(const char *filename)
 	configuration["gridheight"] = value;
       }
 
+      if (token == "GridIconWidth:") {
+	ifile >> value;
+	configuration["gridiconwidth"] = value;
+      }
+
+      if (token == "GridIconHeight:") {
+	ifile >> value;
+	configuration["gridiconheight"] = value;
+      }
     }
 
   ifile.close();
