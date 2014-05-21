@@ -388,6 +388,7 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
   Imlib_Image resized = NULL;
   int h=0, w=0, subx=0;
   int stamp_w=0, stamp_h=0;
+  int iconxmove=0, iconymove=0;
 
   imlib_context_set_display(display);
   imlib_context_set_visual(vis);
@@ -437,7 +438,7 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     //
     int neww = configuration->get_config_int ("gridiconwidth");
     int newh = configuration->get_config_int ("gridiconheight");
-    if ((neww && newh) && (w < neww || h < newh) && configuration->get_icon_string(iconid, "relative-to") == "grid")
+    if ((neww && newh) && (w != neww || h != newh) && configuration->get_icon_string(iconid, "relative-to") == "grid")
       {
 	// TODO: Remove this log: information to make sure we are only changing grid icons with differents sizes
 	log3 ("WARN! Patching GRID ICON Dimensions (imagefile, iconfile, grid)",
@@ -445,9 +446,20 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 	      get_icon_filename(),
 	      configuration->get_icon_string(iconid, "relative-to"));
 
+	//
+	// FIXME: Even if our icons are 124x132, there is a transparent border on either sides and they are also shifted
+	//        towards the bottom. In the end custom icons always look larger, so we hardcode the sizes here.
+	// SOLUTION: Kano icons should not have borders so that user icons are always scaled uniformly on the desktop
+	//
+	neww = 100;
+	newh = 100;
+	iconxmove = 12;
+	iconymove = 32;
+	
 	// create a new resized image buffer based off original icon, with new dimensions (resize)
 	// FYI: misteriously this API discards the alpha channel, so background becomes black: imlib_blend_image_onto_image ()
 	//
+	imlib_context_set_anti_alias(1);    
 	resized = imlib_create_cropped_scaled_image (0, 0, w, h, neww, newh);
 	imlib_context_set_image(resized);
 
@@ -468,7 +480,6 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     imlib_modify_color_modifier_brightness(0);
     imlib_context_set_anti_alias(1);
     imlib_context_set_blend(1);
-
 
     // If Icon transparency is provided, apply the mapping now, before rendering the image
     if (iconMapTransparency && transparency_value) {
@@ -497,7 +508,7 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     }
 
     // Draw the icon on the surface window, default is top-left.
-    imlib_render_image_on_drawable (subx, 0);
+    imlib_render_image_on_drawable (subx + iconxmove, iconymove);
 
     // Set context to stamped image so we can free it.
     if (image_stamp != NULL) {
