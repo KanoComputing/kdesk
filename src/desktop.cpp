@@ -113,7 +113,11 @@ bool Desktop::create_icons (Display *display)
 
 	  // Invoke the icon hook so it is refreshed immediately
 	  // right after Kdesk startup and refresh signals
-	  call_icon_hook (display, emptyev, pconf->get_config_string("iconhook"), pico);
+	  string hookscript = pconf->get_config_string("iconhook");
+	  if (hookscript.length() > 0) {
+	    call_icon_hook (display, emptyev, pconf->get_config_string("iconhook"), pico);
+	  }
+
 	  numicons++;
         }
         else {
@@ -545,7 +549,7 @@ bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Ic
     log ("Icon handler is empty");
     return false;
   }
-  
+
   // Execute the Icon Hook, parse the stdout, and communicate with the icon to refresh attributes
   sprintf (chcmdline, "/bin/bash -c \"%s %s\"", hookscript.c_str(), pico_hook->get_icon_name().c_str());
   log1 ("Executing hook script:", chcmdline);
