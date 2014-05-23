@@ -523,11 +523,6 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 
   } // if icon image could be loaded
 
-  // save the current icon render so we can restore when mouse hovers out
-  imlib_context_set_image (backsafe);
-  imlib_context_set_drawable (win);
-  imlib_copy_drawable_to_image (0, 0, 0, iconw, iconh, 0, 0, 1);
-
   // Render the icon name below it, twice to create a shadow effect
   if (caption.length() > 0) {
     log1 ("Drawing icon caption", caption);
@@ -596,6 +591,11 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 
     free (msg1);
   }
+
+  // save the current icon render so we can restore when mouse hovers out
+  imlib_context_set_image (backsafe);
+  imlib_context_set_drawable (win);
+  imlib_copy_drawable_to_image (0, 0, 0, iconw, iconh, 0, 0, 1);
 }
 
 bool Icon::blink_icon(Display *display, XEvent ev)
