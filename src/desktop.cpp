@@ -360,8 +360,15 @@ bool Desktop::process_and_dispatch(Display *display)
 		  bstarted = iconHandlers[wtarget]->double_click (display, ev);
 		}
 		else {
-		  // The app is already running, icon is disabled
-		  psound->play_sound("sounddisabledicon");
+		  // The app is already running, icon is disabled, or maximized via kdeskrc flag
+		  if (pconf->get_config_string("maximizesingleton") == "true") {
+		    log1 ("Maximizing AppID which is a running singleton", iconHandlers[wtarget]->get_icon_name());
+		    iconHandlers[wtarget]->maximize (display);
+		  }
+		  else {
+		    log1 ("AppID running, disabling icon with alert sound", iconHandlers[wtarget]->get_icon_name());
+		    psound->play_sound("sounddisabledicon");
+		  }
 		}
 	      }
 	    }

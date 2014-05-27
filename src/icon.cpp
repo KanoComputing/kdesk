@@ -18,6 +18,10 @@
 #include <sys/wait.h>
 #include <errno.h>
 
+#include <iostream>
+#include <algorithm>
+#include <cctype>
+
 #include "icon.h"
 #include "logging.h"
 #include "grid.h"
@@ -686,6 +690,91 @@ bool Icon::unblink_icon(Display *display, XEvent ev)
 bool Icon::motion(Display *display, XEvent ev)
 {
   return true;
+}
+
+Window Icon::find_window_from_appid (Display *display, std::string appid)
+{
+  Window wmax=0L;
+  Window returnedroot, returnedparent, root = DefaultRootWindow(display);
+  char *windowname=NULL;
+  Window *children=NULL, *subchildren=NULL;
+  unsigned int numchildren, numsubchildren;
+
+  // Enumarate top-level windows in search for Kdesk control window
+  XQueryTree (display, root, &returnedroot, &returnedparent, &children, &numchildren);
+  XWindowAttributes w;
+  int i;
+  for (int i=numchildren-1; i>=0 && !wmax; i--) {
+    if (XFetchName (display, children[i], &windowname)) {
+      if (!strncmp (windowname, appid.c_str(), strlen (appid.c_str()))) {
+        wmax = children[i];
+	log2 ("Found WindowID from AppID level 1", wmax, appid);
+        XFree (windowname);
+        break;
+      }
+    }
+    
+    // Kdesk might sit a little deeper in the tree hierarchy, let's step in
+    XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);
+    
+    for (int k=numsubchildren-1; k>=0 && !wmax; k--) {
+      if (XFetchName (display, subchildren[k], &windowname)) {
+	
+	if (!strncmp (windowname, appid.c_str(), strlen (appid.c_str()))) {
+	  wmax = children[i];
+	  log2 ("Found WindowID from AppID level 2", wmax, appid);
+	  XFree (windowname);
+	  break;
+	}
+      }
+    }
+    
+  }
+  
+  if(children) {
+    XFree(children);
+  }
+  
+  if(subchildren) {
+    XFree(subchildren);
+  }
+  
+  return wmax;
+}
+
+bool Icon::maximize(Display *display)
+{
+  // Find the main Window ID of the icon's application ID,
+  // AppID, found in the icon LNK file
+  // then give focus to it.
+  static bool fmaximizing=false;
+  bool fdone=false;
+
+  if (fmaximizing == true) {
+    return fdone;
+  }
+  else {
+    string appid = configuration->get_icon_string (iconid, "appid");
+
+    // Remove the AppID delimiters
+    appid.erase (std::remove(appid.begin(), appid.end(), '['), appid.end());
+    appid.erase (std::remove(appid.begin(), appid.end(), ']'), appid.end());
+
+    Window wmaximize = find_window_from_appid (display, appid);
+    if (wmaximize) {
+      log2 ("found window to maximize (appid, window)", appid, wmaximize);
+      XMapWindow(display, win);
+      XRaiseWindow (display, wmaximize);
+      XFlush (display);
+      fdone = true;
+    }
+    else {
+      log1 ("Appid to Maximize was not found", appid);
+    }
+  }
+
+  fmaximizing = false;
+  return fdone;
 }
 
 bool Icon::double_click(Display *display, XEvent ev)

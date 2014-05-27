@@ -71,6 +71,8 @@ class Icon
   bool unblink_icon(Display *display, XEvent ev);
   bool double_click(Display *display, XEvent ev);
   bool motion(Display *display, XEvent ev);
+  bool maximize(Display *display);
+  Window find_window_from_appid (Display *display, std::string appid);
 
   void set_caption (char *new_caption);
   void set_message (char *new_message);
