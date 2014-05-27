@@ -268,6 +268,9 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
       iconx = w / 2 + iconx;
       icony = h + icony;
     }
+    else if (icon_placement == "top-centre") {
+      iconx = w / 2 + iconx;
+    }
     else if (icon_placement == "top-left") {
       // no coordinate transformation necessary. 0,0 is already top-left
       ;
