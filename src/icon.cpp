@@ -700,35 +700,77 @@ Window Icon::find_window_from_appid (Display *display, std::string appid)
   Window *children=NULL, *subchildren=NULL;
   unsigned int numchildren, numsubchildren;
 
+  log1 ("Searching for WindowID from Appid string match", appid);
+
   // Enumarate top-level windows in search for Kdesk control window
   XQueryTree (display, root, &returnedroot, &returnedparent, &children, &numchildren);
   XWindowAttributes w;
   int i;
   for (int i=numchildren-1; i>=0 && !wmax; i--) {
-    if (XFetchName (display, children[i], &windowname)) {
-      if (!strncmp (windowname, appid.c_str(), strlen (appid.c_str()))) {
-        wmax = children[i];
-	log2 ("Found WindowID from AppID level 1", wmax, appid);
-        XFree (windowname);
-        break;
-      }
-    }
-    
-    // Kdesk might sit a little deeper in the tree hierarchy, let's step in
-    XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);
-    
-    for (int k=numsubchildren-1; k>=0 && !wmax; k--) {
-      if (XFetchName (display, subchildren[k], &windowname)) {
-	
-	if (!strncmp (windowname, appid.c_str(), strlen (appid.c_str()))) {
+    // First: search for the WM_COMMAND property in search for a matching command-line
+    char **wargv=NULL;
+    int wargc=0;
+
+    log1 ("PASS ONE", children[i]);
+
+    if (XGetCommand(display, children[i], &wargv, &wargc) > 0) {
+      for (int a=0; a < wargc; a++) {
+	log1 ("1. WM_COMMAND CMD", *(wargv+a));
+	if (strstr (*(wargv+a), appid.c_str()) != NULL) {
 	  wmax = children[i];
-	  log2 ("Found WindowID from AppID level 2", wmax, appid);
-	  XFree (windowname);
+	  log2 ("WM_COMMAND FOUND IT! (cmd, win)", *(wargv+a), wmax);
 	  break;
 	}
       }
+      XFreeStringList (wargv);
     }
-    
+
+    if (!wmax)
+      {
+	// If not, then search for window name (title)
+	if (XFetchName (display, children[i], &windowname)) {
+	  if (!strncmp (windowname, appid.c_str(), strlen (appid.c_str()))) {
+	    wmax = children[i];
+	    log2 ("Found WindowID from AppID level 1", wmax, appid);
+	    XFree (windowname);
+	    break;
+	  }
+	}
+
+	if (!wmax) {
+	  // Go one level deeper in the Window hierarchy
+	  XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);	  
+	  for (int k=numsubchildren-1; k>=0 && !wmax; k--) {
+	    // second attempt: query the WM_COMMAND attribute (normally the application's command-line)
+	    //log1 ("PASS TWO", subchildren[k]);
+	    char **wargv=NULL;
+	    int wargc=0;
+	    if (XGetCommand(display, subchildren[k], &wargv, &wargc) > 0) {
+	      for (int a=0; a < wargc; a++) {
+		log1 ("2. WM_COMMAND CMD", *(wargv+a));
+		if (strstr (*(wargv+a), appid.c_str()) != NULL) {
+		  wmax = subchildren[k];
+		  log2 ("WM_COMMAND FOUND IT! (cmd, win)", *(wargv+a), wmax);
+		  break;
+		}
+	      }
+	      XFreeStringList (wargv);
+	    }
+
+	    // Search for the window name
+	    if (!wmax) {
+	      if (XFetchName (display, subchildren[k], &windowname)) {	
+		if (!strncmp (windowname, appid.c_str(), strlen (appid.c_str()))) {
+		  wmax = subchildren[k];
+		  log2 ("Found WindowID from AppID level 2", wmax, appid);
+		  XFree (windowname);
+		  break;
+		}	
+	      }
+	    }
+	  }
+	}
+      }
   }
   
   if(children) {
@@ -763,8 +805,24 @@ bool Icon::maximize(Display *display)
     Window wmaximize = find_window_from_appid (display, appid);
     if (wmaximize) {
       log2 ("found window to maximize (appid, window)", appid, wmaximize);
+
+      // Map window on the desktop
       XMapWindow(display, win);
       XRaiseWindow (display, wmaximize);
+
+      // Ask window to become in "normal" state, this causes an un-minimize if it currently is
+      XClientMessageEvent ev;
+      Atom prop;
+      prop = XInternAtom (display, "WM_CHANGE_STATE", False);
+      if (prop != None) {
+	ev.type = ClientMessage;
+	ev.window = wmaximize;
+	ev.message_type = prop;
+	ev.format = 32;
+	ev.data.l[0] = NormalState;
+	XSendEvent (display, DefaultRootWindow(display), False, SubstructureRedirectMask | SubstructureNotifyMask, (XEvent *) &ev);
+      }
+
       XFlush (display);
       fdone = true;
     }
