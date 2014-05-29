@@ -100,6 +100,12 @@ int Icon::get_iconid(void)
   return iconid;
 }
 
+string Icon::get_appid(void)
+{
+  string appid = configuration->get_icon_string (iconid, "appid");
+  return appid;
+}
+
 std::string Icon::get_icon_filename(void)
 {
   return configuration->get_icon_string (iconid, "filename");
@@ -134,7 +140,7 @@ void Icon::set_icon_stamp (char *new_icon)
   ficon_stamp = new_icon;
 }
 
-bool Icon::is_singleton_running (void)
+bool Icon::is_singleton_running (Display *display)
 {
   bool bAppRunning=false;
   string appid = configuration->get_icon_string (iconid, "appid");
@@ -142,25 +148,11 @@ bool Icon::is_singleton_running (void)
 
   if (singleton == "true" && appid.size())
     {
-      unsigned int rc=0, exitstatus=0;
-      char cmdpgrep[512];
-
-      log1 ("searching for singleton app", appid);
-      memset(cmdpgrep, 0, sizeof(cmdpgrep));
-
-      // TODO: Change pgrep to something more robust and fast
-      sprintf (cmdpgrep, "pgrep -fl '%s'", appid.c_str());
-      rc = system (cmdpgrep);
-      exitstatus = WEXITSTATUS(rc);
-      if (exitstatus == 0) {
-	bAppRunning = true;
-	log1 ("Application is running", appid);
-      }
-      else {
-	bAppRunning = false;
-	log1 ("Application is NOT running", appid);
-      }
+      // Return wether we can find the icon app window on the desktop
+      bAppRunning = (find_icon_window (display, appid) ? true : false);
     }
+
+  log2 ("Is kdesk icon application running? (AppID, bool)", appid, bAppRunning);
   return bAppRunning;
 }
 
@@ -692,96 +684,124 @@ bool Icon::motion(Display *display, XEvent ev)
   return true;
 }
 
-Window Icon::find_window_from_appid (Display *display, std::string appid)
+Window Icon::find_icon_window (Display *display, std::string appid)
 {
   Window wmax=0L;
   Window returnedroot, returnedparent, root = DefaultRootWindow(display);
   char *windowname=NULL;
   Window *children=NULL, *subchildren=NULL;
   unsigned int numchildren, numsubchildren;
+  XClassHint classHint;
 
-  log1 ("Searching for WindowID from Appid string match", appid);
+  // sanity check
+  if (!appid.length()) {
+    return 0L;
+  }
+
+  // Remove the AppID delimiters
+  // TODO: Remove this code eventually, as it's obsolete legacy icon syntax 
+  // for when we used the "pgrep" strategy, for example, 
+  // AppID: pcmanf[m] was used to avoid pgrep finding himself.
+  //
+  appid.erase (std::remove(appid.begin(), appid.end(), '['), appid.end());
+  appid.erase (std::remove(appid.begin(), appid.end(), ']'), appid.end());
+
+  log1 ("Searching for Icon Window from Appid string match", appid);
 
   // Enumarate top-level windows in search for Kdesk control window
   XQueryTree (display, root, &returnedroot, &returnedparent, &children, &numchildren);
-  XWindowAttributes w;
-  int i;
-  for (int i=numchildren-1; i>=0 && !wmax; i--) {
-    // First: search for the WM_COMMAND property in search for a matching command-line
-    char **wargv=NULL;
-    int wargc=0;
-
-    log1 ("PASS ONE", children[i]);
-
-    if (XGetCommand(display, children[i], &wargv, &wargc) > 0) {
-      for (int a=0; a < wargc; a++) {
-	log1 ("1. WM_COMMAND CMD", *(wargv+a));
-	if (strstr (*(wargv+a), appid.c_str()) != NULL) {
-	  wmax = children[i];
-	  log2 ("WM_COMMAND FOUND IT! (cmd, win)", *(wargv+a), wmax);
-	  break;
-	}
-      }
-      XFreeStringList (wargv);
-    }
-
-    if (!wmax)
-      {
-	// If not, then search for window name (title)
-	if (XFetchName (display, children[i], &windowname)) {
-	  if (!strncmp (windowname, appid.c_str(), strlen (appid.c_str()))) {
-	    wmax = children[i];
-	    log2 ("Found WindowID from AppID level 1", wmax, appid);
-	    XFree (windowname);
-	    break;
-	  }
-	}
-
-	if (!wmax) {
-	  // Go one level deeper in the Window hierarchy
-	  XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);	  
-	  for (int k=numsubchildren-1; k>=0 && !wmax; k--) {
-	    // second attempt: query the WM_COMMAND attribute (normally the application's command-line)
-	    //log1 ("PASS TWO", subchildren[k]);
-	    char **wargv=NULL;
-	    int wargc=0;
-	    if (XGetCommand(display, subchildren[k], &wargv, &wargc) > 0) {
-	      for (int a=0; a < wargc; a++) {
-		log1 ("2. WM_COMMAND CMD", *(wargv+a));
-		if (strstr (*(wargv+a), appid.c_str()) != NULL) {
+  for (int i=numchildren-1; i>=0 && !wmax; i--)
+    {
+      // enumerate child windows from each top-level
+      XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);
+      for (int k=numsubchildren-1; k>=0 && !wmax; k--) 
+	{
+	  // Get Class Hint, window title, along with _NET_WM_ICON_GEOMETRY
+	  // If the hint's class name or window title matches AppID...
+	  windowname = NULL;
+	  classHint.res_name = classHint.res_class = NULL;
+	  XFetchName (display, subchildren[k], &windowname);
+	  XGetClassHint (display, subchildren[k], &classHint);
+	  
+	  if ( (classHint.res_name && !strncasecmp (classHint.res_name, appid.c_str(), strlen (appid.c_str()))) ||
+	       (windowname && !strncasecmp (windowname, appid.c_str(), strlen (appid.c_str()))) )
+	    {
+	      // And the window's Icon Geometry returns 4 leftover LONGs,
+	      // This means that's the window associated with AppID and it's
+	      // represented with an icon on the desktop, which also means it accepts movement events (restore, maximize, ...)
+	      unsigned long nitems=0L;
+	      unsigned long leftover=0L;
+	      Atom xa_IconGeometry, actual_type;
+	      int actual_format;
+	      int status=-1;
+	      unsigned char *p = NULL;
+	      xa_IconGeometry = XInternAtom(display, "_NET_WM_ICON_GEOMETRY", false);
+	      status = XGetWindowProperty (display, subchildren[k],
+					   xa_IconGeometry, 0L, sizeof(unsigned long) * 64,
+					   false, xa_IconGeometry, &actual_type, &actual_format,
+					   &nitems, &leftover, &p);
+	      if (status == Success) {
+		if (leftover == 4) {
+		  log2 ("Icon app window was found (Appid, WindowID)", appid, subchildren[k]);
 		  wmax = subchildren[k];
-		  log2 ("WM_COMMAND FOUND IT! (cmd, win)", *(wargv+a), wmax);
-		  break;
+		}
+
+		if (p) {
+		  XFree (p);
 		}
 	      }
-	      XFreeStringList (wargv);
 	    }
 
-	    // Search for the window name
-	    if (!wmax) {
-	      if (XFetchName (display, subchildren[k], &windowname)) {	
-		if (!strncmp (windowname, appid.c_str(), strlen (appid.c_str()))) {
-		  wmax = subchildren[k];
-		  log2 ("Found WindowID from AppID level 2", wmax, appid);
-		  XFree (windowname);
-		  break;
-		}	
-	      }
-	    }
+	  if (windowname) {
+	    XFree (windowname);
+	  }
+
+	  if (classHint.res_name) {
+	    XFree (classHint.res_name);
+	  }
+
+	  if (classHint.res_class) {
+	    XFree (classHint.res_class);
 	  }
 	}
-      }
+    }
+
+  if (children) {
+    XFree (children);
   }
   
-  if(children) {
-    XFree(children);
+  if (subchildren) {
+    XFree (subchildren);
   }
-  
-  if(subchildren) {
-    XFree(subchildren);
-  }
-  
+
   return wmax;
+}
+
+bool Icon::maximize(Display *display, Window win)
+{
+  if (!win) {
+    return false;
+  }
+
+  // Map window on the desktop
+  XMapWindow(display, win);
+  XRaiseWindow (display, win);
+
+  // Ask window to become in "normal" state, this causes an un-minimize if it currently is
+  XClientMessageEvent ev;
+  Atom prop;
+  prop = XInternAtom (display, "WM_CHANGE_STATE", False);
+  if (prop != None) {
+    ev.type = ClientMessage;
+    ev.window = win;
+    ev.message_type = prop;
+    ev.format = 32;
+    ev.data.l[0] = NormalState;
+    XSendEvent (display, DefaultRootWindow (display), False, SubstructureRedirectMask | SubstructureNotifyMask, (XEvent *) &ev);
+  }
+  
+  XFlush (display);
+  return true;
 }
 
 bool Icon::maximize(Display *display)
@@ -791,40 +811,16 @@ bool Icon::maximize(Display *display)
   // then give focus to it.
   static bool fmaximizing=false;
   bool fdone=false;
-
+  
   if (fmaximizing == true) {
     return fdone;
   }
   else {
     string appid = configuration->get_icon_string (iconid, "appid");
-
-    // Remove the AppID delimiters
-    appid.erase (std::remove(appid.begin(), appid.end(), '['), appid.end());
-    appid.erase (std::remove(appid.begin(), appid.end(), ']'), appid.end());
-
-    Window wmaximize = find_window_from_appid (display, appid);
+    Window wmaximize = find_icon_window (display, appid);
     if (wmaximize) {
       log2 ("found window to maximize (appid, window)", appid, wmaximize);
-
-      // Map window on the desktop
-      XMapWindow(display, win);
-      XRaiseWindow (display, wmaximize);
-
-      // Ask window to become in "normal" state, this causes an un-minimize if it currently is
-      XClientMessageEvent ev;
-      Atom prop;
-      prop = XInternAtom (display, "WM_CHANGE_STATE", False);
-      if (prop != None) {
-	ev.type = ClientMessage;
-	ev.window = wmaximize;
-	ev.message_type = prop;
-	ev.format = 32;
-	ev.data.l[0] = NormalState;
-	XSendEvent (display, DefaultRootWindow(display), False, SubstructureRedirectMask | SubstructureNotifyMask, (XEvent *) &ev);
-      }
-
-      XFlush (display);
-      fdone = true;
+      fdone = maximize (display, wmaximize);
     }
     else {
       log1 ("Appid to Maximize was not found", appid);
@@ -841,7 +837,7 @@ bool Icon::double_click(Display *display, XEvent ev)
   string filename = configuration->get_icon_string (iconid, "filename");
   string command  = configuration->get_icon_string (iconid, "command");
   
-  bool isrunning = is_singleton_running();
+  bool isrunning = is_singleton_running (display);
   if (isrunning == true) {
     log1 ("not starting app - it's a running singleton", filename);
   }
