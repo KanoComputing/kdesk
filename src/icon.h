@@ -57,10 +57,11 @@ class Icon
   virtual ~Icon (void);
 
   int get_iconid(void);
+  std::string get_appid(void);
   std::string get_icon_filename(void);
   std::string get_icon_name(void);
   int get_icon_horizontal_placement (int image_width);
-  bool is_singleton_running (void);
+  bool is_singleton_running (Display *display);
 
   Window create(Display *display, IconGrid *icon_grid);
   void destroy(Display *display);
@@ -71,6 +72,9 @@ class Icon
   bool unblink_icon(Display *display, XEvent ev);
   bool double_click(Display *display, XEvent ev);
   bool motion(Display *display, XEvent ev);
+  bool maximize(Display *display);
+  bool maximize(Display *display, Window win);
+  Window find_icon_window (Display *display, std::string appid);
 
   void set_caption (char *new_caption);
   void set_message (char *new_message);

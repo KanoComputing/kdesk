@@ -183,6 +183,12 @@ bool Configuration::load_conf(const char *filename)
 	ifile >> value;
 	configuration["gridiconheight"] = value;
       }
+
+      if (token == "MaximizeSingleton:") {
+	ifile >> value;
+	configuration["maximizesingleton"] = value;
+      }
+
     }
 
   ifile.close();
