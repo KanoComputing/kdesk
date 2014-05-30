@@ -575,8 +575,8 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     XftDrawStringUtf8 (xftdraw1, &xftcolor, font, fx, fy, (XftChar8 *) msg1, strlen (msg1));
 
     // Render the second line - try using a smaller font
+    XGlyphInfo fiSmaller;
     if (msg2 != NULL) {
-      XGlyphInfo fiSmaller;
       XftTextExtentsUtf8 (display, fontsmaller, (XftChar8*) msg2, strlen(msg2), &fiSmaller);
       if (subx) {
 	// The icon sits to the right, draw the text to the left.
@@ -589,6 +589,19 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     }
 
     free (msg1);
+
+    // Automatically expand icon's width if message text
+    // is aligned to the left, so that the "message" attribute is not cut.
+    if (configuration->get_icon_string (iconid, "halign") == "left")
+      {
+	XWindowChanges xwc;
+	memset (&xwc, 0x00, sizeof (xwc));
+	int longest_text = fiSmaller.width > fontInfoMessage.width ? fiSmaller.width : fontInfoMessage.width;
+
+	xwc.width = w + longest_text + 5;
+	log2 ("Adjusting icon box width (icon, new width)", get_icon_name(), xwc.width);
+	XConfigureWindow (display, win, CWWidth, &xwc);
+      }
   }
 
   // save the current icon render so we can restore when mouse hovers out
