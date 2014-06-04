@@ -110,19 +110,20 @@ int main(int argc, char *argv[])
   int c;
 
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwra:vb:")) != EOF)
+  while ((c = getopt(argc, argv, "?htwra:vb:q")) != EOF)
     {
       switch (c)
         {
 	case '?':
 	case 'h':
-	  cout << "kano-desktop [ -h | -t | -w | -r | -a <icon name> | -b ]" << endl;
+	  cout << "kano-desktop [ -h | -t | -w | -r | -a <icon name> | -b | -q ]" << endl;
 	  cout << " -h help, or -? this screen" << endl;
 	  cout << " -v verbose mode with minimal progress messages" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
 	  cout << " -r refresh configuration and exit" << endl;
-	  cout << " -b blur desktop screen below app - this is a toggle ON/OFF flag)" << endl;
+	  cout << " -b blur the desktop screen and start an application on top of it" << endl;
+	  cout << " -q query if kdesk is running on the current desktop (rc 0 running, nonzero otherwise)" << endl;
 	  cout << " -a send an icon hook alert" << endl << endl;
 	  exit (1);
 
@@ -154,13 +155,13 @@ int main(int argc, char *argv[])
 
 	case 'b':
 	  display = XOpenDisplay(display_name);
-	  blurred = bgblur.is_blurred(display);
 	  if (!display) {
 	    kprintf ("Could not connect to the XServer\n");
 	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
 	    exit (1);
 	  }
 
+	  blurred = bgblur.is_blurred(display);
 	  if (blurred == true) {
 	    kprintf ("Desktop is already blurred - unblurring and quit!\n");
 	    blur_desktop(display);
@@ -206,9 +207,28 @@ int main(int argc, char *argv[])
 	  trigger_icon_hook(display, optarg);
 	  XCloseDisplay(display);
 	  exit (0);
-        }
-    }
 
+	case 'q':
+	  display = XOpenDisplay(display_name);
+	  if (!display) {
+	    kprintf ("Could not connect to the XServer\n");
+	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
+	    exit (1);
+	  }
+	  else {
+	    //dsk.initialize (&bg);
+	    if (dsk.find_kdesk_control_window (display)) {
+	      kprintf ("Kdesk is running on this Display\n");
+	      exit (0);
+	    }
+	    else {
+	      kprintf ("Kdesk is not running on this Display\n");
+	      exit (-1);
+	    }
+	  }
+	}
+    }
+      
   kprintf ("Kano-Desktop - A desktop Icon Manager\n");
   kprintf ("Version v%s\n", VERSION);
   
