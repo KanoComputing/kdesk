@@ -146,9 +146,24 @@ bool Sound::play(void)
 
 void Sound::play_sound(string sound_name)
 {
+  int rc;
+  string sound_cmdline;
+
+  // FIXME: In order to provide for Analog / HDMI Sound output
+  // we momentarily rely on the external tool kano-sound-cli
+  // until a faster method is in place
+
+  sound_cmdline  = "/usr/bin/kano-sound-cli ";
+  sound_cmdline += configuration->get_config_string (sound_name);
+  sound_cmdline += " &";
+  log1 ("Playing sound cmdline:", sound_cmdline);
+  rc = system (sound_cmdline.c_str());
+
   // sound name is the key name specified in the configuration file
+  /*
   if (playing == false && get_enabled() == true) {
     tune = new std::string (configuration->get_config_string (sound_name));
     pthread_create(&t, NULL, InternalThreadEntryFunc, this);
   }
+  */
 }
