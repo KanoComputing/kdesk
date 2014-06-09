@@ -1,2 +1,3 @@
 src/kdesk /usr/bin
+src/kdesk/kdesk-blur/kdesk-blur /usr/bin
 src/kdesk-eglsaver/kdesk-eglsaver /usr/bin
