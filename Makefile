@@ -9,10 +9,12 @@ all: kdesk
 kdesk:
 	cd src && make all
 	cd src/kdesk-eglsaver && make all
+	cd src/kdesk-blur && make all
 
 debug:
 	cd src && make debug
 	cd src/kdesk-eglsaver && make debug
+	cd src/kdesk-blur && make debug
 
 kano-debber:
 	mkdir -p /home/user/.kdesktop
@@ -23,3 +25,4 @@ kano-debber:
 
 	chown -R user:user /home/user/.kdesk*
 	cd src && make all
+	cd src/kdesk-blur && make all
