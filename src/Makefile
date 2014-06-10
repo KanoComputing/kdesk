@@ -11,7 +11,7 @@
 
 DEBUGGING:=
 
-LIBS:=-lXft -lImlib2 -lstdc++ `pkg-config --libs libstartup-notification-1.0` -lmpg123 -lao -lpthread -lXss
+LIBS:=-lXft -lImlib2 -lstdc++ `pkg-config --libs libstartup-notification-1.0` -lpthread -lXss
 XFTINC:=-I/usr/include/freetype2
 SNINC=-I/usr/include/startup-notification-1.0
 
