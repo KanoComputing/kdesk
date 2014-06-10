@@ -37,7 +37,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-
 #include "bcm_host.h"
 
 #include "GLES/gl.h"
@@ -561,16 +560,17 @@ int main ()
 
    // Open access to input devices (keyboard / mouse)
    char buf[128];
-   int fdkbd0, fdkbd1, fdkbd2, fdmouse, fdmice, n;
+   int fdkbd0, fdkbd1, fdkbd2, fdmouse0, fdmouse1, fdmice, n;
    const char *chkbd0="/dev/input/event0",
      *chkbd1="/dev/input/event1",
      *chkbd2="/dev/input/event2",
-     *chmouse="/dev/input/mouse0",
+     *chmouse0="/dev/input/mouse0",
+     *chmouse1="/dev/input/mouse1",
      *chmice="/dev/input/mice";
 
     fdkbd0 = open(chkbd0, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fdkbd0 == -1) {
-      printf("open_port: Unable to open %s\n", chkbd0);
+      printf ("open_port: Unable to open %s\n", chkbd0);
     }
     else {
       // Turn off blocking for reads, use (fd, F_SETFL, FNDELAY) if you want that
@@ -581,7 +581,7 @@ int main ()
 
     fdkbd1 = open(chkbd1, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fdkbd1 == -1) {
-      printf("open_port: Unable to open %s\n", chkbd1);
+      printf ("open_port: Unable to open %s\n", chkbd1);
     }
     else {
       fcntl(fdkbd1, F_SETFL, O_NONBLOCK);
@@ -590,25 +590,34 @@ int main ()
 
     fdkbd2 = open(chkbd2, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fdkbd2 == -1) {
-      printf("open_port: Unable to open %s\n", chkbd2);
+      printf ("open_port: Unable to open %s\n", chkbd2);
     }
     else {
       fcntl(fdkbd2, F_SETFL, O_NONBLOCK);
       n = read(fdkbd2, (void*)buf, sizeof(buf));
     }
     
-    fdmouse = open(chmouse, O_RDWR | O_NOCTTY | O_NDELAY);
-    if (fdmouse == -1) {
-      printf("open_port: Unable to open %s\n", chmouse);
+    fdmouse0 = open(chmouse0, O_RDWR | O_NOCTTY | O_NDELAY);
+    if (fdmouse0 == -1) {
+      printf ("open_port: Unable to open %s\n", chmouse0);
     }
     else {
-      fcntl(fdmouse, F_SETFL, O_NONBLOCK);
-      n = read(fdmouse, (void*)buf, sizeof(buf));
+      fcntl(fdmouse0, F_SETFL, O_NONBLOCK);
+      n = read(fdmouse0, (void*)buf, sizeof(buf));
+    }
+
+    fdmouse1 = open(chmouse1, O_RDWR | O_NOCTTY | O_NDELAY);
+    if (fdmouse1 == -1) {
+      printf ("open_port: Unable to open %s\n", chmouse1);
+    }
+    else {
+      fcntl(fdmouse1, F_SETFL, O_NONBLOCK);
+      n = read(fdmouse1, (void*)buf, sizeof(buf));
     }
 
     fdmice = open(chmice, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fdmice == -1) {
-      printf("open_port: Unable to open %s\n", chmice);
+      printf ("open_port: Unable to open %s\n", chmice);
     }
     else {
       fcntl(fdmice, F_SETFL, O_NONBLOCK);
@@ -624,6 +633,7 @@ int main ()
 	redraw_scene(state);
 	
 	// If there is an input event from keyboard or mouse, stop now
+	// FIXME: Refactor below code to a select() loop
 	n = read(fdkbd0, (void*)buf, sizeof(buf));
 	if (n > 0) {
 	  terminate = 1;
@@ -639,14 +649,20 @@ int main ()
 	      terminate = 1;
 	    }
 	    else {
-	      n = read(fdmouse, (void*)buf, sizeof(buf));
+	      n = read(fdmouse0, (void*)buf, sizeof(buf));
 	      if (n > 0) {
 		terminate = 1;
 	      }
 	      else {
-		n = read(fdmice, (void*)buf, sizeof(buf));
+		n = read(fdmouse1, (void*)buf, sizeof(buf));
 		if (n > 0) {
 		  terminate = 1;
+		}
+		else {
+		  n = read(fdmice, (void*)buf, sizeof(buf));
+		  if (n > 0) {
+		    terminate = 1;
+		  }
 		}
 	      }
 	    }
