@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "../logging.h"
 #include "kdesk-blur.h"
 
 void *BlurDesktop (void *pvnothing);
@@ -47,7 +48,7 @@ void *BlurDesktop(void *pvnothing)
   pmap_blur = XCreatePixmap (display, root_window, deskw, deskh, DefaultDepth (display, DefaultScreen (display)));
   img_blurred = imlib_create_image(deskw, deskh);
   if (!pmap_blur || !img_blurred) {
-    printf ("no resources to create a blurred pixmap or imlib image buffer\n");
+    log ("no resources to create a blurred pixmap or imlib image buffer");
     success = false;
   }
   else {
