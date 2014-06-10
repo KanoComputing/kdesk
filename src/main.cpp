@@ -110,19 +110,18 @@ int main(int argc, char *argv[])
   int c;
 
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwra:vb:q")) != EOF)
+  while ((c = getopt(argc, argv, "?htwra:vq")) != EOF)
     {
       switch (c)
         {
 	case '?':
 	case 'h':
-	  cout << "kano-desktop [ -h | -t | -w | -r | -a <icon name> | -b | -q ]" << endl;
+	  cout << "kano-desktop [ -h | -t | -w | -r | -a <icon name> | -q ]" << endl;
 	  cout << " -h help, or -? this screen" << endl;
 	  cout << " -v verbose mode with minimal progress messages" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
 	  cout << " -r refresh configuration and exit" << endl;
-	  cout << " -b blur the desktop screen and start an application on top of it" << endl;
 	  cout << " -q query if kdesk is running on the current desktop (rc 0 running, nonzero otherwise)" << endl;
 	  cout << " -a send an icon hook alert" << endl << endl;
 	  exit (1);
@@ -154,6 +153,8 @@ int main(int argc, char *argv[])
 	  exit (0);
 
 	case 'b':
+	  // TODO: Remove the kdesk blur effect once "kdesk-blur" process has been integrated
+
 	  display = XOpenDisplay(display_name);
 	  if (!display) {
 	    kprintf ("Could not connect to the XServer\n");
