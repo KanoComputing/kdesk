@@ -15,11 +15,17 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include "../logging.h"
+#include "logging.h"
 #include "kdesk-blur.h"
 
 void *BlurDesktop (void *pvnothing);
 int main (int argc, char *argv[]);
+
+
+// A printf macro sensitive to the -v (verbose) flag
+// Use kprintf for regular stdout messages instead of printf or cout
+bool verbose=false; // Mute by default, no stdout messages unless in Debug build
+#define kprintf(fmt, ...) ( (verbose==false ? : printf(fmt, ##__VA_ARGS__) ))
 
 
 //
@@ -30,6 +36,7 @@ void *BlurDesktop(void *pvnothing)
 {
   Display *display=XOpenDisplay(NULL);
   if (!display) {
+    log ("Could not connect to the XServer");
     return NULL;
   }
 
@@ -98,6 +105,7 @@ void *BlurDesktop(void *pvnothing)
 			     CWEventMask, &attr);
     if (!winblur) {
       // Out of resources or problems with Xlib parameters
+      log ("Could not create blur window");
       success = false;
     }
     else {
@@ -154,6 +162,7 @@ void *BlurDesktop(void *pvnothing)
       imlib_free_image();
 
       XFlush (display);
+      log1 ("Blur window created successfully (winid)", winblur);
       success = true;
     }
   }
@@ -165,6 +174,7 @@ bool IsDesktopBlurred (void)
 {
   Display *display=XOpenDisplay(NULL);
   if (!display) {
+    log ("Could not connect to the XServer");
     return false;
   }
 
@@ -182,6 +192,7 @@ bool IsDesktopBlurred (void)
 	{
 	  if (XFetchName (display, children_return[i], &windowname)) {
 	    if (!strncmp (windowname, KDESK_BLUR_NAME, strlen (KDESK_BLUR_NAME))) {
+	      log1 ("Blurred window was found level1 (winid)", children_return[i]);
 	      found = true;
 	      XFree (windowname);
 	      break;
@@ -193,6 +204,7 @@ bool IsDesktopBlurred (void)
 	  for (int k=nsubchildren_return-1; k>=0; k--) {
 	    if (XFetchName (display, subchildren_return[k], &windowname)) {
 	      if (!strncmp (windowname, KDESK_BLUR_NAME, strlen (KDESK_BLUR_NAME))) {
+		log1 ("Blurred window was found level2 (winid)", subchildren_return[i]);
 		found=true;
 		XFree (windowname);
 		break;
@@ -223,31 +235,47 @@ int main (int argc, char *argv[])
 
   // collect top application command-line
   if (argc < 2) {
-    printf ("Syntax: kdesk-blur <app name>\n");
+    printf ("Syntax: kdesk-blur <app name> [-v]\n");
     printf (" Use double quotation marks and escaping for multiple arguments:\n");
-    printf (" $ kdesk-blur lxterminal --command=\"/bin/bash -c \\\"ls -l ; sleep 5\\\"\"\n");
+    printf (" $ kdesk-blur 'lxterminal --command=\"/bin/bash -c \\\"ls -l ; sleep 5\\\"\"'\n");
+    printf (" -v will emit messages during the process\n");
     printf (" Error level will be set to -1 if blur error, otherwise the app's rc will be set\n");
     exit (-1);
   }
   else {
     cmdline = strdup (argv[1]);
+    if (argc > 2 && !strcasecmp (argv[2], "-v")) {
+      verbose = true;
+    }
   }
 
-  // start a blur and wait
-  pthread_create (&t, NULL, BlurDesktop, NULL);
-  while (!(blurred=IsDesktopBlurred()) && timeout-- > 0)
-    {
-      sleep(1);
-    }
+  // if desktop is not blurred yet, create the blur window
+  if (!IsDesktopBlurred()) {
+    kprintf ("Blurring the desktop\n");
+    log ("Blurring the desktop");
+    pthread_create (&t, NULL, BlurDesktop, NULL);
+    while (!(blurred=IsDesktopBlurred()) && timeout-- > 0)
+      {
+	sleep(1);
+      }
 
-  if (!blurred) {
-    // There was a problem blurring the desktop
-    exit (-1);
+    if (!blurred) {
+      // There was a problem blurring the desktop
+      kprintf ("Error blurring the desktop\n");
+      log ("Error blurring the desktop");
+      exit (-1);
+    }
   }
   else {
-    // Now we can execute the application on top
-    int rc = system (cmdline);
-    free (cmdline);
-    exit (rc);
+    log ("Desktop is already blurred");
   }
+
+  // Now we can execute the application on top
+  kprintf ("Starting app on top of desktop: %s\n", cmdline);
+  log1 ("Starting app on top of the desktop (cmdline)", cmdline);
+  int rc = system (cmdline);
+  log1 ("App has terminated (rc)", rc);
+  kprintf ("App has terminated with rc=%d\n", rc);
+  free (cmdline);
+  exit (rc);
 }

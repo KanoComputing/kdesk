@@ -2,16 +2,19 @@
 # kdesk-blur Makefile
 #
 
+INCS:=-I../
 LIBS:=-lXft -lImlib2 -lstdc++ -lpthread -lXss
 TARGET=kdesk-blur
 
 all: $(TARGET)
-debug: all
+
+debug:
+	make all DEBUGGING="-ggdb -O3 -DDEBUG"
 
 # the linkage
 $(TARGET): $(TARGET).o
-	g++ $(LIBS) $^ -o $(TARGET)
+	g++ $(LIBS) $^ $(DEBUGGING) -o $(TARGET)
 
 # the compilation
 kdesk-blur.o: $(TARGET).cpp $(TARGET).h
-	g++ -c $(TARGET).cpp
+	g++ -c $(INCS) $(DEBUGGING) $(TARGET).cpp
