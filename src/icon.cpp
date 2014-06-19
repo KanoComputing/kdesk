@@ -871,17 +871,19 @@ bool Icon::double_click(Display *display, XEvent ev)
 	  // We are in the child process
 	  {
 	    log2 ("error starting app (rc, command)", rc, command.c_str());
-	    exit(1);
+	    _exit (1); // rather than exit() because the latter could interfere with parent's atexit()
 	  }
 	
 	log1 ("app has finished", filename);
-	exit(0);
+	_exit (0);
       }
       else if (pid == -1) {
 	log1 ("fork call failed, could not start app (errno)", errno);
       }
       else {
-	// we are in the parent process, wait for it to 
+	// we are in the parent process, tell the kernel we don't bother about its termination
+	signal(SIGCHLD, SIG_IGN);
+
 	success = true;
 	log2 ("app has been started (pid, icon)", pid, filename);
       }
