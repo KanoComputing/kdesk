@@ -50,7 +50,7 @@ bool Sound::play(void)
     playing = true;
 
     string sound_cmdline;
-    sound_cmdline  = "/usr/bin/kano-sound-cli ";
+    sound_cmdline  = "/usr/bin/aplay ";
     sound_cmdline += tune->c_str();
     sound_cmdline += " &";
     log1 ("Playing sound cmdline:", sound_cmdline);
