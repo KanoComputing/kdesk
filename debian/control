@@ -7,7 +7,7 @@ Build-Depends: libx11-dev, libxft-dev, libimlib2-dev, libstartup-notification0-d
 
 Package: kdesk
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, libao4, libmpg123-0, libxss1
+Depends: ${misc:Depends}, ${shlibs:Depends}, libxss1
 Provides: idesk
 Conflicts: idesk
 Replaces: idesk
