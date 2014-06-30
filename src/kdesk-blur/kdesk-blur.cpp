@@ -7,6 +7,7 @@
 //
 
 #include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <Imlib2.h>
 
 #include <stdio.h>
@@ -122,13 +123,20 @@ void *BlurDesktop(void *pvnothing)
       } Hints;
       
       Hints hints;
-      Atom property_hints, property_icon;
+      Atom property_hints;
       hints.flags = 2;
       hints.decorations = 0;
       hints.inputMode = False;
 
       property_hints = XInternAtom(display, "_MOTIF_WM_HINTS", false);
       XChangeProperty (display, winblur, property_hints, property_hints, 32, PropModeReplace, (unsigned char *) &hints, 5);
+
+      // _NET_WM_STATE_SKIP_TASKBAR Tells the window manager to not use an icon on the taskbar
+      Atom net_wm_state = XInternAtom (display, "_NET_WM_STATE", false);
+      Atom net_skip_taskbar = XInternAtom(display, "_NET_WM_STATE_SKIP_TASKBAR", false);
+      XChangeProperty (display, winblur, net_wm_state,
+		       XA_ATOM, 32, PropModeAppend,
+		       (unsigned char *) &net_skip_taskbar, 1);
 
       // Give the blurred window a meaningful name and show it
       XStoreName (display, winblur, KDESK_BLUR_NAME);
