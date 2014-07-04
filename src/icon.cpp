@@ -302,12 +302,10 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
     XLowerWindow(display, win);
   }
 
-  // Set mouse cursor to "hand" when the mouse moves over the icon
-  // These are the standard icons defined here:
+  // Set the mouse cursor to "mousehovericon" file, specified in kdeskrc,
+  // when the mouse moves over the icon. Supported cursors are defined here:
   // http://tronche.com/gui/x/xlib/appendix/b/
-  // which can be replaced by system "themes".
-
-  // TODO: Extract this iconid into .kdeskrc
+  // 
   cursor = XCreateFontCursor (display, cursor_id);
   XDefineCursor(display, win, cursor);
 
@@ -422,47 +420,23 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
   image = imlib_load_image(ficon.c_str());
   if (image != NULL) {
 
+    // Work with the original Icon file
     imlib_context_set_image(image);
     w = imlib_image_get_width();
     h = imlib_image_get_height();
     subx = get_icon_horizontal_placement(w);
 
-    // FIXME: This feature needs more work be done - Basically we want uniformed sized icons on the Grid
-    // So the way it works is:
-    //
-    // 1. add the settings GridIconWidth and GridIconHeight to .kdeskrc to set the *icon* size (the image rendered space)
-    // 2. for all icons set with "relative-to" = "grid" whose "icon" dimensions are *smaller* than GridIconWidth and GridIconHeigth,
-    //    kdesk will resize them to fit such dimensions - scaled up.
-    //    note: scale up for the moment, because our original icons are larger than they look to the eye (transparent borders?)
-    //
     int neww = configuration->get_config_int ("gridiconwidth");
     int newh = configuration->get_config_int ("gridiconheight");
     if ((neww && newh) && (w != neww || h != newh) && configuration->get_icon_string(iconid, "relative-to") == "grid")
       {
-	// TODO: Remove this log: information to make sure we are only changing grid icons with differents sizes
-	log3 ("WARN! Patching GRID ICON Dimensions (imagefile, iconfile, grid)",
-	      ficon,
-	      get_icon_filename(),
-	      configuration->get_icon_string(iconid, "relative-to"));
-
-	//
-	// FIXME: Even if our icons are 124x132, there is a transparent border on either sides and they are also shifted
-	//        towards the bottom. In the end custom icons always look larger, so we hardcode the sizes here.
-	// SOLUTION: Kano icons should not have borders so that user icons are always scaled uniformly on the desktop
-	//
-	neww = 100;
-	newh = 100;
-	iconxmove = 12;
-	iconymove = 32;
-	
-	// create a new resized image buffer based off original icon, with new dimensions (resize)
-	// FYI: misteriously this API discards the alpha channel, so background becomes black: imlib_blend_image_onto_image ()
-	//
+	// If the icon is inside a grid and its either larger or smaller than the grid's icon size,
+	// we will resize it so it looks uniform along the rest of the grid icons.
 	imlib_context_set_anti_alias(1);    
 	resized = imlib_create_cropped_scaled_image (0, 0, w, h, neww, newh);
 	imlib_context_set_image(resized);
 
-	// change original image buffer to resized one, a.k.a. the joker card.
+	// replace the original image buffer to that of the resized one.
 	w = neww;
 	h = newh;
 	imlib_context_set_image(image);
