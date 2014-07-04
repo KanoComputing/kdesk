@@ -427,42 +427,18 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     h = imlib_image_get_height();
     subx = get_icon_horizontal_placement(w);
 
-    // FIXME: This feature needs more work be done - Basically we want uniformed sized icons on the Grid
-    // So the way it works is:
-    //
-    // 1. add the settings GridIconWidth and GridIconHeight to .kdeskrc to set the *icon* size (the image rendered space)
-    // 2. for all icons set with "relative-to" = "grid" whose "icon" dimensions are *smaller* than GridIconWidth and GridIconHeigth,
-    //    kdesk will resize them to fit such dimensions - scaled up.
-    //    note: scale up for the moment, because our original icons are larger than they look to the eye (transparent borders?)
-    //
+    // Icons contained in a grid are uniformly resized
     int neww = configuration->get_config_int ("gridiconwidth");
     int newh = configuration->get_config_int ("gridiconheight");
     if ((neww && newh) && (w != neww || h != newh) && configuration->get_icon_string(iconid, "relative-to") == "grid")
       {
-	// TODO: Remove this log: information to make sure we are only changing grid icons with differents sizes
-	log3 ("WARN! Patching GRID ICON Dimensions (imagefile, iconfile, grid)",
-	      ficon,
-	      get_icon_filename(),
-	      configuration->get_icon_string(iconid, "relative-to"));
-
-	//
-	// FIXME: Even if our icons are 124x132, there is a transparent border on either sides and they are also shifted
-	//        towards the bottom. In the end custom icons always look larger, so we hardcode the sizes here.
-	// SOLUTION: Kano icons should not have borders so that user icons are always scaled uniformly on the desktop
-	//
-	neww = 100;
-	newh = 100;
-	iconxmove = 12;
-	iconymove = 32;
-	
-	// create a new resized image buffer based off original icon, with new dimensions (resize)
-	// FYI: misteriously this API discards the alpha channel, so background becomes black: imlib_blend_image_onto_image ()
-	//
-	imlib_context_set_anti_alias(1);    
+	// Create a new image with the new uniformed size
+	log5 ("Resizing grid icon (name, original-size, new-size", ficon.c_str(), w, h, neww, newh);
+	imlib_context_set_anti_alias(1);
 	resized = imlib_create_cropped_scaled_image (0, 0, w, h, neww, newh);
 	imlib_context_set_image(resized);
 
-	// change original image buffer to resized one, a.k.a. the joker card.
+	// swap the original image with the resized one, discard the original one.
 	w = neww;
 	h = newh;
 	imlib_context_set_image(image);
@@ -503,11 +479,18 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 				    (w - stamp_w) / 2,
 				    (h - stamp_h) / 2,
 				    stamp_w, stamp_h);
-
     }
 
     // Draw the icon on the surface window, default is top-left.
-    imlib_render_image_on_drawable (subx + iconxmove, iconymove);
+    if (configuration->get_icon_string(iconid, "relative-to") == "grid") {
+      // If it's inside a grid we will position it horizontally centered, and to the bottom.
+      int gridx = (configuration->get_config_int ("gridwidth") - w) / 2;
+      int gridy = configuration->get_config_int ("gridheight") - h;
+      imlib_render_image_on_drawable (gridx, gridy);
+    } 
+    else {   
+      imlib_render_image_on_drawable (subx + iconxmove, iconymove);
+    }
 
     // Set context to stamped image so we can free it.
     if (image_stamp != NULL) {
@@ -669,8 +652,20 @@ bool Icon::blink_icon(Display *display, XEvent ev)
     int yoffset = configuration->get_icon_int (iconid, "hoveryoffset");
 
     // Account for icons with HAlign=right
-    int subx = get_icon_horizontal_placement(imlib_image_get_width());
-    imlib_render_image_on_drawable (xoffset + subx, yoffset);
+    int image_width = imlib_image_get_width();
+    int subx = get_icon_horizontal_placement(image_width);
+
+    // If the icon is in a grid, the hover icon will be on top, horizontally centered
+    if (configuration->get_icon_string(iconid, "relative-to") == "grid") {
+      int horzx = (configuration->get_config_int ("gridwidth") - image_width) / 2;
+      if (horzx > configuration->get_config_int ("gridwidth")) {
+	horzx = 0; // rectify possible wrong hover icons that are wider than the grid
+      }
+      imlib_render_image_on_drawable (horzx, 0);
+    }
+    else {
+      imlib_render_image_on_drawable (xoffset + subx, yoffset);
+    }
 
     if (colorMod) {
       // The color modifier might have been used during texture blending

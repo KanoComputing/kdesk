@@ -416,11 +416,11 @@ bool Desktop::initialize(Display *display, Configuration *loaded_conf, Sound *ks
   psound = ksound;
   finish = false;
 
-  #ifdef DEBUG
+#ifdef DEBUG
   int x=10,y=10,cw=100,ch=100,width=5;
-  #else
-  int x=10,y=10,cw=100,ch=100,width=5;
-  #endif
+#else
+  int x=0,y=0,cw=1,ch=1,width=0;
+#endif
 
   // Allocate Atoms used for signaling Kdesk's object window
   atom_finish = XInternAtom(display, KDESK_SIGNAL_FINISH, False);
@@ -444,9 +444,13 @@ bool Desktop::initialize(Display *display, Configuration *loaded_conf, Sound *ks
   // We'll give this window a meaningful name
   XStoreName(display, wcontrol, KDESK_CONTROL_WINDOW_NAME);
 
-  #ifdef DEBUG
-  XMapWindow(display, wcontrol);
-  #endif
+#ifdef DEBUG
+  // Show kdesk control window on the bottom right corner of the screen
+  XMapWindow (display, wcontrol);
+  int deskw = DisplayWidth(display, DefaultScreen (display));
+  int deskh = DisplayHeight(display, DefaultScreen (display));
+  XMoveWindow (display, wcontrol, deskw - cw - width, deskh - ch - width);
+#endif
 
   log1 ("Creating Kdesk control window, handle", wcontrol);
   return (wcontrol ? true : false);
