@@ -12,7 +12,7 @@
 #include <map>
 #include <vector>
 
-#define MAX_ICONS 32
+#define MAX_ICONS 64
 
 class Configuration
 {
