@@ -45,7 +45,6 @@ void signal_callback_handler(int signum);
 void reload_configuration (Display *display);
 void trigger_icon_hook (Display *display, char *message);
 void finish_kdesk (Display *display);
-void blur_desktop (Display *display);
 
 // Signal handler reached via a kill -USR
 void signal_callback_handler(int signum)
@@ -90,13 +89,6 @@ void finish_kdesk (Display *display)
   return;
 }
 
-void blur_desktop (Display *display)
-{
-  log ("Blurring the desktop");
-  dsk.send_signal (display, KDESK_BLUR_DESKTOP, NULL);
-  return;
-}
-
 int main(int argc, char *argv[])
 {
   Status rc;
@@ -104,9 +96,7 @@ int main(int argc, char *argv[])
   Configuration conf;
   char *display_name = NULL;
   string strKdeskRC, strHomeKdeskRC, strKdeskDir, strKdeskUser;
-  bool test_mode = false, wallpaper_mode = false, blurred = false;
-  Background bgblur(NULL);
-  int blurWaitTO = 3;
+  bool test_mode = false, wallpaper_mode = false;
   int c;
 
   // Collect command-line parameters
@@ -151,50 +141,6 @@ int main(int argc, char *argv[])
 	  reload_configuration(display);
 	  XCloseDisplay(display);
 	  exit (0);
-
-	case 'b':
-	  // TODO: Remove the kdesk blur effect once "kdesk-blur" process has been integrated
-
-	  display = XOpenDisplay(display_name);
-	  if (!display) {
-	    kprintf ("Could not connect to the XServer\n");
-	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
-	    exit (1);
-	  }
-
-	  blurred = bgblur.is_blurred(display);
-	  if (blurred == true) {
-	    kprintf ("Desktop is already blurred - unblurring and quit!\n");
-	    blur_desktop(display);
-	    exit (-1);
-	  }
-
-	  kprintf ("Triggering desktop blur effect\n");
-	  blur_desktop(display);
-
-	  // wait for async blur signal to appear on the desktop
-	  while (!blurred && blurWaitTO-- > 0) {
-	    sleep (1);
-	    blurred = bgblur.is_blurred(display);	    
-	  }
-
-	  // Execute the requested app on top of the blurred desktop
-	  if (blurred == true) {
-	    kprintf ("Executing the blurred app: %s\n", optarg);
-	    rc =system(optarg);
-	    kprintf ("Blurred app finished rc=%d\n", rc);
-	    
-	    // remove the blurred desktop and finish
-	    blur_desktop(display);
-	    XCloseDisplay(display);
-
-	    // Set errorlevel to that of the blurred application
-	    exit (rc);
-	  }
-	  else {
-	    kprintf ("Could not blur the desktop\n");
-	    exit (-1);
-	  }
 
 	case 'a':
 	  display = XOpenDisplay(display_name);

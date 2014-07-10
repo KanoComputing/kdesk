@@ -12,7 +12,6 @@ class Background
  private:
   Configuration *pconf;
   Window root;
-  Window winblur;
   Visual *vis;
   Colormap cm;
   Pixmap pmap;
@@ -29,8 +28,6 @@ class Background
   bool setup (Display *display);
   bool load (Display *display);
   bool draw (Display *display);
-  bool blur(Display *display);
-  static bool is_blurred(Display *display);
   int refresh_background(Display *display);
 
 };
