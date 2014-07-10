@@ -45,5 +45,7 @@ class IconGrid
     static int ICON_W;
     static int ICON_H;
 
+    bool grid_full;
+
     bool request_position(int field_hint_x, int field_hint_y, int *x, int *y);
 };

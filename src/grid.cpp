@@ -21,6 +21,8 @@ IconGrid::IconGrid(Display *display, Configuration *pconf)
   int w = DisplayWidth(display, screen_num);
   int h = DisplayHeight(display, screen_num);
 
+  grid_full = false;
+
   // Get the grid dimensions from kdeskrc file
   if (pconf) {
     ICON_W = pconf->get_config_int("gridwidth");
@@ -74,6 +76,7 @@ bool IconGrid::get_real_position(int field_x, int field_y,
   // Because the grid grows from bottom to top (0,0 being top left corner of screen)
   // if the real icon position represented on the screen falls beyond limits, reject the icon
   if (*real_y <= MARGIN_TOP) {
+    grid_full = true;
     return false;
   }
   else {

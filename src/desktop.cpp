@@ -16,6 +16,7 @@
 #include <X11/Xft/Xft.h>
 
 #include <string.h>
+#include <errno.h>
 
 #include "sn_callbacks.cpp"
 
@@ -131,6 +132,9 @@ bool Desktop::create_icons (Display *display)
   // error_trap_push, error_trap_pop ???
   sn_display = sn_display_new (display, error_trap_push, error_trap_pop);
   sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
+
+  // tell the outside world how the icon creation has completed
+  dump_metrics(display);
 
   // returns true if at least one icon is available on the desktop
   log1 ("Desktop icon classes have been allocated", nicon);
@@ -598,4 +602,28 @@ bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Ic
     pico_hook->draw(display, ev, false);
   }
   return true;
+}
+
+bool Desktop::dump_metrics (Display *display)
+{
+  //
+  //  Save Kdesk counters in a json-like file prepended with current display number.
+  //
+
+  char chmetrics_filename[80];
+  sprintf (chmetrics_filename, "/tmp/kdesk-metrics%s.dump", XDisplayString(display));
+
+  FILE *fp = fopen (chmetrics_filename, "w");
+  if (fp) {
+    fprintf (fp, "{\n \"icons-found\": %d,\n", pconf->get_numicons());
+    fprintf (fp, " \"icons-rendered\": %d,\n", numicons);
+    fprintf (fp, " \"grid-full\": %s\n}\n", icon_grid->grid_full == true ? "true" : "false");
+    log1 ("Metrics file saved", chmetrics_filename);
+    fclose (fp);
+    return true;
+  }
+  else {
+    log2 ("Error creating metrics file (errno, file)", errno, chmetrics_filename);
+    return false;
+  }
 }
