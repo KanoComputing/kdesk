@@ -103,5 +103,7 @@ bool IconGrid::request_position(int field_hint_x, int field_hint_y,
       }
     }
   }
+
+  grid_full = true;
   return false;
 }
