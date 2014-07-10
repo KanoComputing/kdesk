@@ -36,7 +36,7 @@ class IconGrid
     int start_y;
 
     bool is_place_used(int x, int y);
-    void get_real_position(int field_x, int field_y, int *real_x, int *real_y);
+    bool get_real_position(int field_x, int field_y, int *real_x, int *real_y);
 
   public:
     IconGrid(Display *display, Configuration *pconf);
