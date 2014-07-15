@@ -328,6 +328,17 @@ bool Desktop::process_and_dispatch(Display *display)
       switch (ev.type)
 	{
 	case ButtonPress:
+
+	  // Stop processing a.s.a.p. if the mouse button being pressed is not left or right.
+	  // Button1=Left, Button2=Middle, Button3=Right, higher than those are mapped to mouse scroll wheel
+	  //
+	  //  http://tronche.com/gui/x/xlib/events/keyboard-pointer/keyboard-pointer.html
+	  //
+	  if (ev.xbutton.button != Button1 && ev.xbutton.button != Button3) {
+	    log1 ("ButtonPress for unsupported button number - ignoring", ev.xbutton.button);
+	    break;
+	  }
+
 	  // A double click event is defined by the time elapsed between 2 clicks: "clickdelay"
 	  // And a grace time period to protect nested double clicks: "clickgrace"
 	  // Note we are listening for both left and right mouse click events.
@@ -368,8 +379,13 @@ bool Desktop::process_and_dispatch(Display *display)
 	  break;
 
 	case ButtonRelease:
-	  log2 ("ButtonRelease event to window and time ms", wtarget, ev.xbutton.time);
-	  last_click = ev.xbutton.time;
+	  if (ev.xbutton.button != Button1 && ev.xbutton.button != Button3) {
+	    log1 ("ButtonRelease for unsupported button number - ignoring", ev.xbutton.button);
+	  }
+	  else {
+	    log2 ("ButtonRelease event to window and time ms", wtarget, ev.xbutton.time);
+	    last_click = ev.xbutton.time;
+	  }
 	  break;
 
 	case MotionNotify:
