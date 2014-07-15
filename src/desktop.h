@@ -60,4 +60,6 @@ class Desktop
   bool send_signal (Display *display, const char *signalName, char *message);
   bool call_icon_hook (Display *display, XEvent ev, std::string hookscript, Icon *pico_hook);
   bool finalize(void);
+  bool dump_metrics (Display *display);
+
 };

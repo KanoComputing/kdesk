@@ -21,6 +21,8 @@ IconGrid::IconGrid(Display *display, Configuration *pconf)
   int w = DisplayWidth(display, screen_num);
   int h = DisplayHeight(display, screen_num);
 
+  grid_full = false;
+
   // Get the grid dimensions from kdeskrc file
   if (pconf) {
     ICON_W = pconf->get_config_int("gridwidth");
@@ -65,12 +67,22 @@ bool IconGrid::is_place_used(int x, int y)
   return false;
 }
 
-void IconGrid::get_real_position(int field_x, int field_y,
+bool IconGrid::get_real_position(int field_x, int field_y,
                                  int *real_x, int *real_y)
 {
   *real_x = start_x + field_x * (ICON_W + HORZ_SPC);
   *real_y = start_y - (1 + field_y) * (ICON_H + VERT_SPC);
-  used_fields.push_back(std::pair<int, int>(field_x, field_y));
+
+  // Because the grid grows from bottom to top (0,0 being top left corner of screen)
+  // if the real icon position represented on the screen falls beyond limits, reject the icon
+  if (*real_y <= MARGIN_TOP) {
+    grid_full = true;
+    return false;
+  }
+  else {
+    used_fields.push_back(std::pair<int, int>(field_x, field_y));
+    return true;
+  }
 }
 
 bool IconGrid::request_position(int field_hint_x, int field_hint_y,
@@ -79,8 +91,7 @@ bool IconGrid::request_position(int field_hint_x, int field_hint_y,
   if (field_hint_x >= 0 && field_hint_x < width &&
       field_hint_y >= 0 && field_hint_y < height) {
     if (!is_place_used(field_hint_x, field_hint_y)) {
-      get_real_position(field_hint_x, field_hint_y, x, y);
-      return true;
+      return (get_real_position(field_hint_x, field_hint_y, x, y));
     }
   }
 
@@ -88,10 +99,11 @@ bool IconGrid::request_position(int field_hint_x, int field_hint_y,
   for (int iy = 0; iy < height; iy++) {
     for (int ix = 0; ix < width; ix++) {
       if (!is_place_used(ix, iy)) {
-        get_real_position(ix, iy, x, y);
-        return true;
+        return (get_real_position(ix, iy, x, y));
       }
     }
   }
+
+  grid_full = true;
   return false;
 }
