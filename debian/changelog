@@ -1,3 +1,9 @@
+kdesk (1.1-8) unstable; urgency=low
+
+  * kdesk now maintains a file with the number of icons on the desktop
+
+ -- Team Kano <dev@kano.me>  Tue, 15 Jul 2014 18:29:15 +0001
+
 kdesk (1.1-07) unstable; urgency=low
 
   * Making the kdesk package replace idesk
