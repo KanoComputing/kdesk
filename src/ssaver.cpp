@@ -68,10 +68,12 @@ int hook_ssaver_start(const char *hook_script)
   return rc;
 }
 
-int hook_ssaver_finish(const char *hook_script)
+int hook_ssaver_finish(const char *hook_script, time_t time_ssaver_run)
 {
-  int rc = execute_hook (hook_script, SSAVER_HOOK_FINISH);
-  // Screen saver finish hook cannot change the user session flow, assume success, go forward
+  char hook_params[256];
+
+  sprintf (hook_params, "%s %ld", SSAVER_HOOK_FINISH, time_ssaver_run);
+  int rc = execute_hook (hook_script, hook_params);
   return 0;
 }
 
@@ -110,6 +112,11 @@ void *idle_time (void *p)
   }
 
   XScreenSaverInfo *info = XScreenSaverAllocInfo();
+  if (!info) {
+    log ("Error! Could not allocate screen saver information structure, screen saver disabled");
+    return NULL;
+  }
+
   while (running)
     {
       rc = XScreenSaverQueryInfo(display, DefaultRootWindow(display), info);
@@ -121,14 +128,18 @@ void *idle_time (void *p)
 	    rchook = hook_ssaver_start(pdata->saver_hooks);
 	    if (rchook == 0) {
 	      log2 ("Starting the Screen Saver (idle, timeout in secs)", info->idle / 1000, pdata->idle_timeout);
+
+	      time_t ssaver_time_start = time (NULL);
 	      rc = system (pdata->saver_program);
+	      time_t ssaver_time_end = time (NULL);
+
 	      log1 ("Screen saver finished with rc", rc);
 	      if (rc == 0) {
 		log1 ("Calling xrefresh: ", XREFRESH);
 		rc = system (XREFRESH);
 
 		// Tell kdesk hooks that the screen saver has finished
-		rchook = hook_ssaver_finish(pdata->saver_hooks);
+		rchook = hook_ssaver_finish(pdata->saver_hooks, ssaver_time_end - ssaver_time_start);
 	      }
 	    }
 	    else {
