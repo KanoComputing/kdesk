@@ -85,10 +85,12 @@ bool setup_ssaver (KSAVER_DATA *kdata)
   return true;
 }
 
-void fake_user_input (void)
+void fake_user_input (Display *display)
 {
-  // TODO: We need to tell the XServer to restart counting user inactivity
-  // how to do that? send fake data to /dev/input?
+  // Send a fake mouse movement so that the XServer restarts the inactivity timer
+  Window root = DefaultRootWindow(display);
+  XWarpPointer(display, None, root, 0, 0, 0, 0, 10, 10);
+  XFlush(display);
 }
 
 void *idle_time (void *p)
@@ -140,11 +142,15 @@ void *idle_time (void *p)
 
 		// Tell kdesk hooks that the screen saver has finished
 		rchook = hook_ssaver_finish(pdata->saver_hooks, ssaver_time_end - ssaver_time_start);
+
+		// some bluetooth keyboard devices need an explicit activity event,
+		// otherwise the inactivity timer stops working (returning 0 which means activity is being received).
+		fake_user_input(display);
 	      }
 	    }
 	    else {
 	      log1 ("Screen saver start hook not returning 0, cancelling the screen saver, rc=", rchook);
-	      fake_user_input();
+	      fake_user_input(display);
 	    }
 	  }
 	}
