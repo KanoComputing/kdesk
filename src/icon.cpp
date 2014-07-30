@@ -195,9 +195,15 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
       rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0), "black", &xftcolor_shadow);
       log1 ("XftColorAllocName bool", rc);
 
+      int subtitle_fontsize = configuration->get_config_int ("subtitlefontsize");
+      if (!subtitle_fontsize) {
+        // Assign a smaller font size
+        subtitle_fontsize = fontsize - DEFAULT_SUBTITLE_FONT_POINT_DECREASE;
+      }
+
       fontsmaller = XftFontOpen (display, DefaultScreen(display),
 				 XFT_FAMILY, XftTypeString, fontname.c_str(),
-				 XFT_SIZE, XftTypeDouble, (float) fontsize - 2,
+				 XFT_SIZE, XftTypeDouble, (float) subtitle_fontsize,
 				 NULL);
       log1 ("creating a smaller font for messages", fontsmaller);
 

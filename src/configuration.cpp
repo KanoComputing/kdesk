@@ -53,6 +53,11 @@ bool Configuration::load_conf(const char *filename)
 	ifile >> value;
 	configuration["fontsize"] = value;
       }
+
+      if (token == "SubtitleFontSize:") {
+	ifile >> value;
+	configuration["subtitlefontsize"] = value;
+      }
       
       if (token == "Bold:") {
 	ifile >> value;

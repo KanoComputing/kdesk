@@ -20,6 +20,9 @@
 // 
 #define DEFAULT_ICON_CURSOR XC_hand1
 
+// Number of points to decrease the font size for subtitle text in icons
+#define DEFAULT_SUBTITLE_FONT_POINT_DECREASE 6
+
 class IconGrid;
 
 class Icon
