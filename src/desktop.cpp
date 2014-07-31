@@ -249,6 +249,7 @@ bool Desktop::process_and_dispatch(Display *display)
 {
   // Process X11 events and dispatch them to each icon handler for processing
   static unsigned long last_click=0, last_dblclick=0;
+  bool doubleclicked, oneclick;
   static bool bstarted = false;
   int iGrace = 500;
   XEvent ev;
@@ -339,11 +340,14 @@ bool Desktop::process_and_dispatch(Display *display)
 	    break;
 	  }
 
+          doubleclicked=((ev.xbutton.time - last_click) < pconf->get_config_int("clickdelay")) ? true : false;
+          oneclick=(pconf->get_config_string("oneclick") == "true") ? true : false;
+
 	  // A double click event is defined by the time elapsed between 2 clicks: "clickdelay"
 	  // And a grace time period to protect nested double clicks: "clickgrace"
 	  // Note we are listening for both left and right mouse click events.
 	  log3 ("ButtonPress event: window, time, last click", wtarget, ev.xbutton.time, last_click);
-	  if (ev.xbutton.time - last_click < pconf->get_config_int("clickdelay") || pconf->get_config_string("oneclick") == "true")
+          if ((doubleclicked == true && oneclick == false) || (doubleclicked == false and oneclick == true))
 	    {
 	      // Protect the UI experience by disallowing a new app startup if one is in progress
 	      if (bstarted == true && (ev.xbutton.time - last_dblclick < pconf->get_config_int("iconstartdelay"))) {
