@@ -10,6 +10,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xft/Xft.h>
+#include <X11/Xatom.h>
 
 #include <Imlib2.h>
 
@@ -39,6 +40,7 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   font = fontsmaller = NULL;
   image = image_stamp = NULL;
   xftdraw1 = NULL;
+  blinking = false;
 
   // save the icon, icon hover image files
   ficon = configuration->get_icon_string (iconid, "icon");
@@ -140,7 +142,7 @@ void Icon::set_icon_stamp (char *new_icon)
   ficon_stamp = new_icon;
 }
 
-bool Icon::is_singleton_running (Display *display)
+bool Icon::is_singleton_running (Display *display, bool *is_minimized)
 {
   bool bAppRunning=false;
   string appid = configuration->get_icon_string (iconid, "appid");
@@ -149,7 +151,7 @@ bool Icon::is_singleton_running (Display *display)
   if (singleton == "true" && appid.size())
     {
       // Return wether we can find the icon app window on the desktop
-      bAppRunning = (find_icon_window (display, appid) ? true : false);
+      bAppRunning = (find_icon_window (display, appid, is_minimized) ? true : false);
     }
 
   log2 ("Is kdesk icon application running? (AppID, bool)", appid, bAppRunning);
@@ -601,12 +603,19 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 
 bool Icon::blink_icon(Display *display, XEvent ev)
 {
-  bool bsuccess = false;
+  bool bsuccess = false, is_minimized = false;
   Imlib_Image original = imlib_load_image(ficon.c_str());
   Imlib_Color_Modifier colorMod=NULL;
 
+  if (is_singleton_running(display, &is_minimized) == true && is_minimized == true) {
+    log1 ("Not showing hover icon because the app is running and minimized:", configuration->get_icon_string (iconid, "appid"));
+    return false;
+  }
+
   // If a second texture is provided, create a visual effect when mouse moves over the icon (hover effect)
   if (ficon_hover.length() > 0) {
+
+    blinking = true;
 
     // start by laoding the second texture icon
     log1 ("drawing second texture icon", ficon_hover);
@@ -687,13 +696,20 @@ bool Icon::blink_icon(Display *display, XEvent ev)
 
 bool Icon::unblink_icon(Display *display, XEvent ev)
 {
-  // Mouse is moving out of the icon
-  // smoothly restore the original rendered icon.
-  log ("smoothly restoring original rendered icon");
-  imlib_context_set_image(backsafe);
-  imlib_context_set_drawable(win);
-  imlib_render_image_on_drawable(0, 0);
-  return true;
+  if (blinking == true) {
+    // Mouse is moving out of the icon
+    // smoothly restore the original rendered icon,
+    // removing the hover image, but only if it is actually displayed
+    log ("smoothly restoring original rendered icon");
+    imlib_context_set_image(backsafe);
+    imlib_context_set_drawable(win);
+    imlib_render_image_on_drawable(0, 0);
+    blinking = false;
+    return true;
+  }
+  else {
+    return false;
+  }
 }
 
 bool Icon::motion(Display *display, XEvent ev)
@@ -701,7 +717,7 @@ bool Icon::motion(Display *display, XEvent ev)
   return true;
 }
 
-Window Icon::find_icon_window (Display *display, std::string appid)
+Window Icon::find_icon_window (Display *display, std::string appid, bool *isMinimized)
 {
   Window wmax=0L;
   Window returnedroot, returnedparent, root = DefaultRootWindow(display);
@@ -761,13 +777,39 @@ Window Icon::find_icon_window (Display *display, std::string appid)
 		if (leftover == 4) {
 		  log2 ("Icon app window was found (Appid, WindowID)", appid, subchildren[k]);
 		  wmax = subchildren[k];
-		}
 
-		if (p) {
-		  XFree (p);
-		}
-	      }
-	    }
+                  if (p) {
+                    XFree (p);
+                  }
+
+                  // If requested, find out if the app we just found is minimized
+                  if (isMinimized != NULL) {
+
+                    *isMinimized = false;
+                    Atom xa_WindowState, xa_WindowMinimized;
+                    Atom actual_type=0;
+                    int actual_format=0;
+                    unsigned long i=0, num_items=0, bytes_after=0;
+                    Atom *atoms=NULL;
+
+                    xa_WindowState = XInternAtom(display, "_NET_WM_STATE", false);
+                    xa_WindowMinimized = XInternAtom(display, "_NET_WM_STATE_HIDDEN", false);
+                    XGetWindowProperty(display, wmax, xa_WindowState, 0, 1024, False, XA_ATOM, &actual_type, 
+                                       &actual_format, &num_items, &bytes_after, (unsigned char**)&atoms);
+
+                    for(i=0; i < num_items; ++i) {
+                      if(atoms[i] == xa_WindowMinimized) {
+                        XFree(atoms);
+                        *isMinimized = true;
+                        break;
+                      }
+                    }
+
+                    log2 ("Icon app window is minimized? (appid, bool)", appid, isMinimized);
+                  }
+                }
+              }
+            }
 
 	  if (windowname) {
 	    XFree (windowname);
@@ -780,7 +822,7 @@ Window Icon::find_icon_window (Display *display, std::string appid)
 	  if (classHint.res_class) {
 	    XFree (classHint.res_class);
 	  }
-	}
+        }
     }
 
   if (children) {
@@ -834,7 +876,7 @@ bool Icon::maximize(Display *display)
   }
   else {
     string appid = configuration->get_icon_string (iconid, "appid");
-    Window wmaximize = find_icon_window (display, appid);
+    Window wmaximize = find_icon_window (display, appid, NULL);
     if (wmaximize) {
       log2 ("found window to maximize (appid, window)", appid, wmaximize);
       fdone = maximize (display, wmaximize);
@@ -854,7 +896,7 @@ bool Icon::double_click(Display *display, XEvent ev)
   string filename = configuration->get_icon_string (iconid, "filename");
   string command  = configuration->get_icon_string (iconid, "command");
   
-  bool isrunning = is_singleton_running (display);
+  bool isrunning = is_singleton_running (display, NULL);
   if (isrunning == true) {
     log1 ("not starting app - it's a running singleton", filename);
   }
