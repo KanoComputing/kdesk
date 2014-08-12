@@ -18,6 +18,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include <Imlib2.h>
+
 #include "sn_callbacks.cpp"
 
 //
@@ -77,9 +79,22 @@ Desktop::~Desktop(void)
 
 bool Desktop::create_icons (Display *display)
 {
-  int nicon=0;
+  int nicon=0, cache_size=0;
 
   icon_grid = new IconGrid(display, pconf);
+
+  // Set the initial imlib2 cache size programmatically
+  cache_size = pconf->get_config_int("imagecachesize");
+  if (cache_size > 0) {
+    log1 ("Setting image cache-size via config ImageCacheSize to bytes", cache_size);
+  }
+  else {
+    // default cache size assumes each icon is 90x90 * 32 bpp (Imlib2 RGBA) ~ 32Kb, accounting for hover icons as well
+    cache_size = pconf->get_numicons() * 2 * 32768;
+    log1 ("Setting auto-computed image cache-size to bytes", cache_size);
+  }
+
+  imlib_set_cache_size(cache_size);
 
   // Create and draw all icons, save a mapping of their window IDs -> handlers
   // so that we can dispatch events to each one in turn later on.
@@ -199,6 +214,12 @@ bool Desktop::destroy_icons (Display *display)
   // Then empty the list of icon handlers
   iconHandlers.clear();
   numicons = 0;
+
+  // make sure imlib2 cache is empty so that icons will effectively
+  // be reloaded from disk. Imlib2 cache system is based on file pathnames.
+  // specially important during kdesk -refresh
+  imlib_set_cache_size(0);
+
 }
 
 bool Desktop::notify_startup_load (Display *display, int iconid, Time time)

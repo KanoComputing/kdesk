@@ -360,9 +360,19 @@ void Icon::destroy(Display *display)
     fontsmaller = NULL;
   }
 
+  if (image != NULL) {
+    imlib_context_set_image(image);
+    imlib_free_image_and_decache();
+  }
+
+  if (image_stamp != NULL) {
+    imlib_context_set_image(image_stamp);
+    imlib_free_image_and_decache();
+  }
+
   if (backsafe != NULL) {
     imlib_context_set_image(backsafe);
-    imlib_free_image();
+    imlib_free_image_and_decache();
   }
 
   XDestroyWindow (display, win);
@@ -429,6 +439,14 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
   if (image != NULL) {
 
     imlib_context_set_image(image);
+
+    // imlib2 stores each image buffer as a sequence of ARGB objects (32 bits per pixel)
+    // this log will emit this size to better profile kdesk's cache size setting.
+    log4 ("Image filename, width, height, and RGBA buffer size",
+          ficon.c_str(),
+          imlib_image_get_width(), imlib_image_get_height(),
+          (imlib_image_get_width() * imlib_image_get_height() * 32) / 8);
+
     w = imlib_image_get_width();
     h = imlib_image_get_height();
     subx = get_icon_horizontal_placement(w);
