@@ -194,6 +194,11 @@ bool Configuration::load_conf(const char *filename)
 	configuration["maximizesingleton"] = value;
       }
 
+      if (token == "ImageCacheSize:") {
+	ifile >> value;
+	configuration["imagecachesize"] = value;
+      }
+
     }
 
   ifile.close();
