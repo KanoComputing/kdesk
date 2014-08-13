@@ -381,7 +381,7 @@ bool Desktop::process_and_dispatch(Display *display)
 		bstarted = false;
 
 		// Save to request an app startup: tell the icon a mouse double click needs processing
-		Window winapp = iconHandlers[wtarget]->find_icon_window (display, iconHandlers[wtarget]->get_appid());
+		Window winapp = iconHandlers[wtarget]->find_icon_window (display, iconHandlers[wtarget]->get_appid(), NULL);
 		if (!winapp) {
 		  // Notify system we are about to load a new app (hourglass)
 		  psound->play_sound("soundlaunchapp");
@@ -393,6 +393,9 @@ bool Desktop::process_and_dispatch(Display *display)
 		  if (pconf->get_config_string("maximizesingleton") == "true") {
 		    log1 ("Maximizing AppID which is a running singleton", iconHandlers[wtarget]->get_appid());
 		    iconHandlers[wtarget]->maximize (display, winapp);
+
+                    // send the icon a GUI feedback now because the app changed its visual appearance
+		    iconHandlers[wtarget]->blink_icon (display, ev);
 		  }
 		  else {
 		    log1 ("AppID running, disabling icon with alert sound", iconHandlers[wtarget]->get_appid());

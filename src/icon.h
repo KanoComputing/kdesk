@@ -35,6 +35,7 @@ class Icon
   int shadowx, shadowy;
   int icontitlegap;
   int transparency_value;
+  bool blinking;
   Cursor cursor;
   int cursor_id;
   Imlib_Image image, image_stamp;
@@ -64,7 +65,7 @@ class Icon
   std::string get_icon_filename(void);
   std::string get_icon_name(void);
   int get_icon_horizontal_placement (int image_width);
-  bool is_singleton_running (Display *display);
+  bool is_singleton_running (Display *display, bool *is_minimized);
 
   Window create(Display *display, IconGrid *icon_grid);
   void destroy(Display *display);
@@ -77,7 +78,7 @@ class Icon
   bool motion(Display *display, XEvent ev);
   bool maximize(Display *display);
   bool maximize(Display *display, Window win);
-  Window find_icon_window (Display *display, std::string appid);
+  Window find_icon_window (Display *display, std::string appid, bool *isMinimized);
 
   void set_caption (char *new_caption);
   void set_message (char *new_message);
