@@ -18,6 +18,7 @@
 #define KDESK_CONTROL_WINDOW_NAME "KdeskControlWindow"
 #define KDESK_SIGNAL_FINISH       "KSIG_FINISH"
 #define KDESK_SIGNAL_RELOAD       "KSIG_RELOAD"
+#define KDESK_SIGNAL_RELOAD_ICONS "KSIG_RELOAD_ICONS"
 #define KDESK_SIGNAL_ICON_ALERT   "KSIG_ICON_ALERT"
 
 class IconGrid;
@@ -37,7 +38,7 @@ class Desktop
   bool finish;
   static int error_trap_depth;
   int numicons;
-  Atom atom_finish, atom_reload, atom_icon_alert;
+  Atom atom_finish, atom_reload, atom_reload_icons, atom_icon_alert;
 
  public:
   Desktop(void);
@@ -48,6 +49,7 @@ class Desktop
   Icon *find_icon_name (char *icon_name);
   bool redraw_icons (Display *display, bool forceClear);
   bool destroy_icons (Display *display);
+  bool reload_icons (Display *display);
 
   bool notify_startup_load (Display *display, int iconid, Time time);
   bool notify_startup_ready (Display *display);

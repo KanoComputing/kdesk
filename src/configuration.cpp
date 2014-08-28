@@ -417,7 +417,12 @@ void Configuration::reset(void)
     {
       configuration.erase(it);
     }
+  reset_icons();
+}
 
+void Configuration::reset_icons(void)
+{
+  std::map<string,string>::iterator it;
   for (int c=0; c < numicons; c++) {
     for (it=icons[c].begin(); it != icons[c].end(); ++it)
       {
@@ -428,3 +433,4 @@ void Configuration::reset(void)
   icons.clear();
   numicons = 0;
 }
+

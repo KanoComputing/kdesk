@@ -31,6 +31,7 @@ class Configuration
   bool parse_icon (const char *directory, std::string fname, int iconid);
   void dump (void);
   void reset(void);
+  void reset_icons(void);
 
   std::string get_config_string(std::string item);
   unsigned int get_config_int(std::string item);
