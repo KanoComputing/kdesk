@@ -32,6 +32,7 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   configuration = loaded_conf;
   iconid = iconidx;
   iconx=icony=iconw=iconh=0;
+  pgrid = NULL;
   shadowx=shadowy=0;
   iconMapNone = iconMapGlow = iconMapTransparency = (unsigned char *) NULL;
   transparency_value=0;
@@ -39,8 +40,11 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   font = fontsmaller = NULL;
   image = image_stamp = NULL;
   xftdraw1 = NULL;
+  is_grid = false;
+  gridx = gridy = 0;
 
-  // save the icon, icon hover image files
+  // save the lnk filename, icon, icon hover image files
+  filename = configuration->get_icon_string (iconid, "filename");
   ficon = configuration->get_icon_string (iconid, "icon");
   ficon_hover = configuration->get_icon_string (iconid, "iconhover");
   ficon_stamp = configuration->get_icon_string (iconid, "iconstamp");
@@ -108,7 +112,7 @@ string Icon::get_appid(void)
 
 std::string Icon::get_icon_filename(void)
 {
-  return configuration->get_icon_string (iconid, "filename");
+  return filename;
 }
 
 std::string Icon::get_icon_name(void)
@@ -161,8 +165,9 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
   unsigned int rc=0;
   int border;
 
-  // save the display variable for later cleanup
+  // save the display variable and grid for later cleanup
   icon_display = display;
+  pgrid = icon_grid;
   vis = DefaultVisual(display, DefaultScreen(display));
   cmap = DefaultColormap(display, DefaultScreen(display));
 
@@ -233,6 +238,9 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
 
   string icon_placement = configuration->get_icon_string(iconid, "relative-to");
   if (icon_placement == "grid") {
+    // save grid icon mode
+    is_grid = true;
+
     // Grid icons have fixed size
     iconw = icon_grid->ICON_W;
     iconh = icon_grid->ICON_H;
@@ -253,7 +261,7 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
       icony = configuration->get_icon_int (iconid, "y");
     }
 
-    if (!icon_grid->request_position(iconx, icony, &iconx, &icony)) {
+    if (!icon_grid->request_position(iconx, icony, &iconx, &icony, &gridx, &gridy)) {
       /* Error! No more space available! */
       log("No spaces available in the grid!");
       return None;
@@ -373,6 +381,11 @@ void Icon::destroy(Display *display)
   if (backsafe != NULL) {
     imlib_context_set_image(backsafe);
     imlib_free_image_and_decache();
+  }
+
+  // free the grid position just occupied if necessary
+  if (is_grid == true) {
+    pgrid->free_space_used (gridx, gridy);
   }
 
   XDestroyWindow (display, win);

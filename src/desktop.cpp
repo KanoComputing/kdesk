@@ -22,6 +22,8 @@
 
 #include "sn_callbacks.cpp"
 
+#include "main.h"
+
 //
 // TODO: Always keep an eye on libsn upgrades.
 // This API library is not officially conformed across different architectures
@@ -42,7 +44,7 @@
 
 Desktop::Desktop(void)
 {
-  atom_finish = atom_reload = atom_icon_alert = 0L;
+  atom_finish = atom_reload = atom_reload_icons = atom_icon_alert = 0L;
   wcontrol = 0L;
   numicons = 0;
   initialized = false;
@@ -222,6 +224,74 @@ bool Desktop::destroy_icons (Display *display)
 
 }
 
+bool Desktop::reload_icons (Display *display)
+{
+  pconf->reset_icons();
+  pconf->load_icons(DIR_KDESKTOP);
+
+  log ("Reloading desktop icons only");
+
+  // delete desktop icons for which lnk files have been removed
+  std::map <Window, Icon *>::iterator it;
+  for (it=iconHandlers.begin(); it != iconHandlers.end(); ++it)
+    {
+      if (it->second != NULL)
+        {
+          bool found = false;
+          string iconname = it->second->get_icon_filename().c_str();
+          for (int nicon=0; nicon < pconf->get_numicons(); nicon++)
+            {
+              string icon_filename = pconf->get_icon_string(nicon, "filename");
+              if (!strcasecmp (icon_filename.c_str(), it->second->get_icon_filename().c_str())) {
+                found=true;
+              }
+            }
+
+          if (!found) {
+            // the desktop icon is missing the lnk file, remove it from the desktop
+            log1 ("Icon has been removed from desktop (lnk is gone)", it->second->get_icon_filename().c_str());
+            it->second->destroy(display);
+            delete it->second;
+            it->second = NULL;
+            numicons--;
+          }
+        }
+    }
+  
+  // search for newly added lnk files and create their desktop icons.
+  for (int nicon=0; nicon < pconf->get_numicons(); nicon++)
+    {
+      string icon_filename = pconf->get_icon_string(nicon, "filename");
+      bool found=false;
+      for (it=iconHandlers.begin(); it != iconHandlers.end(); ++it)
+        {
+          if (it->second != NULL) {
+            if (!strcasecmp (icon_filename.c_str(), it->second->get_icon_filename().c_str())) {
+              found=true;
+            }
+          }
+        }
+      
+      if (!found) {
+        // create a new icon handler and add it to the desktop
+        Icon *pico = new Icon(pconf, nicon);
+        Window wicon = pico->create(display, icon_grid);
+        if (wicon) {
+	  XEvent emptyev;
+	  iconHandlers[wicon] = pico;
+	  pico->draw(display, emptyev, false);
+        }
+        numicons++;
+        log1 ("Nem icon has been added to desktop", icon_filename);
+      }
+    }
+
+  // tell the outside world how the icon creation has completed
+  dump_metrics(display);
+  log1 ("Finished reloading desktop icons only (num icons)", pconf->get_numicons());
+  return true;
+}
+
 bool Desktop::notify_startup_load (Display *display, int iconid, Time time)
 {
   bool bsuccess=false;
@@ -298,9 +368,14 @@ bool Desktop::process_and_dispatch(Display *display)
 	      log ("Kdesk object control window receives a RELOAD event");
 	      return true; // true means do whatever you need to, and come back to process_and_dispatch, we are ready.
 	    }
+            if ((Atom) ev.xclient.data.l[0] == atom_reload_icons) {
+              log ("Kdesk object control window receives a ICON RELOAD event");
+              reload_icons (display);
+              return false; // false means do not reload kdesk settings
+	    }
 	    else if ((Atom) ev.xclient.data.l[0] == atom_finish) {
-	      log ("Kdesk object control window receives a FINISH event");
-	      return false; // false means quit kdesk
+              log ("Kdesk object control window receives a FINISH event");
+              return false; // false means do not reload kdesk settings
 	    }
 	    else if ((Atom) ev.xclient.data.l[0] == atom_icon_alert) {
 
@@ -458,6 +533,7 @@ bool Desktop::initialize(Display *display, Configuration *loaded_conf, Sound *ks
   // Allocate Atoms used for signaling Kdesk's object window
   atom_finish = XInternAtom(display, KDESK_SIGNAL_FINISH, False);
   atom_reload = XInternAtom(display, KDESK_SIGNAL_RELOAD, False);
+  atom_reload_icons = XInternAtom(display, KDESK_SIGNAL_RELOAD_ICONS, False);
   atom_icon_alert = XInternAtom(display, KDESK_SIGNAL_ICON_ALERT, False);
 
   // Create a hidden Object Control window which will receive Kdesk external events

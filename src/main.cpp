@@ -43,6 +43,7 @@ static Desktop dsk;
 // local function prototypes
 void signal_callback_handler(int signum);
 void reload_configuration (Display *display);
+void reload_icons (Display *display);
 void trigger_icon_hook (Display *display, char *message);
 void finish_kdesk (Display *display);
 
@@ -75,6 +76,13 @@ void reload_configuration (Display *display)
   return;
 }
 
+void reload_icons (Display *display)
+{
+  log ("Reloading kdesk configuration");
+  dsk.send_signal (display, KDESK_SIGNAL_RELOAD_ICONS, NULL);
+  return;
+}
+
 void trigger_icon_hook (Display *display, char *message)
 {
   log ("Trigger an icon hook signal");
@@ -100,7 +108,7 @@ int main(int argc, char *argv[])
   int c;
 
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwra:vq")) != EOF)
+  while ((c = getopt(argc, argv, "?htwria:vq")) != EOF)
     {
       switch (c)
         {
@@ -112,6 +120,7 @@ int main(int argc, char *argv[])
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
 	  cout << " -r refresh configuration and exit" << endl;
+	  cout << " -i refresh desktop icons only and exit" << endl;
 	  cout << " -q query if kdesk is running on the current desktop (rc 0 running, nonzero otherwise)" << endl;
 	  cout << " -a send an icon hook alert" << endl << endl;
 	  exit (1);
@@ -139,6 +148,19 @@ int main(int argc, char *argv[])
 
 	  kprintf ("Sending a refresh signal to Kdesk\n");
 	  reload_configuration(display);
+	  XCloseDisplay(display);
+	  exit (0);
+
+	case 'i':
+	  display = XOpenDisplay(display_name);
+	  if (!display) {
+	    kprintf ("Could not connect to the XServer\n");
+	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
+	    exit (1);
+	  }
+
+	  kprintf ("Sending an icon refresh signal to Kdesk\n");
+	  reload_icons(display);
 	  XCloseDisplay(display);
 	  exit (0);
 

@@ -36,7 +36,7 @@ class IconGrid
     int start_y;
 
     bool is_place_used(int x, int y);
-    bool get_real_position(int field_x, int field_y, int *real_x, int *real_y);
+    bool get_real_position(int field_x, int field_y, int *real_x, int *real_y, int *gridx, int *gridy);
 
   public:
     IconGrid(Display *display, Configuration *pconf);
@@ -47,5 +47,6 @@ class IconGrid
 
     bool grid_full;
 
-    bool request_position(int field_hint_x, int field_hint_y, int *x, int *y);
+    bool request_position(int field_hint_x, int field_hint_y, int *x, int *y, int *gridx, int *gridy);
+    bool free_space_used(int x, int y);
 };

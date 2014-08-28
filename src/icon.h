@@ -31,10 +31,13 @@ class Icon
   Configuration *configuration;
   Display *icon_display;
   Window win;
+  IconGrid *pgrid;
   int iconx, icony, iconw, iconh;
   int shadowx, shadowy;
   int icontitlegap;
   int transparency_value;
+  bool is_grid;
+  int gridx, gridy;
   Cursor cursor;
   int cursor_id;
   Imlib_Image image, image_stamp;
@@ -47,6 +50,7 @@ class Icon
   XftDraw *xftdraw1;
   XftColor xftcolor, xftcolor_shadow;
   unsigned char *iconMapNone, *iconMapGlow, *iconMapTransparency;
+  std::string filename;
   std::string ficon;
   std::string ficon_hover;
   std::string ficon_stamp;
