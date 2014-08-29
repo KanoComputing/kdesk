@@ -268,12 +268,18 @@ bool Desktop::reload_icons (Display *display)
           if (it->second != NULL) {
             if (!strcasecmp (icon_filename.c_str(), it->second->get_icon_filename().c_str())) {
               found=true;
+
+              // update the iconid as reported from the configurator,
+              // as they have most probably been rearranged in the preceding "remove" loop
+              it->second->set_iconid(nicon);
             }
           }
         }
       
       if (!found) {
         // create a new icon handler and add it to the desktop
+        log2 ("adding new icon to desktop (name, id)", icon_filename, nicon);
+
         Icon *pico = new Icon(pconf, nicon);
         Window wicon = pico->create(display, icon_grid);
         if (wicon) {

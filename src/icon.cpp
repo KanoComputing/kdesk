@@ -104,6 +104,11 @@ int Icon::get_iconid(void)
   return iconid;
 }
 
+int Icon::set_iconid(int iconidx)
+{
+  iconid = iconidx;
+}
+
 string Icon::get_appid(void)
 {
   string appid = configuration->get_icon_string (iconid, "appid");
