@@ -64,6 +64,7 @@ class Icon
   virtual ~Icon (void);
 
   int get_iconid(void);
+  int set_iconid(int iconidx);
   std::string get_appid(void);
   std::string get_icon_filename(void);
   std::string get_icon_name(void);
