@@ -16,6 +16,8 @@
 #include "logging.h"
 #include "ssaver.h"
 
+#include <sys/wait.h>
+
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <linux/vt.h>
@@ -45,7 +47,11 @@ int execute_hook(const char *hook_script, const char *params)
   if (chcmdline != NULL && hook_script != NULL) {
     sprintf (chcmdline, "/bin/bash -c \"%s %s\"", hook_script, (params ? params : ""));
     log1 ("Executing screen saver hook:", chcmdline);
+
+    signal(SIGCHLD, SIG_DFL);
     rc = system (chcmdline);
+    signal(SIGCHLD, SIG_IGN);
+
     log2 ("Screen saver hook returns with RC, WEXITSTATUS", rc, WEXITSTATUS(rc));
     if (rc != -1) {
       rc = WEXITSTATUS(rc);
