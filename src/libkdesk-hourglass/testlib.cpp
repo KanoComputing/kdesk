@@ -1,0 +1,63 @@
+//
+// testlib.cpp  -  C++ sample to test the hourglass library
+//
+// Copyright (C) 2013-2014 Kano Computing Ltd.
+// License: http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
+//
+// A shared library to provide apps with a desktop app loading mouse hourglass.
+//
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <dlfcn.h>
+#include <unistd.h>
+
+void *lib_handle;
+void (*fn_start)(void);
+void (*fn_end)(void);
+char *error=NULL;
+
+
+int main(void)
+{
+
+  printf ("loading the hourglass dynamic library\n");
+  lib_handle = (void*) dlopen("libkdesk-hourglass.so", RTLD_LAZY);
+  if (!lib_handle) 
+    {
+      fprintf(stderr, "%s\n", dlerror());
+      exit(1);
+    }
+
+  // load the library function entry points
+  fn_start = ( void (*)() ) dlsym(lib_handle, "kdesk_hourglass_start");
+  if ((error = dlerror()) != NULL) {
+    fprintf(stderr, "%s\n", error);
+    exit(1);
+  }
+  else {
+    
+    fn_end = ( void (*)() ) dlsym(lib_handle, "kdesk_hourglass_end");
+    if ((error = dlerror()) != NULL) {
+      fprintf(stderr, "%s\n", error);
+      exit(1);
+    }
+    else {
+      printf ("showing the hourglass before loading the app\n");
+      (*fn_start)();
+    }
+  }
+
+  printf ("do the lengthy loading job here (hourglass is visible)\n");
+  sleep(10);
+
+  printf ("our app is ready and responsive, removing the hourglass\n");
+  (*fn_end)();
+
+  sleep(1);
+  printf ("seeya!\n");
+
+  dlclose(lib_handle);
+  return 0;
+}
+

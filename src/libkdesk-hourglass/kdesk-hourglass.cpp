@@ -1,5 +1,5 @@
 //
-// kdesk-hourglass.cpp  -  Class to draw an icon on the desktop
+// kdesk-hourglass.cpp  -  Provide a system wide library for a mouse hourglass
 //
 // Copyright (C) 2013-2014 Kano Computing Ltd.
 // License: http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
