@@ -20,7 +20,7 @@ SnDisplay *sn_display=NULL;
 SnLauncherContext *sn_context=NULL;
 Display *display=NULL;
 
-void kdesk_hourglass_start()
+void kdesk_hourglass_start(char *appname)
 {
   Time xlib_time=0L;
 
@@ -33,7 +33,6 @@ void kdesk_hourglass_start()
   sn_display = sn_display_new (display, error_trap_push, error_trap_pop);
   sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
 
-  char *appname=(char *)"helloWorld";
   sn_launcher_context_set_name (sn_context, appname);
   sn_launcher_context_set_description (sn_context, appname);
   sn_launcher_context_set_binary_name (sn_context, appname);

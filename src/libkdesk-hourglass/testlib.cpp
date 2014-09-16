@@ -13,10 +13,12 @@
 #include <unistd.h>
 
 void *lib_handle;
-void (*fn_start)(void);
+void (*fn_start)(char *);
 void (*fn_end)(void);
 char *error=NULL;
 
+char *app=(char *)"/usr/bin/xcalc &";
+char *appname=(char *)"xcalc";
 
 int main(void)
 {
@@ -30,7 +32,7 @@ int main(void)
     }
 
   // load the library function entry points
-  fn_start = ( void (*)() ) dlsym(lib_handle, "kdesk_hourglass_start");
+  fn_start = ( void (*)(char *) ) dlsym(lib_handle, "kdesk_hourglass_start");
   if ((error = dlerror()) != NULL) {
     fprintf(stderr, "%s\n", error);
     exit(1);
@@ -44,19 +46,21 @@ int main(void)
     }
     else {
       printf ("showing the hourglass before loading the app\n");
-      (*fn_start)();
+      (*fn_start)(appname);
     }
   }
 
   printf ("do the lengthy loading job here (hourglass is visible)\n");
-  sleep(10);
+  int rc = system (app);
+  if (rc) {
+    printf ("something went wrong, removing the hourglass\n");
+    (*fn_end)();
+  }
+  else {
+    printf ("app started, hourglass should disappear once it is responsive\n");
+  }
 
-  printf ("our app is ready and responsive, removing the hourglass\n");
-  (*fn_end)();
-
-  sleep(1);
   printf ("seeya!\n");
-
   dlclose(lib_handle);
   return 0;
 }
