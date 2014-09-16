@@ -10,8 +10,21 @@
 
 import ctypes
 import sys
+import time
 
+print 'loading the hourglass dynamic library'
 libname='libkdesk-hourglass.so'
 kdesk_hourglass_lib=ctypes.CDLL(libname)
-kdesk_hourglass_lib.kdesk_hourglass()
+
+print 'showing the hourglass before loading the app'
+kdesk_hourglass_lib.kdesk_hourglass_start()
+
+print 'do the lengthy loading job here (hourglass is visible)'
+time.sleep(10)
+
+print 'our app is ready and responsive, removing the hourglass'
+kdesk_hourglass_lib.kdesk_hourglass_end()
+time.sleep(1)
+
+print 'seeya!'
 sys.exit(0)
