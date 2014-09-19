@@ -10,25 +10,32 @@ INCS:=-I../ `pkg-config --cflags-only-I $(libstartup)`
 LIBS:=`pkg-config --libs $(libstartup)`
 TARGET:=kdesk-hourglass
 
-CPPTEST:=testlib
+CPPTEST:=testdynlib
+CPPTESTSHARED:=testshared
 
-all: $(TARGET) $(CPPTEST)
+all: $(TARGET) $(CPPTEST) $(CPPTESTSHARED)
 
 debug:
 	make all DEBUGGING="-ggdb -O3 -DDEBUG"
 
 # the linkage
 $(TARGET): $(TARGET).o
-	g++ -shared -rdynamic -fPIC $(LIBS) $^ $(DEBUGGING) -o lib$(TARGET).so
+	g++ -shared -rdynamic -Wl,-soname,lib$(TARGET).so -o lib$(TARGET).so $(LIBS) $^ $(DEBUGGING)
 
 # the compilation
 $(TARGET).o: $(TARGET).cpp $(TARGET).h
-	g++ -c $(INCS) $(DEBUGGING) $(TARGET).cpp
+	g++ -c -fPIC $(INCS) $(DEBUGGING) $(TARGET).cpp
 
-
-# c++ test application
+# c++ dynamic loading test application
 $(CPPTEST): $(CPPTEST).o
 	g++ $(CPPTEST).o -ldl -o $(CPPTEST)
 
 $(CPPTEST).o: $(CPPTEST).cpp
 	g++ -c $(CPPTEST).cpp
+
+# c++ dynamic loading test application
+$(CPPTESTSHARED): $(CPPTESTSHARED).o
+	g++ $(CPPTESTSHARED).o -L. -l$(TARGET) -o $(CPPTESTSHARED)
+
+$(CPPTESTSHARED).o: $(CPPTESTSHARED).cpp
+	g++ -c -g $(CPPTESTSHARED).cpp

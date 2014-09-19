@@ -1,0 +1,5 @@
+src/libkdesk-hourglass/libkdesk-hourglass.so /usr/lib
+src/libkdesk-hourglass/kdesk-hourglass.h /usr/include/
+src/libkdesk-hourglass/testlib.py /usr/local/share/doc/kdesk
+src/libkdesk-hourglass/testdynlib.cpp /usr/local/share/doc/kdesk
+src/libkdesk-hourglass/testshared.cpp /usr/local/share/doc/kdesk

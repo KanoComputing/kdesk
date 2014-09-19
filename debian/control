@@ -7,7 +7,7 @@ Build-Depends: libx11-dev, libxft-dev, libimlib2-dev, libstartup-notification0-d
 
 Package: kdesk
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, libxss1
+Depends: ${misc:Depends}, ${shlibs:Depends}, libkdesk-dev, libstartup-notification0, libxss1
 Provides: idesk
 Conflicts: idesk
 Replaces: idesk
@@ -16,3 +16,11 @@ Description: Kanux desktop icon manager
  It presents the Kanux background along with all Kano-Make icons organized
  so you can follow all learning experience apps: Make Pong, Minecraft, Video
  and surf the rest of system applications directly from the desktop
+
+Package: libkdesk-dev
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, libstartup-notification0
+Description: Kanux desktop hourglass developer library
+ This package contains the library, include file and sample source code
+ to provide your applications with an hourglass for desktop lengthy tasks.
+

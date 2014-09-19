@@ -46,4 +46,29 @@ void kdesk_hourglass_end()
   // unbind from startup notify
   sn_launcher_context_complete (sn_context);
   sn_launcher_context_unref (sn_context);
+  sn_context = NULL;
+}
+
+
+// Library constructor
+void __attribute__ ((constructor)) initialize(void)
+{
+}
+
+// Library destructor
+void __attribute__ ((destructor)) finalize(void)
+{
+  if (sn_display) {
+    ;
+  }
+
+  if (sn_context) {
+    sn_launcher_context_unref(sn_context);
+    sn_context=NULL;
+  }
+
+  if (display) {
+    XCloseDisplay(display);
+    display=0L;
+  }
 }

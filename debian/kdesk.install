@@ -1,4 +1,3 @@
 src/kdesk /usr/bin
 src/kdesk-blur/kdesk-blur /usr/bin
 src/kdesk-eglsaver/kdesk-eglsaver /usr/bin
-src/libkdesk-hourglass/libkdesk-hourglass.so /lib
