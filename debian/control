@@ -19,7 +19,7 @@ Description: Kanux desktop icon manager
 
 Package: libkdesk-dev
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, libstartup-notification0
+Depends: ${misc:Depends}, ${shlibs:Depends}, libstartup-notification0, python
 Description: Kanux desktop hourglass developer library
  This package contains the library, include file and sample source code
  to provide your applications with an hourglass for desktop lengthy tasks.
