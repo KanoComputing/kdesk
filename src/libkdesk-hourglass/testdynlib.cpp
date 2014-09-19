@@ -6,7 +6,7 @@
 //
 // A shared library to provide apps with a desktop app loading mouse hourglass.
 //
-// Compilation: gc testdynlib.cpp -ldl -o testdynlib
+// Compilation: gcc testdynlib.cpp -ldl -o testdynlib
 //
 
 #include <stdio.h>

@@ -6,7 +6,7 @@
 //
 // A shared library to provide apps with a desktop app loading mouse hourglass.
 //
-// Compilation: gcc testshared.cpp -lkdesk-hourglass -L/usr/lib -o testshared.cpp
+// Compilation: gcc testshared.cpp -lkdesk-hourglass -o testshared
 //
 
 #include <stdlib.h>
