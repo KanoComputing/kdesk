@@ -7,5 +7,12 @@
 // A shared library to provide apps with a desktop app loading mouse hourglass.
 //
 
-extern "C" void kdesk_hourglass_start(char *appname);
-extern "C" void kdesk_hourglass_end(void);
+#ifdef __cpluplus__
+extern "C"
+#endif
+void kdesk_hourglass_start(char *appname);
+
+#ifdef __cpluplus__
+extern "C"
+#endif
+void kdesk_hourglass_end(void);
