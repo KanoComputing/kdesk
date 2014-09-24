@@ -727,6 +727,18 @@ bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Ic
   return true;
 }
 
+bool Desktop::get_metrics_filename(Display *display, char *chfilename, int size)
+{
+  char *chdisplayname = XDisplayString(display);
+  if (!chdisplayname) {
+    return false;
+  }
+  else {
+    snprintf (chfilename, (size_t) size, "/tmp/kdesk-metrics%s.dump", XDisplayString(display));
+    return true;
+  }
+}
+
 bool Desktop::dump_metrics (Display *display)
 {
   //
@@ -734,8 +746,11 @@ bool Desktop::dump_metrics (Display *display)
   //
 
   char chmetrics_filename[80];
-  sprintf (chmetrics_filename, "/tmp/kdesk-metrics%s.dump", XDisplayString(display));
+  if (!get_metrics_filename(display, chmetrics_filename, sizeof(chmetrics_filename))) {
+      return false;
+    }
 
+  unlink (chmetrics_filename);
   FILE *fp = fopen (chmetrics_filename, "w");
   if (fp) {
     fprintf (fp, "{\n \"icons-found\": %d,\n", pconf->get_numicons());
@@ -743,6 +758,9 @@ bool Desktop::dump_metrics (Display *display)
     fprintf (fp, " \"grid-full\": %s\n}\n", icon_grid->grid_full == true ? "true" : "false");
     log1 ("Metrics file saved", chmetrics_filename);
     fclose (fp);
+
+    // broaden permissions so we can remove it next time we switch user contexts
+    chmod (chmetrics_filename, 0666);
     return true;
   }
   else {
