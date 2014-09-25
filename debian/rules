@@ -2,3 +2,10 @@
 
 %:
 	dh $@
+
+override_dh_strip:
+	# don't strip synmbols off libkdesk-hourglass.so
+	# FIXME: find a better way to resolve this issue
+
+override_dh_shlibdeps:
+	# same rules apply as for override_dh_strip, so we provide exported library symbols
