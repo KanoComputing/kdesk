@@ -137,11 +137,13 @@ void *idle_time (void *p)
 	    if (rchook == 0) {
 	      log2 ("Starting the Screen Saver (idle, timeout in secs)", info->idle / 1000, pdata->idle_timeout);
 
-	      time_t ssaver_time_start = time (NULL);
-	      rc = system (pdata->saver_program);
-	      time_t ssaver_time_end = time (NULL);
+              time_t ssaver_time_start = time (NULL);
+              signal(SIGCHLD, SIG_DFL);
+              rc = system (pdata->saver_program);
+              signal(SIGCHLD, SIG_IGN);
+              time_t ssaver_time_end = time (NULL);
 
-	      log1 ("Screen saver finished with rc", rc);
+              log1 ("Screen saver finished with rc", rc);
 	      if (rc == 0) {
 		log1 ("Calling xrefresh: ", XREFRESH);
 		rc = system (XREFRESH);
