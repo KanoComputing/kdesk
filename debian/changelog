@@ -1,3 +1,8 @@
+
+kdesk (1.1-9) unstable; urgency=low
+
+  * kdesk-hourglass provides a new API based on the app command line only
+
 kdesk (1.1-8) unstable; urgency=low
 
   * kdesk now maintains a file with the number of icons on the desktop

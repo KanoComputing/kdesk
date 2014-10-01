@@ -8,23 +8,30 @@
 # A python test app to load and call the kdesk-hourglass dynamic library
 #
 
-from kdesk.hourglass import hourglass_start, hourglass_end
+from kdesk.hourglass import hourglass_start, hourglass_start_appcmd, hourglass_end
 import os
 import sys
 import time
 
 # Application to test for startup hourglass
-app='/usr/bin/xcalc &'
+app='/usr/bin/xcalc'
 appname='xcalc'
 
+# testing the appname API
 hourglass_start(appname)
 rc = os.system(app)
 if (rc!=0):
     hourglass_end()
     sys.exit(1)
 
-print 'doing other tasks...'
-time.sleep(5)
+time.sleep(1)
 
+# testing the cmdline API
+hourglass_start_appcmd(app)
+rc = os.system(app)
+if (rc!=0):
+    hourglass_end()
+    sys.exit(1)
+    
 print 'byebye!'
 sys.exit(rc)

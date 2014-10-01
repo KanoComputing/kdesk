@@ -17,5 +17,9 @@ def hourglass_start(appname):
     c_appname=ctypes.c_char_p(appname)
     kdesk_hourglass_lib.kdesk_hourglass_start(c_appname)
 
+def hourglass_start_appcmd(cmdline):
+    c_cmdline=ctypes.c_char_p(cmdline)
+    kdesk_hourglass_lib.kdesk_hourglass_start_appcmd(c_cmdline)
+
 def hourglass_end():
     kdesk_hourglass_lib.kdesk_hourglass_end()
