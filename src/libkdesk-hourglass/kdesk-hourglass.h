@@ -17,4 +17,10 @@ void kdesk_hourglass_start(char *appname);
 extern "C"
 #endif
 
+void kdesk_hourglass_start_appcmd(char *cmdline);
+
+#ifdef __cplusplus
+extern "C"
+#endif
+
 void kdesk_hourglass_end(void);
