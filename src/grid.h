@@ -15,11 +15,14 @@
 #define DEFAULT_GRID_WIDTH   128
 #define DEFAULT_GRID_HEIGHT  128
 
+#define DEFAULT_ICON_HORZ_SPACE   50
+#define DEFAULT_ICON_VERT_SPACE   25
+
 class IconGrid
 {
   private:
-    static const int VERT_SPC = 10;
-    static const int HORZ_SPC = 10;
+    int VERT_SPC;
+    int HORZ_SPC;
 
     static const int MARGIN_BOTTOM = 84;
     static const int MARGIN_TOP = 50;

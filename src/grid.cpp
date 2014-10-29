@@ -25,8 +25,26 @@ IconGrid::IconGrid(Display *display, Configuration *pconf)
 
   // Get the grid dimensions from kdeskrc file
   if (pconf) {
-    ICON_W = pconf->get_config_int("gridwidth");
-    ICON_H = pconf->get_config_int("gridheight");
+
+      // this is the blank, unsensitive empty space beween icons, horizontally and vertically.
+      int horz_gap=pconf->get_config_int("icongaphorz");
+      if (horz_gap) {
+          HORZ_SPC=horz_gap;
+      }
+      else {
+          HORZ_SPC=DEFAULT_ICON_HORZ_SPACE;
+      }
+
+      int vert_gap=pconf->get_config_int("icongapvert");
+      if (vert_gap) {
+          VERT_SPC=vert_gap;
+      }
+      else {
+          VERT_SPC=DEFAULT_ICON_VERT_SPACE;
+      }
+      
+      ICON_W = pconf->get_config_int("gridwidth");
+      ICON_H = pconf->get_config_int("gridheight");
   }
 
   // Or set default values if they're not defined
@@ -40,13 +58,17 @@ IconGrid::IconGrid(Display *display, Configuration *pconf)
 
   log2 ("Icon grid width and height", ICON_W, ICON_H);
 
-  width = w / ICON_W;
+  // Take into account the space needed for the icon and the empty margin
+  width = w / (ICON_W + HORZ_SPC);
   if (width > MAX_FIELDS_X)
     width = MAX_FIELDS_X;
 
   height = (h - MARGIN_TOP - MARGIN_BOTTOM) / ICON_H;
 
-  start_x = w/2 - (width * (ICON_W + HORZ_SPC))/2;
+  // FIXME: + ((HORZ_SPC/2) - 2, this is needed to avoid overall displacement to the left
+  // I believe the gap applies to all the icons except one, but needs clarification.
+  start_x = w/2 - ((width * (ICON_W + HORZ_SPC)) / 2) + ((HORZ_SPC/2) - 2);
+
   start_y = h - MARGIN_BOTTOM;
 }
 

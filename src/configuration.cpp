@@ -104,6 +104,16 @@ bool Configuration::load_conf(const char *filename)
 	configuration["icontitlegap"] = value;
       }
 
+      if (token == "IconGapHorz:") {
+	ifile >> value;
+	configuration["icongaphorz"] = value;
+      }
+
+      if (token == "IconGapVert:") {
+	ifile >> value;
+	configuration["icongapvert"] = value;
+      }
+
       if (token == "Transparency:") {
 	ifile >> value;
 	configuration["transparency"] = value;
