@@ -1,19 +1,16 @@
 #
 # Build kano-desktop
 #
-#  $ make - builds the release version
-#  $ make debug - with debug logs to console
+#  $ make - Builds the release version
+#  $ make debug - Debug version (kdesk-dbg binary)
 #
-# Requirements:
-#
-#  libx11-dev, libxft-dev, libstartup-notification0-dev, libao-dev, libmpg123-0-dev
 #
 
 DEBUGGING:=
 
-LIBS:=-lXft -lImlib2 -lstdc++ `pkg-config --libs libstartup-notification-1.0` -lpthread -lX11 -lXss
+LIBS:=-lXft -lImlib2 -lstdc++ -lpthread -lX11 -lXss -L`pwd`/libkdesk-hourglass -lkdesk-hourglass
 XFTINC:=-I/usr/include/freetype2
-SNINC=-I/usr/include/startup-notification-1.0
+HOURGLASSINCS= -I`pwd`/libkdesk-hourglass
 
 TARGET=kdesk
 
@@ -36,7 +33,7 @@ grid.o: grid.cpp grid.h
 	g++ -c $(DEBUGGING) $(XFTINC) grid.cpp
 
 main.o: main.cpp main.h configuration.h logging.h version.h ssaver.h
-	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) main.cpp
+	g++ -c $(DEBUGGING) $(XFTINC) main.cpp
 
 background.o: background.cpp logging.h sound.h
 	g++ -c $(DEBUGGING) background.cpp
@@ -44,14 +41,14 @@ background.o: background.cpp logging.h sound.h
 configuration.o: configuration.cpp configuration.h logging.h main.h
 	g++ -c $(DEBUGGING) configuration.cpp
 
-desktop.o: desktop.cpp desktop.h logging.h configuration.h sn_callbacks.cpp sound.h grid.h
-	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) desktop.cpp
+desktop.o: desktop.cpp desktop.h logging.h configuration.h sound.h grid.h
+	g++ -c $(DEBUGGING) $(XFTINC) $(HOURGLASSINCS) desktop.cpp
 
 sound.o: sound.cpp sound.h
-	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) sound.cpp
+	g++ -c $(DEBUGGING) sound.cpp
 
 ssaver.o: ssaver.cpp ssaver.h
-	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) ssaver.cpp
+	g++ -c $(DEBUGGING) ssaver.cpp
 
 clean:
 	-rm *o kdesk kdesk-dbg

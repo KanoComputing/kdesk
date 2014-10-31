@@ -1,7 +1,7 @@
 #
-# libkdesk-hourglass Makefile
+# libkdesk-hourglass - Makefile
 #
-#  gcc -shared  -rdynamic -Wl,-soname,testlib -o testlib.so -fPIC testlib.cpp
+#  A library API to provide for a loading progress mouse cursor accross your apps
 #
 
 libstartup:=libstartup-notification-1.0
@@ -10,10 +10,10 @@ INCS:=-I../ `pkg-config --cflags-only-I $(libstartup)`
 LIBS:=`pkg-config --libs $(libstartup)`
 TARGET:=kdesk-hourglass
 
-CPPTEST:=testdynlib
+CPPTESTDYNLIB:=testdynlib
 CPPTESTSHARED:=testshared
 
-all: $(TARGET) $(CPPTEST) $(CPPTESTSHARED)
+all: $(TARGET) $(CPPTESTDYNLIB) $(CPPTESTSHARED)
 
 debug:
 	make all DEBUGGING="-ggdb -O3 -DDEBUG"
@@ -26,14 +26,14 @@ $(TARGET): $(TARGET).o
 $(TARGET).o: $(TARGET).cpp $(TARGET).h
 	g++ -c -fPIC $(INCS) $(DEBUGGING) $(TARGET).cpp
 
-# c++ dynamic loading test application
-$(CPPTEST): $(CPPTEST).o
-	g++ $(CPPTEST).o -ldl -o $(CPPTEST)
+# C++ sample on how to use the kdesk hourglass library dynamically
+$(CPPTESTDYNLIB): $(CPPTESTDYNLIB).o
+	g++ $(CPPTESTDYNLIB).o -ldl -o $(CPPTESTDYNLIB)
 
-$(CPPTEST).o: $(CPPTEST).cpp
-	g++ -c $(CPPTEST).cpp
+$(CPPTESTDYNLIB).o: $(CPPTESTDYNLIB).cpp
+	g++ -c $(CPPTESTDYNLIB).cpp
 
-# c++ dynamic loading test application
+# C++ sample on how to use the kdesk hourglass library at build time
 $(CPPTESTSHARED): $(CPPTESTSHARED).o
 	g++ $(CPPTESTSHARED).o -L. -l$(TARGET) -o $(CPPTESTSHARED)
 

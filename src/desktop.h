@@ -12,8 +12,6 @@
 // This API library is not officially conformed across different architectures
 // See the file:  /usr/include/startup-notification-1.0/libsn/sn-common.h for details
 //
-#define SN_API_NOT_YET_FROZEN
-#include <libsn/sn.h>
 
 #define KDESK_CONTROL_WINDOW_NAME "KdeskControlWindow"
 #define KDESK_SIGNAL_FINISH       "KSIG_FINISH"
@@ -31,8 +29,6 @@ class Desktop
   bool initialized;
   std::map <Window, Icon *> iconHandlers;
   IconGrid *icon_grid;
-  SnDisplay *sn_display;
-  SnLauncherContext *sn_context;
   Configuration *pconf;
   Sound *psound;
   bool finish;

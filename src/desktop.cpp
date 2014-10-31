@@ -20,17 +20,9 @@
 
 #include <Imlib2.h>
 
-#include "sn_callbacks.cpp"
+#include <kdesk-hourglass.h>
 
 #include "main.h"
-
-//
-// TODO: Always keep an eye on libsn upgrades.
-// This API library is not officially conformed across different architectures
-// See the file:  /usr/include/startup-notification-1.0/libsn/sn-common.h for details
-//
-#define SN_API_NOT_YET_FROZEN
-#include <libsn/sn.h>
 
 #include <unistd.h>
 #include <map>
@@ -65,12 +57,6 @@ Desktop::~Desktop(void)
     {
       delete it->second;
     }
-
-  // Detach from Startup Notification library
-  if (sn_display) {
-    sn_display_unref (sn_display);
-    sn_display = 0;
-  }
 
   // FIXME: Atoms are not meant to be freed, correct me if I'm wrong.
 
@@ -144,11 +130,6 @@ bool Desktop::create_icons (Display *display)
         }
       }
    }
-
-  // Setup a connection with startup notification library
-  // error_trap_push, error_trap_pop ???
-  sn_display = sn_display_new (display, error_trap_push, error_trap_pop);
-  sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
 
   // tell the outside world how the icon creation has completed
   dump_metrics(display);
@@ -298,50 +279,6 @@ bool Desktop::reload_icons (Display *display)
   return true;
 }
 
-bool Desktop::notify_startup_load (Display *display, int iconid, Time time)
-{
-  bool bsuccess=false;
-  string name = pconf->get_icon_string (iconid, "command");
-  string command = pconf->get_icon_string (iconid, "command");
-
-  if (!sn_context || sn_launcher_context_get_initiated (sn_context)) {
-    sn_launcher_context_unref (sn_context);
-    sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
-  }
-
-  if (!sn_context) {
-    log ("could not acquire a startup notification context - hourglass not working");
-  }
-  else {
-    log1 ("startup notification for app", command);
-
-    sn_launcher_context_set_name (sn_context, name.c_str());
-    sn_launcher_context_set_description (sn_context, command.c_str());
-    sn_launcher_context_set_binary_name (sn_context, command.c_str());
-    sn_launcher_context_set_icon_name(sn_context, name.c_str());
-    sn_launcher_context_initiate (sn_context, name.c_str(), command.c_str(), time);
-    sn_launcher_context_setup_child_process (sn_context);
-    bsuccess = true;
-  }
-
-  return bsuccess;
-}
-
-void Desktop::notify_startup_event (Display *display, XEvent *pev)
-{
-  if (sn_context) {
-    sn_display_process_event (sn_display, pev);
-  }
-}
-
-bool Desktop::notify_startup_ready (Display *display)
-{
-  if (sn_context) {
-    sn_launcher_context_unref (sn_context);
-    sn_context = 0;
-  }
-}
-
 bool Desktop::process_and_dispatch(Display *display)
 {
   // Process X11 events and dispatch them to each icon handler for processing
@@ -357,11 +294,6 @@ bool Desktop::process_and_dispatch(Display *display)
       // This is the main X11 event processing loop
       XNextEvent(display, &ev);
       wtarget = ev.xany.window;
-
-      // The libnotify library likes to know what's happening
-      if (sn_display != NULL) {
-	sn_display_process_event (sn_display, &ev);
-      }
 
       // If the event is sent to Kdesk's object control window,
       // this means it's a special signal sent from external processes via kill SIG or an XSendEvent.
@@ -466,8 +398,16 @@ bool Desktop::process_and_dispatch(Display *display)
 		if (!winapp) {
 		  // Notify system we are about to load a new app (hourglass)
 		  psound->play_sound("soundlaunchapp");
-		  notify_startup_load (display, iconHandlers[wtarget]->iconid, ev.xbutton.time);
+
+                  // Show the hourglass mouse
+                  string command_line=iconHandlers[wtarget]->get_commandline();
+                  kdesk_hourglass_start_appcmd((char *) command_line.c_str());
+
 		  bstarted = iconHandlers[wtarget]->double_click (display, ev);
+                  if (!bstarted) {
+                      // Remove the hourglass, we could not start the app
+                      kdesk_hourglass_end();
+                  }
 		}
 		else {
 		  // The app is already running, icon is disabled, unless MaximizeSingleton flag is set
@@ -515,9 +455,6 @@ bool Desktop::process_and_dispatch(Display *display)
 	default:
 	  break;
 	}
-
-      // Pass on rest of unhandled events to the startup notification library
-      notify_startup_event (display, &ev);
 
     } while (!finish);
 
