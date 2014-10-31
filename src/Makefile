@@ -17,10 +17,12 @@ SNINC=-I/usr/include/startup-notification-1.0
 
 TARGET=kdesk
 
+.PHONY: clean
+
 all: $(TARGET)
 
 debug:
-	make all DEBUGGING="-ggdb -O3 -DDEBUG"
+	make all DEBUGGING="-ggdb -O3 -DDEBUG" TARGET=kdesk-dbg
 
 # the linkage
 $(TARGET): main.o icon.o grid.o background.o configuration.o desktop.o sound.o ssaver.o
@@ -50,3 +52,6 @@ sound.o: sound.cpp sound.h
 
 ssaver.o: ssaver.cpp ssaver.h
 	g++ -c $(DEBUGGING) $(XFTINC) $(SNINC) ssaver.cpp
+
+clean:
+	-rm *o kdesk kdesk-dbg
