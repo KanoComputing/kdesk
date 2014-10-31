@@ -3,7 +3,7 @@
 #
 
 INCS:=-I../
-LIBS:=-lXft -lImlib2 -lstdc++ -lpthread -lXss
+LIBS:=-lXft -lImlib2 -lstdc++ -lpthread -lXss -lX11
 TARGET=kdesk-blur
 
 all: $(TARGET)

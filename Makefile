@@ -7,13 +7,15 @@
 all: kdesk
 
 kdesk:
-	cd src && make all
+	cd src && make -B
+	cd src && make debug -B
+
 	cd src/kdesk-eglsaver && make all
 	cd src/kdesk-blur && make all
 	cd src/libkdesk-hourglass && make all
 
 debug:
-	cd src && make debug
+	cd src && make debug -B
 	cd src/kdesk-eglsaver && make debug
 	cd src/kdesk-blur && make debug
 	cd src/libkdesk-hourglass && make all
