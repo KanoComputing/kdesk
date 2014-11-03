@@ -68,6 +68,7 @@ class Icon
   std::string get_appid(void);
   std::string get_icon_filename(void);
   std::string get_icon_name(void);
+  std::string get_commandline(void);
   int get_icon_horizontal_placement (int image_width);
   bool is_singleton_running (Display *display);
 

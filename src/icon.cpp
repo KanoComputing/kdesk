@@ -115,6 +115,12 @@ string Icon::get_appid(void)
   return appid;
 }
 
+string Icon::get_commandline(void)
+{
+  string commandline = configuration->get_icon_string (iconid, "command");
+  return commandline;
+}
+
 std::string Icon::get_icon_filename(void)
 {
   return filename;
@@ -888,7 +894,7 @@ bool Icon::double_click(Display *display, XEvent ev)
 {
   bool success = false;
   string filename = configuration->get_icon_string (iconid, "filename");
-  string command  = configuration->get_icon_string (iconid, "command");
+  string command  = get_commandline();
   
   bool isrunning = is_singleton_running (display);
   if (isrunning == true) {
