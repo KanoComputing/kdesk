@@ -47,10 +47,15 @@ void reload_icons (Display *display);
 void trigger_icon_hook (Display *display, char *message);
 void finish_kdesk (Display *display);
 
+Display *get_current_display(void);
+void close_display(Display *display);
+
+
+
 // Signal handler reached via a kill -USR
 void signal_callback_handler(int signum)
 {
-  Display *display=XOpenDisplay(NULL);
+  Display *display=get_current_display();
   if (!display) {
     return;
   }
@@ -65,7 +70,7 @@ void signal_callback_handler(int signum)
     finish_kdesk(display);
   }
   
-  XCloseDisplay (display);
+  close_display(display);
   return;
 }
 
@@ -97,12 +102,22 @@ void finish_kdesk (Display *display)
   return;
 }
 
+Display *get_current_display(void)
+{
+    // Get a handle to the display bound to the current user session
+    return XOpenDisplay(NULL);
+}
+
+void close_display(Display *display)
+{
+    XCloseDisplay(display);
+}
+
 int main(int argc, char *argv[])
 {
   Status rc;
-  Display *display;
+  Display *display=get_current_display();
   Configuration conf;
-  char *display_name = NULL;
   string strKdeskRC, strHomeKdeskRC, strKdeskDir, strKdeskUser;
   bool test_mode = false, wallpaper_mode = false;
   int c;
@@ -139,7 +154,6 @@ int main(int argc, char *argv[])
 	  break;
 
 	case 'r':
-	  display = XOpenDisplay(display_name);
 	  if (!display) {
 	    kprintf ("Could not connect to the XServer\n");
 	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
@@ -148,11 +162,10 @@ int main(int argc, char *argv[])
 
 	  kprintf ("Sending a refresh signal to Kdesk\n");
 	  reload_configuration(display);
-	  XCloseDisplay(display);
+	  close_display(display);
 	  exit (0);
 
 	case 'i':
-	  display = XOpenDisplay(display_name);
 	  if (!display) {
 	    kprintf ("Could not connect to the XServer\n");
 	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
@@ -161,11 +174,10 @@ int main(int argc, char *argv[])
 
 	  kprintf ("Sending an icon refresh signal to Kdesk\n");
 	  reload_icons(display);
-	  XCloseDisplay(display);
+	  close_display(display);
 	  exit (0);
 
 	case 'a':
-	  display = XOpenDisplay(display_name);
 	  if (!display) {
 	    kprintf ("Could not connect to the XServer\n");
 	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
@@ -174,11 +186,10 @@ int main(int argc, char *argv[])
 
 	  kprintf ("Triggering icon hook with message: %s\n\n", optarg);
 	  trigger_icon_hook(display, optarg);
-	  XCloseDisplay(display);
+	  close_display(display);
 	  exit (0);
 
 	case 'q':
-	  display = XOpenDisplay(display_name);
 	  if (!display) {
 	    kprintf ("Could not connect to the XServer\n");
 	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
@@ -188,10 +199,12 @@ int main(int argc, char *argv[])
 	    //dsk.initialize (&bg);
 	    if (dsk.find_kdesk_control_window (display)) {
 	      kprintf ("Kdesk is running on this Display\n");
+              close_display(display);
 	      exit (0);
 	    }
 	    else {
 	      kprintf ("Kdesk is not running on this Display\n");
+              close_display(display);
 	      exit (-1);
 	    }
 	  }
@@ -245,7 +258,6 @@ int main(int argc, char *argv[])
   log1 ("XInitThreads rc", rc);
 
   // Connect to the X Server
-  display = XOpenDisplay(display_name);
   if (!display) {
     char *env_display = getenv ("DISPLAY");
     kprintf ("could not connect to X display\n");
@@ -314,7 +326,7 @@ int main(int argc, char *argv[])
     }
     else {
       KSAVER_DATA ksaver_data;
-      ksaver_data.display_name  = display_name;
+      ksaver_data.display_name  = NULL;   // NULL means the currently attached display
       ksaver_data.idle_timeout  = conf.get_config_int("screensavertimeout");
       ksaver_data.saver_program = conf.get_config_string("screensaverprogram").c_str();
       ksaver_data.saver_hooks = conf.get_config_string("iconhook").c_str();
