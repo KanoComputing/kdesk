@@ -30,12 +30,11 @@ bitmap_pong.h: bitmap_pong.raw
 bitmap_homefolder.h: bitmap_homefolder.raw
 	$(call cstyle_from_raw, "bitmap_homefolder")
 
+hid.o: hid.cpp hid.h
+	g++ -c -o $@ hid.cpp
 
-$(APP): $(APP).o
-	gcc -o $@ -Wl,--whole-archive $(APP).o $(LDFLAGS) -Wl,--no-whole-archive -rdynamic
+$(APP): $(APP).o hid.o
+	gcc -o $@ -Wl,--whole-archive $(APP).o hid.o $(LDFLAGS) -Wl,--no-whole-archive -rdynamic
 
-$(APP).o: $(APP).c bitmap_minecraft.h bitmap_pong.h bitmap_homefolder.h
+$(APP).o: $(APP).c bitmap_minecraft.h bitmap_pong.h bitmap_homefolder.h hid.h
 	gcc $(CFLAGS) $(INCLUDES) -g -c $< -o $@ -Wno-deprecated-declarations
-
-
-
