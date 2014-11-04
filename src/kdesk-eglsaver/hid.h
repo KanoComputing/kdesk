@@ -37,7 +37,7 @@ HID_HANDLE hid_init(int flags);
 #ifdef __cplusplus
 extern "C"
 #endif
-bool hid_is_user_idle (HID_HANDLE hhid);
+bool hid_is_user_idle (HID_HANDLE hhid, int timeout);
 
 #ifdef __cplusplus
 extern "C"

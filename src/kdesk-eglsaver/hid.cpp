@@ -74,7 +74,7 @@ HID_HANDLE hid_init(int flags)
     return hid;
 }
 
-bool hid_is_user_idle (HID_HANDLE hid)
+bool hid_is_user_idle (HID_HANDLE hid, int timeout)
 {
     int rc=0;
     fd_set hid_devices;
@@ -84,20 +84,18 @@ bool hid_is_user_idle (HID_HANDLE hid)
         return false;
     }
 
-    FD_ZERO(&hid_devices);
+    // setting timeout member values to zero means return immediately
+    // the passed timeout parameter is expressed in seconds.
+    tv.tv_sec = timeout;
+    tv.tv_usec = 0;
 
-    // Add all devices we want to listen to, into a list that "access()" likes
+    FD_ZERO(&hid_devices);
     FD_SET(hid->fdkbd0, &hid_devices);
     FD_SET(hid->fdkbd1, &hid_devices);
     FD_SET(hid->fdkbd2, &hid_devices);
     FD_SET(hid->fdmouse0, &hid_devices);
     FD_SET(hid->fdmouse1, &hid_devices);
     FD_SET(hid->fdmice, &hid_devices);
-
-
-    // setting timeout values to zero means return immediately
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
 
     // return ASAP with indication on wether there is a HID input event or not
     rc = select (6, &hid_devices, NULL, NULL, &tv);
@@ -106,5 +104,17 @@ bool hid_is_user_idle (HID_HANDLE hid)
 
 void hid_terminate(HID_HANDLE hid)
 {
+    // Free HID devices and deallocate wrapped structure
+    if (hid != NULL) {
+        if (hid->fdkbd0 != -1) close (hid->fdkbd0);
+        if (hid->fdkbd1 != -1) close (hid->fdkbd1);
+        if (hid->fdkbd2 != -1) close (hid->fdkbd2);
+        if (hid->fdmouse0 != -1) close(hid->fdmouse0);
+        if (hid->fdmouse1 != -1) close (hid->fdmouse1);
+        if (hid->fdmice != -1) close (hid->fdmice);
+        
+        free (hid);
+    }
+
     return;
 }

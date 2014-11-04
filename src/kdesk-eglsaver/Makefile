@@ -36,8 +36,5 @@ hid.o: hid.cpp hid.h
 $(APP): $(APP).o hid.o
 	gcc -o $@ -Wl,--whole-archive $(APP).o hid.o $(LDFLAGS) -Wl,--no-whole-archive -rdynamic
 
-$(APP).o: $(APP).c bitmap_minecraft.h bitmap_pong.h bitmap_homefolder.h
+$(APP).o: $(APP).c bitmap_minecraft.h bitmap_pong.h bitmap_homefolder.h hid.h
 	gcc $(CFLAGS) $(INCLUDES) -g -c $< -o $@ -Wno-deprecated-declarations
-
-
-

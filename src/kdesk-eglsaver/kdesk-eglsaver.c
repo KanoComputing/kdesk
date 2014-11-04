@@ -403,11 +403,11 @@ static void redraw_scene(CUBE_STATE_T *state)
 static void init_textures(CUBE_STATE_T *state)
 {
 
-  //  TODO: use load_tex_images when bitmap files are provided on the command line
+  // TODO: use load_tex_images when bitmap files are provided on the command line
   // load three texture buffers from files but use them on six OGL|ES texture surfaces
-  //load_tex_images;
+  // load_tex_images;
 
-  //  TODO: use load_tex_images when bitmap files are provided on the command line
+  // load_tex_buffers() use in-memory images compiled into the binary as raw data.
   load_tex_buffers(state);
 
    glGenTextures(6, &state->tex[0]);
@@ -568,7 +568,7 @@ int main ()
         redraw_scene(state);
             
 	// If there is an input event from keyboard or mouse, stop now
-        if (hid_is_user_idle(hid) == true) {
+        if (hid_is_user_idle(hid, 0) == true) {
             terminate=true;
         }
     }
