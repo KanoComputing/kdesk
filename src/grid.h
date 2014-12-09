@@ -27,7 +27,7 @@ class IconGrid
     static const int MARGIN_BOTTOM = 84;
     static const int MARGIN_TOP = 50;
 
-    static const int MAX_FIELDS_X = 7;
+    static const int MAX_FIELDS_X = 9;
 
     typedef std::vector<std::pair<int, int> > coord_list_t;
 
