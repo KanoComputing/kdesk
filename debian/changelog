@@ -1,3 +1,6 @@
+kdesk (1.3-1) unstable; urgency=low
+
+  * The grid can now accomodate 9 icons per row
 
 kdesk (1.1-9) unstable; urgency=low
 
