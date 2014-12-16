@@ -5,3 +5,4 @@ src/libkdesk-hourglass/testmodule.py /usr/share/doc/kdesk
 src/libkdesk-hourglass/testdynlib.cpp /usr/share/doc/kdesk
 src/libkdesk-hourglass/testshared.cpp /usr/share/doc/kdesk
 src/libkdesk-hourglass/python/* /usr/lib/python2.7/dist-packages/kdesk
+src/kdesk-hourglass-app /usr/bin

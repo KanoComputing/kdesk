@@ -12,11 +12,19 @@ TARGET:=kdesk-hourglass
 
 CPPTESTDYNLIB:=testdynlib
 CPPTESTSHARED:=testshared
+CPPTESTSHARED:=testshared
 
-all: $(TARGET) $(CPPTESTDYNLIB) $(CPPTESTSHARED)
+KDESK_HOURGLASS_APP:=kdesk-hourglass-app
+
+all: $(TARGET) $(CPPTESTDYNLIB) $(CPPTESTSHARED) $(KDESK_HOURGLASS_APP)
 
 debug:
 	make all DEBUGGING="-ggdb -O3 -DDEBUG"
+
+clean:
+	-rm *o
+	-rm lib$(TARGET).so
+	-rm $(CPPTESTDYNLIB) $(CPPTESTSHARED) $(KDESK_HOURGLASS_APP)
 
 # the linkage
 $(TARGET): $(TARGET).o
@@ -39,3 +47,11 @@ $(CPPTESTSHARED): $(CPPTESTSHARED).o
 
 $(CPPTESTSHARED).o: $(CPPTESTSHARED).cpp
 	g++ -c -g $(CPPTESTSHARED).cpp
+
+# A command line tool to bring up the hourglass to a loading app
+$(KDESK_HOURGLASS_APP): $(KDESK_HOURGLASS_APP).o
+	g++ $(KDESK_HOURGLASS_APP).o -L. -l$(TARGET) -o $(KDESK_HOURGLASS_APP)
+
+$(KDESK_HOURGLASS_APP).o: $(KDESK_HOURGLASS_APP).cpp
+	g++ -c -g $(KDESK_HOURGLASS_APP).cpp
+
