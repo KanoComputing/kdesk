@@ -16,7 +16,7 @@
 #include <string.h>
 #include "kdesk-hourglass.h"
 
-// TODO: make sure the CDATA attributes guarantee a per-process instance
+// Global variables
 SnDisplay *sn_display=NULL;
 SnLauncherContext *sn_context=NULL;
 Display *display=NULL;
@@ -37,70 +37,79 @@ void kdesk_hourglass_start_appcmd(char *cmdline)
 
     // We will strip off the cmdline full path,
     // beacause sn_notify wants to match against the program binary name only.
-    char *jump_slash=strstr(cmdline, "/");;
+    char *jump_slash=strstr(cmdline, "/");
     while (jump_slash != NULL) {
         cmdline=jump_slash + sizeof(char);
-        jump_slash=strstr(cmdline, "/");;
+        jump_slash=strstr(cmdline, "/");
     }
-
+    
     _start_launcher_(NULL, cmdline);
 }
 
 void kdesk_hourglass_end()
 {
-  // unbind from startup notify
-  sn_launcher_context_complete (sn_context);
-  sn_launcher_context_unref (sn_context);
-  sn_context = NULL;
+    // unbind from startup notify
+    if (sn_context) {
+        sn_launcher_context_complete(sn_context);
+    }
 }
 
 void _start_launcher_(char *appname, char *cmdline)
 {
-  Time xlib_time=0L;
+    Time xlib_time=0L;
 
-  display=XOpenDisplay(NULL);
-  if (!display) {
-    return;
-  }
+    display=XOpenDisplay(NULL);
+    if (!display) {
+        return;
+    }
+  
+    // sn_notify cannot cope with appname being NULL, but he likes it as an empty string.
+    if (!appname) {
+        appname=(char*) "";
+    }
 
-  // sn_notify cannot cope with appname being NULL, but he likes it as an empty string.
-  if (!appname) {
-      appname=(char*) "";
-  }
+    // bind to the startup notify library
+    if (!sn_display) {
+        sn_display = sn_display_new (display, error_trap_push, error_trap_pop);
+    }
+  
+    if (!sn_context) {
+        sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
+    }
+  
+    sn_launcher_context_set_name (sn_context, appname);
+    sn_launcher_context_set_description (sn_context, appname);
+    sn_launcher_context_set_binary_name (sn_context, cmdline ? cmdline : appname);
+    sn_launcher_context_set_icon_name(sn_context, appname);
 
-  // bind to the startup notify library
-  sn_display = sn_display_new (display, error_trap_push, error_trap_pop);
-  sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
-
-  sn_launcher_context_set_name (sn_context, appname);
-  sn_launcher_context_set_description (sn_context, appname);
-  sn_launcher_context_set_binary_name (sn_context, cmdline ? cmdline : appname);
-  sn_launcher_context_set_icon_name(sn_context, appname);
-
-  // We are not interested on the launcher-launchee relationship at this point
-  sn_launcher_context_initiate (sn_context, "launcher", "launchee", xlib_time);
-  sn_launcher_context_setup_child_process (sn_context);
+    // We are not interested on the launcher-launchee relationship at this point
+    sn_launcher_context_initiate (sn_context, "launcher", "launchee", xlib_time);
+    sn_launcher_context_setup_child_process (sn_context);
 }
 
 // Library constructor
 void __attribute__ ((constructor)) initialize(void)
 {
+    display=XOpenDisplay(NULL);
+    if (!display) {
+        return;
+    }
+
+    sn_display = sn_display_new (display, error_trap_push, error_trap_pop);
+    sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
 }
 
 // Library destructor
 void __attribute__ ((destructor)) finalize(void)
 {
-  if (sn_display) {
-    ;
-  }
-
-  if (sn_context) {
-    sn_launcher_context_unref(sn_context);
-    sn_context=NULL;
-  }
-
-  if (display) {
-    XCloseDisplay(display);
-    display=0L;
-  }
+    if (sn_context) {
+        sn_launcher_context_unref(sn_context);
+        sn_context=NULL;
+    }
+    
+    if (display) {
+        XCloseDisplay(display);
+        display=0L;
+        sn_display=0L;
+    }
 }
