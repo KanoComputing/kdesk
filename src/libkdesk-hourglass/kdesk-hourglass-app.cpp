@@ -29,14 +29,12 @@ int main(int argc, char *argv[]) {
   else {
       // Remove the hourglass
       if (!strcmp(argv[1], "-r")) {
-          printf("Cancelling the hourglass\n");
           kdesk_hourglass_end();
           exit(0);
       }
       else {
           // Start the hourglass for the app
           appname=strdup(argv[1]);
-          printf ("Bringing up hourglass in wait for app to arrive: %s\n", appname);
           kdesk_hourglass_start(appname);
           exit(0);
       }
