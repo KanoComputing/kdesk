@@ -51,7 +51,6 @@ void kdesk_hourglass_end()
     // unbind from startup notify
     if (sn_context) {
         sn_launcher_context_complete(sn_context);
-        sn_launchee_context_complete(sn_context);
     }
 }
 
