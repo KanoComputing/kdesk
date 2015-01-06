@@ -538,8 +538,6 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
         int gridy = (configuration->get_config_int ("gridheight") > h ?
                      configuration->get_config_int ("gridheight") - h : 0);
 
-      log2 ("XXX and YYY", gridx, gridy);
-
       imlib_render_image_on_drawable (gridx, gridy);
     } 
     else {   
