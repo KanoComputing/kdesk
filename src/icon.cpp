@@ -532,8 +532,14 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     // Draw the icon on the surface window, default is top-left.
     if (configuration->get_icon_string(iconid, "relative-to") == "grid") {
       // If it's inside a grid we will position it horizontally centered, and to the bottom.
-      int gridx = (configuration->get_config_int ("gridwidth") - w) / 2;
-      int gridy = configuration->get_config_int ("gridheight") - h;
+        int gridx = (configuration->get_config_int ("gridwidth") > w ? 
+                     (configuration->get_config_int ("gridwidth") - w) / 2 : 0);
+
+        int gridy = (configuration->get_config_int ("gridheight") > h ?
+                     configuration->get_config_int ("gridheight") - h : 0);
+
+      log2 ("XXX and YYY", gridx, gridy);
+
       imlib_render_image_on_drawable (gridx, gridy);
     } 
     else {   
