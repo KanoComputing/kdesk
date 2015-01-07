@@ -34,6 +34,7 @@ class Desktop
   bool finish;
   static int error_trap_depth;
   int numicons;
+  int cache_size;
   Atom atom_finish, atom_reload, atom_reload_icons, atom_icon_alert;
 
  public:
