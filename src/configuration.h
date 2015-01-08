@@ -32,6 +32,7 @@ class Configuration
   void dump (void);
   void reset(void);
   void reset_icons(void);
+  std::string get_spaced_value(void);
 
   std::string get_config_string(std::string item);
   unsigned int get_config_int(std::string item);
