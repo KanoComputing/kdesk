@@ -80,13 +80,13 @@ bool Configuration::load_conf(const char *filename)
       }
 
       if (token == "Background.File-4-3:") {
-	ifile >> value;
-	configuration["background.file-4-3"] = value;
+          value = get_spaced_value();
+          configuration["background.file-4-3"] = value;
       }
 
       if (token == "Background.File-16-9:") {
-	ifile >> value;
-	configuration["background.file-16-9"] = value;
+          value = get_spaced_value();
+          configuration["background.file-16-9"] = value;
       }
 
       if (token == "ClickDelay:") {
@@ -165,8 +165,8 @@ bool Configuration::load_conf(const char *filename)
       }
 
       if (token == "Background.File-medium:") {
-	ifile >> value;
-	configuration["background.file-medium"] = value;
+          value = get_spaced_value();
+          configuration["background.file-medium"] = value;
       }
 
       if (token == "MouseHoverIcon:") {
@@ -399,6 +399,20 @@ int Configuration::get_icon_int(int iconid, std::string key)
 int Configuration::get_numicons(void)
 {
   return numicons;
+}
+
+std::string Configuration::get_spaced_value(void)
+{
+    std::string value;
+
+    // get the value until end of line
+    std::getline (ifile, value);
+
+    // trim leading and trailing spaces
+    value.erase (0, value.find_first_not_of (' '));
+    value.erase (value.find_last_not_of (' ') + 1);
+
+    return value;
 }
 
 void Configuration::dump()
