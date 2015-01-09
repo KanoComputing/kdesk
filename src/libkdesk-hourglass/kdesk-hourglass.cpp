@@ -57,11 +57,6 @@ void kdesk_hourglass_end()
 void _start_launcher_(char *appname, char *cmdline)
 {
     Time xlib_time=0L;
-
-    display=XOpenDisplay(NULL);
-    if (!display) {
-        return;
-    }
   
     // sn_notify cannot cope with appname being NULL, but he likes it as an empty string.
     if (!appname) {

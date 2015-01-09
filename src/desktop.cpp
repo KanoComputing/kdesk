@@ -41,6 +41,7 @@ Desktop::Desktop(void)
   numicons = 0;
   initialized = false;
   icon_grid = NULL;
+  cache_size = 0;
 }
 
 void Desktop::initialize(Background *p)
@@ -67,22 +68,28 @@ Desktop::~Desktop(void)
 
 bool Desktop::create_icons (Display *display)
 {
-  int nicon=0, cache_size=0;
+  int nicon=0;
 
   icon_grid = new IconGrid(display, pconf);
 
-  // Set the initial imlib2 cache size programmatically
+  // By default we do not use imlib2 image cache.
   cache_size = pconf->get_config_int("imagecachesize");
   if (cache_size > 0) {
     log1 ("Setting image cache-size via config ImageCacheSize to bytes", cache_size);
   }
   else {
-    // default cache size assumes each icon is 90x90 * 32 bpp (Imlib2 RGBA) ~ 32Kb, accounting for hover icons as well
-    cache_size = pconf->get_numicons() * 2 * 32768;
-    log1 ("Setting auto-computed image cache-size to bytes", cache_size);
+    // Do not use imlib2 cache by default. It occassionally messes up icon images.
+    cache_size = 0;
+    log ("Not using Imlib2 image cache");
   }
 
-  imlib_set_cache_size(cache_size);
+  // Sets the cache size. The size is in bytes. Setting the cache size to 0 effectively flushes the cache
+  // and keeps the cache size at 0 until set to another value. 
+  // Whenever you set the cache size Imlib2 will flush as many old images and pixmap 
+  // from the cache as needed until the current cache usage is less than or equal to the cache size.
+  if (cache_size > 0) {
+      imlib_set_cache_size(cache_size);
+  }
 
   // Create and draw all icons, save a mapping of their window IDs -> handlers
   // so that we can dispatch events to each one in turn later on.
@@ -198,10 +205,12 @@ bool Desktop::destroy_icons (Display *display)
   iconHandlers.clear();
   numicons = 0;
 
-  // make sure imlib2 cache is empty so that icons will effectively
-  // be reloaded from disk. Imlib2 cache system is based on file pathnames.
-  // specially important during kdesk -refresh
-  imlib_set_cache_size(0);
+  // Reset imlib2 image cache memory, only if a cache is specified.
+  // This will effectively remove them from memory to be reloaded from disk.
+  // Imlib2 cache system is based on file pathnames. specially important during kdesk -refresh
+  if (cache_size > 0) {
+      imlib_set_cache_size(0);
+  }
 
 }
 
