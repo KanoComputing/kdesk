@@ -22,7 +22,10 @@ SnLauncherContext *sn_context=NULL;
 Display *display=NULL;
 
 // local private prototypes
+void __attribute__ ((constructor)) initialize(void);
+void __attribute__ ((destructor)) finalize(void);
 void _start_launcher_(char *appname, char *cmdline);
+
 
 void kdesk_hourglass_start(char *appname)
 {
@@ -57,21 +60,15 @@ void kdesk_hourglass_end()
 void _start_launcher_(char *appname, char *cmdline)
 {
     Time xlib_time=0L;
-  
+
+    // bind to the startup notify library
+    initialize();
+
     // sn_notify cannot cope with appname being NULL, but he likes it as an empty string.
     if (!appname) {
         appname=(char*) "";
     }
 
-    // bind to the startup notify library
-    if (!sn_display) {
-        sn_display = sn_display_new (display, error_trap_push, error_trap_pop);
-    }
-  
-    if (!sn_context) {
-        sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
-    }
-  
     sn_launcher_context_set_name (sn_context, appname);
     sn_launcher_context_set_description (sn_context, appname);
     sn_launcher_context_set_binary_name (sn_context, cmdline ? cmdline : appname);
@@ -80,6 +77,9 @@ void _start_launcher_(char *appname, char *cmdline)
     // We are not interested on the launcher-launchee relationship at this point
     sn_launcher_context_initiate (sn_context, "launcher", "launchee", xlib_time);
     sn_launcher_context_setup_child_process (sn_context);
+
+    // release access to startup notify library
+    finalize();
 }
 
 // Library constructor
@@ -101,7 +101,7 @@ void __attribute__ ((destructor)) finalize(void)
         sn_launcher_context_unref(sn_context);
         sn_context=NULL;
     }
-    
+
     if (display) {
         XCloseDisplay(display);
         display=0L;
