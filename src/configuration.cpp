@@ -441,6 +441,8 @@ void Configuration::reset(void)
     {
       configuration.erase(it);
     }
+
+  configuration.clear();
   reset_icons();
 }
 

@@ -42,10 +42,11 @@ int get_current_console (void)
 int execute_hook(const char *hook_script, const char *params)
 {
   int rc=-1;
-  char *chcmdline = (char *) calloc (1024, sizeof(char));
+  size_t cmdline_bytes=1024 * sizeof(char);
+  char *chcmdline = (char *) calloc (1, cmdline_bytes);
 
   if (chcmdline != NULL && hook_script != NULL) {
-    sprintf (chcmdline, "/bin/bash -c \"%s %s\"", hook_script, (params ? params : ""));
+    snprintf (chcmdline, cmdline_bytes, "/bin/bash -c \"%s %s\"", hook_script, (params ? params : ""));
     log1 ("Executing screen saver hook:", chcmdline);
 
     signal(SIGCHLD, SIG_DFL);
@@ -56,7 +57,10 @@ int execute_hook(const char *hook_script, const char *params)
     if (rc != -1) {
       rc = WEXITSTATUS(rc);
     }
-    free (chcmdline);
+  }
+
+  if (chcmdline) {
+      free (chcmdline);
   }
 
   return rc;

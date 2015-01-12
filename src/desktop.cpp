@@ -664,7 +664,7 @@ bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Ic
     }
     
   // Redraw the icon if attributes have been modified
-  fclose (fp_iconhooks);
+  pclose (fp_iconhooks);
   if (updates) {
     log1 ("Populating hook updates to icon (#updates)", updates);
     pico_hook->clear(display, ev);

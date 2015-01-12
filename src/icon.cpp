@@ -490,7 +490,7 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 	w = neww;
 	h = newh;
 	imlib_context_set_image(image);
-	imlib_free_image();
+	imlib_free_image_and_decache();
 	image = resized;
 	imlib_context_set_image(image);
       }
@@ -547,7 +547,7 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     // Set context to stamped image so we can free it.
     if (image_stamp != NULL) {
       imlib_context_set_image(image_stamp);
-      imlib_free_image();
+      imlib_free_image_and_decache();
     }
 
     // Free the color transformation if used
@@ -724,7 +724,7 @@ bool Icon::blink_icon(Display *display, XEvent ev)
       imlib_free_color_modifier();
     }
 
-    imlib_free_image();
+    imlib_free_image_and_decache();
     bsuccess = true;
   }
 
