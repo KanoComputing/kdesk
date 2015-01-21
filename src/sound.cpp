@@ -69,6 +69,11 @@ void Sound::play_sound(string sound_name)
   int rc;
   string sound_cmdline;
 
+  // Do not play anything if sound is disabled in kdeskrc
+  if (!(configuration->get_config_string ("enablesound") == "true")) {
+      return;
+  }
+
   if (playing == true) {
     log ("A sound is currently being played");
   }
