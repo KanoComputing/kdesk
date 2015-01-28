@@ -26,6 +26,8 @@
 
 #include <unistd.h>
 #include <map>
+#include <syslog.h>
+#include <sys/time.h>
 
 #include "icon.h"
 #include "sound.h"
@@ -408,8 +410,18 @@ bool Desktop::process_and_dispatch(Display *display)
 		  // Notify system we are about to load a new app (hourglass)
 		  psound->play_sound("soundlaunchapp");
 
-                  // Show the hourglass mouse
                   string command_line=iconHandlers[wtarget]->get_commandline();
+
+		  // Log for timing purposes
+		  
+		  {
+		    struct timeval now;
+		    gettimeofday(&now,NULL);
+		    
+		    syslog(LOG_USER | LOG_INFO,"timepoint %d.%06d: starting %s",now.tv_sec,now.tv_usec,command_line.c_str());
+		  }
+
+                  // Show the hourglass mouse
                   kdesk_hourglass_start_appcmd((char *) command_line.c_str());
 
 		  bstarted = iconHandlers[wtarget]->double_click (display, ev);

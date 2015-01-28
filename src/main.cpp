@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <syslog.h>
 
 #include <signal.h>
 #include <fcntl.h>
@@ -121,6 +122,9 @@ int main(int argc, char *argv[])
   string strKdeskRC, strHomeKdeskRC, strKdeskDir, strKdeskUser;
   bool test_mode = false, wallpaper_mode = false;
   int c;
+
+  // initialise syslog
+  openlog("kdesk",0,LOG_INFO);
 
   // Collect command-line parameters
   while ((c = getopt(argc, argv, "?htwria:vq")) != EOF)
