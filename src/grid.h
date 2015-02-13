@@ -1,7 +1,7 @@
 //
 // grid.h
 //
-// Copyright (C) 2013-2014 Kano Computing Ltd.
+// Copyright (C) 2013-2014-2015 Kano Computing Ltd.
 // License: http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
 //
 //
@@ -27,7 +27,7 @@ class IconGrid
     static const int MARGIN_BOTTOM = 84;
     static const int MARGIN_TOP = 50;
 
-    static const int MAX_FIELDS_X = 8;
+    static const int MAX_FIELDS_X = 7;
 
     typedef std::vector<std::pair<int, int> > coord_list_t;
 
