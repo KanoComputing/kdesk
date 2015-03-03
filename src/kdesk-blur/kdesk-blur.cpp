@@ -138,28 +138,8 @@ void *BlurDesktop(void *pvnothing)
 		       XA_ATOM, 32, PropModeAppend,
 		       (unsigned char *) &net_skip_taskbar, 1);
 
-      // Give the blurred window a meaningful name and show it
+      // Give the blurred window a meaningful name.
       XStoreName (display, winblur, KDESK_BLUR_NAME);
-      XMapWindow(display, winblur);
-
-      // Set the window to always stay on top of all others, full screen.
-      // FIXME: This effectively blurs the taskbar, but we need to be the "owner" of the popup window.
-      // If we transform this code into a library, the client can effectively show up itself.
-      /*
-	XEvent e;
-	e.xclient.type         = ClientMessage;
-	e.xclient.window       = winblur;
-	e.xclient.message_type = XInternAtom (display, "_NET_WM_STATE", False); //_NET_WM_STATE;
-	e.xclient.format = 32;
-	e.xclient.data.l[0] = 2;    // _NET_WM_STATE_TOGGLE
-	e.xclient.data.l[1] = XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", True);
-	e.xclient.data.l[2] = 0;    // no second property to toggle
-	e.xclient.data.l[3] = 1;
-	e.xclient.data.l[4] = 0;
-
-	// Send this event after mapping the window
-	XSendEvent(display, root_window, False, SubstructureRedirectMask | SubstructureNotifyMask, &e);
-      */
 
       // Draw the blurred image into the pixmap, then apply the pixmap to the window
       // We do it this way so the XServer can have a copy for the backing store to repaint on Exposure events
@@ -167,9 +147,12 @@ void *BlurDesktop(void *pvnothing)
       imlib_render_image_on_drawable (0, 0);
       XSetWindowBackgroundPixmap(display, winblur, pmap_blur);
 
+      // Map the window after setting the pixmap so it is displayed before the app that will run on top
+      XMapWindow(display, winblur);
+      XFlush(display);
+
       imlib_free_image();
 
-      XFlush (display);
       log1 ("Blur window created successfully (winid)", winblur);
       success = true;
     }
