@@ -651,6 +651,9 @@ bool Icon::blink_icon(Display *display, XEvent ev)
   Imlib_Image original = imlib_load_image(ficon.c_str());
   Imlib_Color_Modifier colorMod=NULL;
 
+  // Set the cursor to hand icon
+  XDefineCursor(display, win, cursor);
+
   // If a second texture is provided, create a visual effect when mouse moves over the icon (hover effect)
   if (ficon_hover.length() > 0) {
 
@@ -906,6 +909,9 @@ bool Icon::double_click(Display *display, XEvent ev)
   }
   else
     {
+      // Remove the hand icon to let the system show the startup hourglass
+      XUndefineCursor (display, win);
+
       // Launch the icon's appplication asynchronously,
       // Set the status to starting, so that icons get disabled
       // Until the app is up and running
