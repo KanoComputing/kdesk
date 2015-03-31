@@ -10,11 +10,17 @@
 #include <dirent.h>
 #include <sstream>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 
 #include "main.h"
 #include "configuration.h"
 #include "logging.h"
+
+// Name of the reserved icon filename which will always
+// be positioned at the last cell of the grid
+char *kdesk_plus_icon_filename=(char *) "";
+
 
 Configuration::Configuration()
 {
@@ -209,6 +215,15 @@ bool Configuration::load_conf(const char *filename)
 	configuration["imagecachesize"] = value;
       }
 
+      if (token == "LastGridIcon:") {
+	ifile >> value;
+	configuration["lastgridicon"] = value;
+
+        // This icon filename will be used to make sure
+        // it is the last icon to position in the grid
+        kdesk_plus_icon_filename = (char *) configuration["lastgridicon"].c_str();
+      }
+
     }
 
   ifile.close();
@@ -338,6 +353,23 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
   return bsuccess;
 }
 
+int Configuration::plus_icon_sort (const struct dirent **e1, const struct dirent **e2)
+{
+    // This function will make sure the special icon name "kdesk_plus_icon"
+    // is located at the last grid position available on the desktop
+
+    const char *a = (*e1)->d_name;
+    const char *b = (*e2)->d_name;
+    cout << "comparing " << b << " with " << kdesk_plus_icon_filename << endl;
+
+    if (!strcmp(kdesk_plus_icon_filename, a)) {
+        return -1;
+    }
+    else {
+        return (strcmp (a, b));
+    }
+}
+
 bool Configuration::load_icons(const char *directory)
 {
   struct dirent **files;
@@ -345,7 +377,7 @@ bool Configuration::load_icons(const char *directory)
 
   // Read kano-desktop distributed icons first
   log1 ("Loading icons from directory", directory);
-  numfiles = scandir (directory, &files, 0, 0);
+  numfiles = scandir (directory, &files, 0, plus_icon_sort);
   for (count=0; count < numfiles && numicons <= MAX_ICONS; count++)
     {
       string f = files[count]->d_name;

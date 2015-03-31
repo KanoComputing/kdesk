@@ -27,6 +27,9 @@ class Configuration
   Configuration ();
   virtual ~Configuration (void);
   bool load_conf (const char *filename);
+
+  static int plus_icon_sort (const struct dirent **e1, const struct dirent **e2);
+
   bool load_icons (const char *directory);
   bool parse_icon (const char *directory, std::string fname, int iconid);
   void dump (void);
