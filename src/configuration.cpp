@@ -19,7 +19,7 @@
 
 // Name of the reserved icon filename which will always
 // be positioned at the last cell of the grid
-char *kdesk_plus_icon_filename=(char *) "";
+char *kdesk_plus_icon_filename=NULL;
 
 
 Configuration::Configuration()
@@ -353,34 +353,25 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
   return bsuccess;
 }
 
-int Configuration::plus_icon_sort (const struct dirent **e1, const struct dirent **e2)
-{
-    // This function will make sure the special icon name "kdesk_plus_icon"
-    // is located at the last grid position available on the desktop
-
-    const char *a = (*e1)->d_name;
-    const char *b = (*e2)->d_name;
-    cout << "comparing " << b << " with " << kdesk_plus_icon_filename << endl;
-
-    if (!strcmp(kdesk_plus_icon_filename, a)) {
-        return -1;
-    }
-    else {
-        return (strcmp (a, b));
-    }
-}
-
 bool Configuration::load_icons(const char *directory)
 {
   struct dirent **files;
   int numfiles, count;
+  string last_grid_icon_file;
+  char last_grid_icon_dir[256]={0};
 
   // Read kano-desktop distributed icons first
   log1 ("Loading icons from directory", directory);
-  numfiles = scandir (directory, &files, 0, plus_icon_sort);
+  numfiles = scandir (directory, &files, 0, 0);
   for (count=0; count < numfiles && numicons <= MAX_ICONS; count++)
     {
       string f = files[count]->d_name;
+      if (kdesk_plus_icon_filename && !strcmp(f.c_str(), kdesk_plus_icon_filename)) {
+          last_grid_icon_file=f;
+          strcpy(last_grid_icon_dir, directory);
+          continue;
+      }
+
       if (parse_icon (directory, f, numicons) == true) {
 	numicons++;
       }
@@ -395,10 +386,25 @@ bool Configuration::load_icons(const char *directory)
   for (count=0; count < numfiles && numicons <= MAX_ICONS; count++)
     {
       string f = files[count]->d_name;
+      if (kdesk_plus_icon_filename && !strcmp(f.c_str(), kdesk_plus_icon_filename)) {
+          last_grid_icon_file=f;
+          strcpy(last_grid_icon_dir, kdesk_homedir.c_str());
+          continue;
+      }
+
       if (parse_icon (kdesk_homedir.c_str(), f, numicons) == true) {
 	numicons++;
       }
     }
+
+  if (last_grid_icon_file.length()) {
+      log1 ("Adding a last_grid_icon: ", last_grid_icon_file);
+
+      // add the last grid icon at the end of the list
+      if (parse_icon (last_grid_icon_dir, last_grid_icon_file, numicons) == true) {
+          numicons++;
+      }      
+  }
 
   log2 ("Number of icons loaded, max permitted", numicons, MAX_ICONS);
   return (bool) (count > 0);
