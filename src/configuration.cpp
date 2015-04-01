@@ -474,27 +474,20 @@ void Configuration::dump()
 
 void Configuration::reset(void)
 {
-  std::map<string,string>::iterator it;
-  for (it=configuration.begin(); it != configuration.end(); ++it)
-    {
-      configuration.erase(it);
-    }
-
-  configuration.clear();
-  reset_icons();
+    configuration.erase(configuration.begin(), configuration.end());
+    configuration.clear();
+    reset_icons();
 }
 
 void Configuration::reset_icons(void)
 {
-  std::map<string,string>::iterator it;
-  for (int c=0; c < numicons; c++) {
-    for (it=icons[c].begin(); it != icons[c].end(); ++it)
-      {
-	icons[c].erase (it);
-      }
-  }
+    std::map<string,string>::iterator it;
 
-  icons.clear();
-  numicons = 0;
+    for (int c=0; c < numicons; c++) {
+        icons[c].erase(icons[c].begin(), icons[c].end());
+    }
+
+    icons.clear();
+    numicons=0;
 }
 
