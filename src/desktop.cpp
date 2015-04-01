@@ -195,13 +195,14 @@ bool Desktop::destroy_icons (Display *display)
       // events which we are not dealing with anymore, they are defunct.
       // This is the case with hover effects when the mouse is over them during refresh.
       if (it->second) {
-	it->second->destroy(display);
-	delete it->second;
+          it->second->destroy(display);
+          delete it->second;
+          log1 ("deleting", it->first);
       }
-      iconHandlers.erase(it);
     }
 
   // Then empty the list of icon handlers
+  iconHandlers.erase(iconHandlers.begin(), iconHandlers.end());
   iconHandlers.clear();
   numicons = 0;
 
