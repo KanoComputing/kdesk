@@ -369,6 +369,8 @@ void Icon::destroy(Display *display)
     xftdraw1 = NULL;
   }
 
+  XDestroyWindow (display, win);
+
   if (font) {
     XftFontClose(display, font);
     font = NULL;
@@ -398,8 +400,6 @@ void Icon::destroy(Display *display)
   if (is_grid == true) {
     pgrid->free_space_used (gridx, gridy);
   }
-
-  XDestroyWindow (display, win);
 }
 
 int Icon::get_icon_horizontal_placement (int image_width)
