@@ -79,7 +79,9 @@ bool Desktop::create_icons (Display *display)
   }
   else {
     // Do not use imlib2 cache by default. It occassionally messes up icon images.
-    cache_size = 0;
+    // Force a cache of 1 if no cache specified. This is to account for the free_image
+    // calls not being called as it causes memory leaks - see icon.cpp#destroy()
+    cache_size = 1;
     log ("Not using Imlib2 image cache");
   }
 
@@ -198,10 +200,10 @@ bool Desktop::destroy_icons (Display *display)
 	it->second->destroy(display);
 	delete it->second;
       }
-      iconHandlers.erase(it);
     }
 
-  // Then empty the list of icon handlers
+  // Then erase each window->handler mapping entry, and empty the map list
+  iconHandlers.erase(iconHandlers.begin(), iconHandlers.end());
   iconHandlers.clear();
   numicons = 0;
 

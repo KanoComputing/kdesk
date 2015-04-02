@@ -381,25 +381,37 @@ void Icon::destroy(Display *display)
 
   if (image != NULL) {
     imlib_context_set_image(image);
-    imlib_free_image_and_decache();
+    // FIXME: Freeing the images causes a segfault after a few iterations
+    // setting imlibi's cache to 1 makes the memory usage become stable
+    //imlib_free_image_and_decache();
+    //imlib_free_image();
+    image=NULL;
   }
 
   if (image_stamp != NULL) {
     imlib_context_set_image(image_stamp);
-    imlib_free_image_and_decache();
+    // FIXME: Freeing the images causes a segfault after a few iterations
+    // setting imlibi's cache to 1 makes the memory usage become stable
+    //imlib_free_image_and_decache();
+    //imlib_free_image();
+    image_stamp=NULL;
   }
 
   if (backsafe != NULL) {
     imlib_context_set_image(backsafe);
-    imlib_free_image_and_decache();
+    // FIXME: Freeing the images causes a segfault after a few iterations
+    // setting imlibi's cache to 1 makes the memory usage become stable
+    //imlib_free_image_and_decache();
+    //imlib_free_image();
+    backsafe=NULL;
   }
+
+  XDestroyWindow (display, win);
 
   // free the grid position just occupied if necessary
   if (is_grid == true) {
     pgrid->free_space_used (gridx, gridy);
   }
-
-  XDestroyWindow (display, win);
 }
 
 int Icon::get_icon_horizontal_placement (int image_width)
