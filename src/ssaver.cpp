@@ -99,7 +99,13 @@ void fake_user_input (Display *display)
 {
   // Send a fake mouse movement so that the XServer restarts the inactivity timer
   Window root = DefaultRootWindow(display);
-  XWarpPointer(display, None, root, 0, 0, 0, 0, 10, 10);
+
+  // From the docs: If dest_w is None, XWarpPointer() moves the pointer by the offsets
+  // (dest_x, dest_y) relative to the current position of the pointer
+  XWarpPointer(display, root, 0, // Display, source window, destination window
+               0, 0, 0, 0,       // source x,y and width, height
+               1, 1);            // destination x,y
+
   XFlush(display);
 }
 
