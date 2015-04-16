@@ -344,6 +344,10 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	if (token == "Relative-To:") {
 	  icons[iconid]["relative-to"] = value;
 	}
+
+        if (token == "Transparency:") {
+          icons[iconid]["transparency"] = value;
+        }
       }
 
     ifile.close();

@@ -75,8 +75,14 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
     log ("Error allocating memory for iconMapGlow");
   }
 
-  // Icon transparency can be specified for all icons in the kdeskrc file.
-  transparency_value = configuration->get_config_int("transparency");
+  // Icon transparency can be specified for each icon,
+  // or globally for all icons in the kdeskrc file.
+  // 0 means full transparent, 255 is opaque.
+  transparency_value = configuration->get_icon_int(iconid, "transparency");
+  if (!transparency_value) {
+      transparency_value = configuration->get_config_int("transparency");
+  }
+
   if (transparency_value > 0) {
     log1 ("Found icon transparency setting", transparency_value);
     iconMapTransparency = (unsigned char *) calloc (sizeof(unsigned char), 256);
