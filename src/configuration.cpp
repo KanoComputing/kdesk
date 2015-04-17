@@ -54,7 +54,12 @@ bool Configuration::load_conf(const char *filename)
 	ifile >> value;
 	configuration["fontname"] = value;
       }
-      
+
+      if (token == "FontColor:") {
+	ifile >> value;
+	configuration["fontcolor"] = value;
+      }
+
       if (token == "FontSize:") {
 	ifile >> value;
 	configuration["fontsize"] = value;
@@ -73,6 +78,11 @@ bool Configuration::load_conf(const char *filename)
       if (token == "Shadow:") {
 	ifile >> value;
 	configuration["shadow"] = value;
+      }
+
+      if (token == "ShadowColor:") {
+	ifile >> value;
+	configuration["shadowcolor"] = value;
       }
 
       if (token == "ShadowX:") {
