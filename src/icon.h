@@ -34,6 +34,8 @@ class Icon
   IconGrid *pgrid;
   int iconx, icony, iconw, iconh;
   int shadowx, shadowy;
+  int stamp_x, stamp_y;
+  int message_x, message_y;
   int icontitlegap;
   int transparency_value;
   bool is_grid;
@@ -55,7 +57,8 @@ class Icon
   std::string ficon_hover;
   std::string ficon_stamp;
   std::string caption;
-  std::string message;
+  std::string message_line1;
+  std::string message_line2;
 
  public:
   int iconid;

@@ -42,16 +42,19 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   xftdraw1 = NULL;
   is_grid = false;
   gridx = gridy = 0;
+  stamp_x=stamp_y=0;
+  message_x=message_y=0;
 
   // save the lnk filename, icon, icon hover image files
   filename = configuration->get_icon_string (iconid, "filename");
   ficon = configuration->get_icon_string (iconid, "icon");
   ficon_hover = configuration->get_icon_string (iconid, "iconhover");
-  ficon_stamp = configuration->get_icon_string (iconid, "iconstamp");
+
+  set_icon_stamp((char *)configuration->get_icon_string (iconid, "iconstamp").c_str());
 
   // save the icon caption and message literals to be rendered around it
   caption = configuration->get_icon_string (iconid, "caption");
-  message = configuration->get_icon_string (iconid, "message");
+  set_message((char *)configuration->get_icon_string (iconid, "message").c_str());
 
   // Initially we don't know yet which display we are bound to until create()
   icon_display = NULL;
@@ -148,7 +151,14 @@ void Icon::set_caption (char *new_caption)
 
 void Icon::set_message (char *new_message)
 {
-  message = new_message;
+    // Parse and extract the message components in the syntax form:
+    // "Message: {x,y} Line 1|Line 2"
+
+    // FIXME: Providing sample hardcode values for initial testing
+    message_line1="hello";
+    message_line2="goodbye";
+    message_x=0;
+    message_y=0;
 }
 
 void Icon::set_icon (char *new_icon)
@@ -158,7 +168,17 @@ void Icon::set_icon (char *new_icon)
 
 void Icon::set_icon_stamp (char *new_icon)
 {
-  ficon_stamp = new_icon;
+    // Extract coordinates from the string (Stamp: {x,y} /path/to/filename)
+    char *open_braces=strstr (new_icon, "{");
+    char *close_braces=strstr (new_icon, "}");
+    if (open_braces && close_braces) {
+        sscanf (new_icon, "{%d,%d} %*s", &stamp_x, &stamp_y);
+        ficon_stamp = close_braces + sizeof(char);
+    }
+    else {
+        stamp_x = stamp_y = 0;
+        ficon_stamp = new_icon;
+    }
 }
 
 bool Icon::is_singleton_running (Display *display)
@@ -189,7 +209,7 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
   cmap = DefaultColormap(display, DefaultScreen(display));
 
   // If there is an icon caption or message defined, allocate a font for it
-  if (caption.length() > 0 || message.length() > 0) {
+  if (caption.length() > 0 || message_line1.length() > 0) {
     log ("allocating font resources for icon title");
 
     // Collect font details: shadow offsets and caption screen space occupied, used for centering
@@ -213,43 +233,39 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
         memset (&font_extents, 0x00, sizeof(XGlyphInfo));
         XftTextExtents8 (display,
                          font,
-                         (const FcChar8*) message.c_str(),
-                         message.length(),
+                         (const FcChar8*) message_line1.c_str(),
+                         message_line1.length(),
                          &font_extents);
 
         log2("Message extents (width, height)", font_extents.width, font_extents.height);
+        rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0),
+                               (const char *) configuration->get_config_string("fontcolor").c_str(), &xftcolor);
 
+        rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0),
+                               (const char *) configuration->get_config_string("shadowcolor").c_str(), &xftcolor_shadow);
+        log1 ("XftColorAllocName bool", rc);
 
-      log("font loaded");
-      rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0),
-                             (const char *) configuration->get_config_string("fontcolor").c_str(), &xftcolor);
+        int subtitle_fontsize = configuration->get_config_int ("subtitlefontsize");
+        if (!subtitle_fontsize) {
+            // Assign a smaller font size
+            subtitle_fontsize = fontsize - DEFAULT_SUBTITLE_FONT_POINT_DECREASE;
+        }
 
-      rc = XftColorAllocName(display, DefaultVisual(display,0), DefaultColormap(display,0),
-                             (const char *) configuration->get_config_string("shadowcolor").c_str(), &xftcolor_shadow);
-      log1 ("XftColorAllocName bool", rc);
+        fontsmaller = XftFontOpen (display, DefaultScreen(display),
+                                   XFT_FAMILY, XftTypeString, fontname.c_str(),
+                                   XFT_SIZE, XftTypeDouble, (float) subtitle_fontsize,
+                                   NULL);
+        log1 ("creating a smaller font for messages", fontsmaller);
 
-      int subtitle_fontsize = configuration->get_config_int ("subtitlefontsize");
-      if (!subtitle_fontsize) {
-        // Assign a smaller font size
-        subtitle_fontsize = fontsize - DEFAULT_SUBTITLE_FONT_POINT_DECREASE;
-      }
-
-      fontsmaller = XftFontOpen (display, DefaultScreen(display),
-				 XFT_FAMILY, XftTypeString, fontname.c_str(),
-				 XFT_SIZE, XftTypeDouble, (float) subtitle_fontsize,
-				 NULL);
-      log1 ("creating a smaller font for messages", fontsmaller);
-
-      // Find out the extent of icon caption and message on the rendering surface
-      // The window containing the icon will be enlarged vertically to accomodate this space
-      if (caption.length() > 0) {
-	XftTextExtentsUtf8 (display, font, (XftChar8*) caption.c_str(), caption.length(), &fontInfoCaption);
-      }
+        // Find out the extent of icon caption and message on the rendering surface
+        // The window containing the icon will be enlarged vertically to accomodate this space
+        if (caption.length() > 0) {
+            XftTextExtentsUtf8 (display, font, (XftChar8*) caption.c_str(), caption.length(), &fontInfoCaption);
+        }
     }
   }
 
   XSetWindowAttributes attr;
-
   attr.background_pixmap = ParentRelative;
   attr.backing_store = Always;
   attr.event_mask = ExposureMask | EnterWindowMask | LeaveWindowMask;
@@ -562,12 +578,13 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
       imlib_set_color_modifier_tables (iconMapNone, iconMapNone, iconMapNone, iconMapTransparency);
     }
 
-    // If we have a stamp icon, draw it on top of the icon
+    // If we have a stamp icon, draw it centered on top of the icon
+    // Or at given coordinates if specifed in the form "Stamp: {x,y} /my/path/file.png"
     if (image_stamp != NULL) {
-      imlib_blend_image_onto_image (image_stamp, 1, 0, 0, stamp_w, stamp_h,
-				    (w - stamp_w) / 2,
-				    (h - stamp_h) / 2,
-				    stamp_w, stamp_h);
+        imlib_blend_image_onto_image (image_stamp, 1, 0, 0, stamp_w, stamp_h,
+                                      (stamp_x ? stamp_x : (w - stamp_w) / 2),
+                                      (stamp_y ? stamp_y : (h - stamp_h) / 2),
+                                       stamp_w, stamp_h);
     }
 
     // Draw the icon on the surface window, default is top-left.
@@ -615,45 +632,20 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 		       (XftChar8 *) caption.c_str(), caption.size());
   }
 
-  // Render the message information area, default is on the right side of the icon
-  if (message.length() > 0 && font && fontsmaller) {
+  // Render the message information area for non-grid icons
+  // Can be at the left or right side of the image
+  // Or in absolute coordinates on top of the image (Message: {x,y} Line1|Line2)
+  if (is_grid == false && message_line1.length() > 0 && font && fontsmaller) {
 
-    // If the message is dual-line (i.e. some\ntext), then split it in 2 messages
-    // and use a smaller font to render the text below the first line.
-    char *msg = (char *) strdup(message.c_str());
-    char *msg1 = msg;
-    char *msg2 = NULL;
-    char *newline = NULL;
-
-    // If we find the newline magic mark ( OR sign ), this is a dual-line message. Split it.
-    newline = (char *) strstr (msg1, "|");
-    if (newline != NULL) {
-      *newline = 0x00;
-      msg2 = newline + sizeof (char);
-      log2 ("Message is dual-line (first, second)", msg1, msg2);
-    }
-
-    // Decide where to position the message (absolute coords, or next to the image)
-    XftTextExtentsUtf8 (display, font, (XftChar8*) msg1, strlen (msg1), &fontInfoMessage);
-
-    int fx=0, fy=0;
+    // Ask how wide the rendered text will occupy in pixels
+    XftTextExtentsUtf8 (display, font, (XftChar8*) message_line1.c_str(), message_line1.length(), &fontInfoMessage);
     int xgap=5;      // used to avoid the text from blending with the icon when halign=right
 
-    char *open_braces=strstr (msg1, "{");
-    char *close_braces=strstr (msg1, "}");
-    if (open_braces && close_braces) {
-        // Absolute positioning: the message tells us the coordinates relative to image
-        // For example: "Message: {10,30} Myname|Level 8\n"
-        sscanf (msg1, "{%d,%d} %*s", &fx, &fy);
-        subx = 200;
-
-        // Remove the coordinates indication: skip literal after the closing braces
-        msg1 = close_braces + sizeof(char);
-
-        // If the text is too long to fit, choose a smaller font
-        if ((fx + fontInfoMessage.width) > iconw) {
-
-            log1 ("Text cannot fit: choosing a smaller font", msg1);
+    // Decide where to position the message (absolute coords, or next to the image)
+    if (message_x && message_y) {
+        // Absolute positioning. If the text is too long to fit, choose a smaller font
+        if ((message_x + fontInfoMessage.width) > iconw) {
+            log1 ("Text cannot fit: choosing a smaller font", message_line1.c_str());
             XftFontClose(display, font);
             string fontname = get_font_name();
             int fontsize = configuration->get_config_int ("fontsize") / 2;
@@ -664,43 +656,49 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
         }
     } 
     else {
-        // Position the text message, next to the image
-        XftTextExtentsUtf8 (display, font, (XftChar8*) msg1, strlen (msg1), &fontInfoMessage);
-        fy = h / 2;      // FIXME: This is not pixel-accurate
+        // Automatic position. Next to the image.
+        // (left or right, depending on how close to the screen border)
+        message_y = h / 2;      // FIXME: This is not pixel-accurate
         if (subx > 0) {
             // Icon is aligned to the right - Align the message to the left of the icon
-            fx = subx - fontInfoMessage.width - xgap;
+            message_x = subx - fontInfoMessage.width - xgap;
         }
         else {
             // Message is aligned to the right side of the image
-            fx = w + icontitlegap;
+            message_x = w + icontitlegap;
         }
     }
 
     // Render the first line
-    log3 ("Drawing first message (msg, x, y)", msg1, fx, fy);
-    XftDrawStringUtf8 (xftdraw1, &xftcolor, font, fx, fy, (XftChar8 *) msg1, strlen (msg1));
+    log3 ("Drawing first message (msg, x, y)", message_line1, message_x, message_y);
+    XftDrawStringUtf8 (xftdraw1, &xftcolor, font, message_x, message_y,
+                       (XftChar8 *) message_line1.c_str(), message_line1.length());
 
-    // Render the second line below - try using a smaller font
+    // Render the second line below using a smaller font
     XGlyphInfo fiSmaller;
-    if (msg2) {
-        XftTextExtentsUtf8 (display, fontsmaller, (XftChar8*) msg2, strlen(msg2), &fiSmaller);
-        int fx2=fx, fy2=fy;
-        
+    memset(&fiSmaller, 0x00, sizeof(fiSmaller));
+    if (message_line2.length()) {
+        XftTextExtentsUtf8 (display, fontsmaller, (XftChar8*) message_line2.c_str(),
+                            message_line2.length(), &fiSmaller);
+
+        /*
+        int fx2=message_x, fy2=message_y;
+
         if (subx) {
             // The icon sits to the right, draw the text to the left.
             fx2 = subx - fiSmaller.width - xgap;
-            printf ("Drawing shit\n");
         }
 
         fy2 += fontInfoMessage.height + 5;
+        */
 
-        log3 ("Drawing second message (msg, x, y)", msg2, fx2, fy2);
+        int fx2=message_x;
+        int fy2=message_y + fontInfoMessage.height + 5;
+        log3 ("Drawing second message (msg, x, y)", message_line2, fx2, fy2);
         XftDrawStringUtf8 (xftdraw1, &xftcolor, fontsmaller ? fontsmaller : font, 
-                           fx2, fy2, (XftChar8*) msg2, strlen (msg2));
+                           fx2, fy2, (XftChar8*) message_line2.c_str(),
+                           message_line2.length());
     }
-
-    free(msg);
 
     // Automatically expand icon's width if message text
     // is aligned to the left, so that the "message" attribute is not cut.
