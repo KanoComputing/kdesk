@@ -35,6 +35,7 @@ class Icon
   int iconx, icony, iconw, iconh;
   int shadowx, shadowy;
   int stamp_x, stamp_y;
+  int status_x, status_y;
   int message_x, message_y;
   int icontitlegap;
   int transparency_value;
@@ -42,7 +43,7 @@ class Icon
   int gridx, gridy;
   Cursor cursor;
   int cursor_id;
-  Imlib_Image image, image_stamp;
+  Imlib_Image image, image_stamp, image_status;
   Imlib_Image backsafe;
   Visual *vis;
   Colormap cmap;
@@ -56,6 +57,7 @@ class Icon
   std::string ficon;
   std::string ficon_hover;
   std::string ficon_stamp;
+  std::string ficon_status;
   std::string caption;
   std::string message_line1;
   std::string message_line2;
@@ -93,5 +95,6 @@ class Icon
   void set_message (char *new_message);
   void set_icon (char *new_icon);
   void set_icon_stamp (char *new_icon);
+  void set_icon_status (char *new_icon);
 
 };

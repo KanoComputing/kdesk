@@ -663,6 +663,10 @@ bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Ic
 	pico_hook->set_icon_stamp (value);
 	updates++;
       }
+      else if (!strcmp (key, "IconStatus:")) {
+        pico_hook->set_icon_status (value);
+	updates++;
+      }
     }
     
   // Redraw the icon if attributes have been modified

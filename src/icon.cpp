@@ -38,7 +38,7 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   transparency_value=0;
   backsafe = NULL;
   font = fontsmaller = NULL;
-  image = image_stamp = NULL;
+  image = image_stamp = image_status = NULL;
   xftdraw1 = NULL;
   is_grid = false;
   gridx = gridy = 0;
@@ -55,6 +55,9 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
   // save the icon caption and message literals to be rendered around it
   caption = configuration->get_icon_string (iconid, "caption");
   set_message((char *)configuration->get_icon_string (iconid, "message").c_str());
+
+  // the status icon works similar to the stamp icon with absolute coordinates indication
+  set_icon_status((char *)configuration->get_icon_string (iconid, "iconstatus").c_str());
 
   // Initially we don't know yet which display we are bound to until create()
   icon_display = NULL;
@@ -186,7 +189,11 @@ void Icon::set_icon (char *new_icon)
 
 void Icon::set_icon_stamp (char *new_icon)
 {
-    // Extract coordinates from the string (Stamp: {x,y} /path/to/filename)
+    // Extract coordinates from the string (IconStamp: {x,y} /path/to/filename.png)
+    if (!new_icon || !strlen(new_icon)) {
+        return;
+    }
+
     log1("parsing Stamp Icon(text)", new_icon);
 
     char *open_braces=strstr (new_icon, "{");
@@ -200,6 +207,29 @@ void Icon::set_icon_stamp (char *new_icon)
     else {
         stamp_x = stamp_y = 0;
         ficon_stamp = new_icon;
+    }
+}
+
+void Icon::set_icon_status (char *new_icon)
+{
+    // Extract coordinates from the string (IconStatus: {x,y} /path/to/filename.png)
+    if (!new_icon || !strlen(new_icon)) {
+        return;
+    }
+
+    log1("parsing Status Icon(text)", new_icon);
+
+    char *open_braces=strstr (new_icon, "{");
+    char *close_braces=strstr (new_icon, "}");
+    if (open_braces && close_braces) {
+        char icon_pathname[128];
+        sscanf (new_icon, "{%d,%d} %s", &status_x, &status_y, icon_pathname);
+        ficon_status = strlen(icon_pathname) ? icon_pathname : new_icon;
+        log3("Status Icon has absolute coords (x,y,icon)", status_x, status_y, ficon_status);
+    }
+    else {
+        status_x = status_y = 0;
+        ficon_status = new_icon;
     }
 }
 
@@ -452,6 +482,15 @@ void Icon::destroy(Display *display)
     image_stamp=NULL;
   }
 
+  if (image_status != NULL) {
+    imlib_context_set_image(image_status);
+    // FIXME: Freeing the images causes a segfault after a few iterations
+    // setting imlibi's cache to 1 makes the memory usage become stable
+    //imlib_free_image_and_decache();
+    //imlib_free_image();
+    image_status=NULL;
+  }
+
   if (backsafe != NULL) {
     imlib_context_set_image(backsafe);
     // FIXME: Freeing the images causes a segfault after a few iterations
@@ -506,6 +545,7 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
   Imlib_Image resized = NULL;
   int h=0, w=0, subx=0;
   int stamp_w=0, stamp_h=0;
+  int status_w=0, status_h=0;
   int iconxmove=0, iconymove=0;
 
   imlib_context_set_display(display);
@@ -535,6 +575,17 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
       stamp_w = imlib_image_get_width();
       stamp_h = imlib_image_get_height();
       log3 ("loaded stamp icon (icon, width, height)", ficon_stamp, stamp_w, stamp_h);
+    }
+  }
+
+  // Is there a s Status icon? If so, load it now
+  if (ficon_status.length() > 0) {
+    image_status = imlib_load_image (ficon_status.c_str());
+    if (image_status) {
+      imlib_context_set_image(image_status);
+      status_w = imlib_image_get_width();
+      status_h = imlib_image_get_height();
+      log3 ("loaded status icon (icon, width, height)", ficon_status, status_w, status_h);
     }
   }
 
@@ -601,12 +652,21 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     }
 
     // If we have a stamp icon, draw it centered on top of the icon
-    // Or at given coordinates if specifed in the form "Stamp: {x,y} /my/path/file.png"
+    // Or at given coordinates if specifed in the form "IconStamp: {x,y} /my/path/file.png"
     if (image_stamp != NULL) {
         imlib_blend_image_onto_image (image_stamp, 1, 0, 0, stamp_w, stamp_h,
                                       (stamp_x ? stamp_x : (w - stamp_w) / 2),
                                       (stamp_y ? stamp_y : (h - stamp_h) / 2),
-                                       stamp_w, stamp_h);
+                                      stamp_w, stamp_h);
+    }
+
+    // If we have a status icon, draw it centered on top of the icon
+    // Or at given coordinates if specifed in the form "IconStatus: {x,y} /my/path/file.png"
+    if (image_status != NULL) {
+        imlib_blend_image_onto_image (image_status, 1, 0, 0, status_w, status_h,
+                                      (status_x ? status_x : (w - status_w) / 2),
+                                      (status_y ? status_y : (h - status_h) / 2),
+                                      status_w, status_h);
     }
 
     // Draw the icon on the surface window, default is top-left.
@@ -627,6 +687,11 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     // Set context to stamped image so we can free it.
     if (image_stamp != NULL) {
       imlib_context_set_image(image_stamp);
+      imlib_free_image_and_decache();
+    }
+
+    if (image_status != NULL) {
+      imlib_context_set_image(image_status);
       imlib_free_image_and_decache();
     }
 
