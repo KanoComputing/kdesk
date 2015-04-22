@@ -153,12 +153,30 @@ void Icon::set_message (char *new_message)
 {
     // Parse and extract the message components in the syntax form:
     // "Message: {x,y} Line 1|Line 2"
+    int rc=0;
+    char first_line[128]="", second_line[128]="";
 
-    // FIXME: Providing sample hardcode values for initial testing
-    message_line1="hello";
-    message_line2="goodbye";
-    message_x=0;
-    message_y=0;
+    log1("parsing Message(text)", new_message);
+
+    char *open_braces=strstr (new_message, "{");
+    char *close_braces=strstr (new_message, "}");
+    if (open_braces && close_braces) {
+        rc=sscanf(new_message, "{%d,%d} %[^|]|%[^|\n]",
+                  &message_x, &message_y, first_line, second_line);
+        log5("Message contains absolute coordinates(items, x,y,first,second)", rc, message_x, message_y, first_line, second_line);
+    }
+    else {
+        rc=sscanf(new_message, "%[^|]|%[^|\n]", first_line, second_line);
+        log3("Message parsed lines(items, first, second)", rc, first_line, second_line);
+    }
+
+    if (strlen(first_line)) {
+        message_line1 = first_line;
+    }
+    
+    if (strlen(second_line)) {
+        message_line2 = second_line;
+    }
 }
 
 void Icon::set_icon (char *new_icon)
@@ -169,11 +187,15 @@ void Icon::set_icon (char *new_icon)
 void Icon::set_icon_stamp (char *new_icon)
 {
     // Extract coordinates from the string (Stamp: {x,y} /path/to/filename)
+    log1("parsing Stamp Icon(text)", new_icon);
+
     char *open_braces=strstr (new_icon, "{");
     char *close_braces=strstr (new_icon, "}");
     if (open_braces && close_braces) {
-        sscanf (new_icon, "{%d,%d} %*s", &stamp_x, &stamp_y);
-        ficon_stamp = close_braces + sizeof(char);
+        char icon_pathname[128];
+        sscanf (new_icon, "{%d,%d} %s", &stamp_x, &stamp_y, icon_pathname);
+        ficon_stamp = strlen(icon_pathname) ? icon_pathname : new_icon;
+        log3("Stamp Icon has absolute coords (x,y,icon)", stamp_x, stamp_y, ficon_stamp);
     }
     else {
         stamp_x = stamp_y = 0;
@@ -365,7 +387,7 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
   // http://tronche.com/gui/x/xlib/appendix/b/
   // which can be replaced by system "themes".
 
-  // TODO: Extract this iconid into .kdeskrc
+  // Cursor ID comes from kdeskrc key name "mousehovericon"
   cursor = XCreateFontCursor (display, cursor_id);
   XDefineCursor(display, win, cursor);
 
@@ -507,12 +529,12 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 
   // Is there a s Stamp icon? If so, load it now
   if (ficon_stamp.length() > 0) {
-    log3 ("loading stamp icon (icon, width, height)", ficon_stamp, stamp_w, stamp_h);
     image_stamp = imlib_load_image (ficon_stamp.c_str());
     if (image_stamp) {
       imlib_context_set_image(image_stamp);
       stamp_w = imlib_image_get_width();
       stamp_h = imlib_image_get_height();
+      log3 ("loaded stamp icon (icon, width, height)", ficon_stamp, stamp_w, stamp_h);
     }
   }
 
