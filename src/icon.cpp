@@ -661,20 +661,31 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 
     // Ask how wide the rendered text will occupy in pixels
     XftTextExtentsUtf8 (display, font, (XftChar8*) message_line1.c_str(), message_line1.length(), &fontInfoMessage);
-    int xgap=5;      // used to avoid the text from blending with the icon when halign=right
+    int xgap=5;        // used to avoid the text from blending with the icon when halign=right
+    int y_font_gap=5;  // used to give vertical empty space between the two text lines
 
     // Decide where to position the message (absolute coords, or next to the image)
     if (message_x && message_y) {
-        // Absolute positioning. If the text is too long to fit, choose a smaller font
+
+        // Absolute positioning. If the text is too long to fit, downscale font size,
+        // based on remaining rendering space in pixels, and string length.
         if ((message_x + fontInfoMessage.width) > iconw) {
-            log1 ("Text cannot fit: choosing a smaller font", message_line1.c_str());
             XftFontClose(display, font);
             string fontname = get_font_name();
-            int fontsize = configuration->get_config_int ("fontsize") / 2;
+            int fontsize = configuration->get_config_int ("fontsize");
+            int new_fontsize = (iconw - message_x) / message_line1.length() + 6;
+            log1 ("Text cannot fit: chossing a smaller font (size)", new_fontsize);
+
+            // rectify the baseline position of the text
+            message_y -= (fontsize - new_fontsize) / 8;
+
             font = XftFontOpen (display, DefaultScreen(display),
                                 XFT_FAMILY, XftTypeString, fontname.c_str(),
-                                XFT_SIZE, XftTypeDouble, (float) fontsize,
+                                XFT_SIZE, XftTypeDouble, (float) new_fontsize,
                                 NULL);
+
+            // Obtain new font extents information
+            XftTextExtentsUtf8 (display, font, (XftChar8*) message_line1.c_str(), message_line1.length(), &fontInfoMessage);
         }
     } 
     else {
@@ -703,21 +714,11 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
         XftTextExtentsUtf8 (display, fontsmaller, (XftChar8*) message_line2.c_str(),
                             message_line2.length(), &fiSmaller);
 
-        /*
-        int fx2=message_x, fy2=message_y;
-
-        if (subx) {
-            // The icon sits to the right, draw the text to the left.
-            fx2 = subx - fiSmaller.width - xgap;
-        }
-
-        fy2 += fontInfoMessage.height + 5;
-        */
-
         int fx2=message_x;
-        int fy2=message_y + fontInfoMessage.height + 5;
+        int fy2=message_y + fiSmaller.height + y_font_gap;
+
         log3 ("Drawing second message (msg, x, y)", message_line2, fx2, fy2);
-        XftDrawStringUtf8 (xftdraw1, &xftcolor, fontsmaller ? fontsmaller : font, 
+        XftDrawStringUtf8 (xftdraw1, &xftcolor_shadow, fontsmaller ? fontsmaller : font, 
                            fx2, fy2, (XftChar8*) message_line2.c_str(),
                            message_line2.length());
     }
