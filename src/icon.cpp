@@ -596,13 +596,12 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 
     // imlib2 stores each image buffer as a sequence of ARGB objects (32 bits per pixel)
     // this log will emit this size to better profile kdesk's cache size setting.
-    log4 ("Image filename, width, height, and RGBA buffer size",
-          ficon.c_str(),
-          imlib_image_get_width(), imlib_image_get_height(),
-          (imlib_image_get_width() * imlib_image_get_height() * 32) / 8);
-
     w = imlib_image_get_width();
     h = imlib_image_get_height();
+
+    log4 ("Image filename, width, height, and RGBA buffer size",
+          ficon.c_str(), w, h, (w * h * 32) / 8);
+
     subx = get_icon_horizontal_placement(w);
 
     // Icons contained in a grid are uniformly resized
@@ -734,12 +733,12 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
 
         // Absolute positioning. If the text is too long to fit, downscale font size,
         // based on remaining rendering space in pixels, and string length.
-        if ((message_x + fontInfoMessage.width) > iconw) {
+        if ((message_x + fontInfoMessage.width + 10) > w) {
             XftFontClose(display, font);
             string fontname = get_font_name();
             int fontsize = configuration->get_config_int ("fontsize");
-            int new_fontsize = (iconw - message_x) / message_line1.length() + 6;
-            log1 ("Text cannot fit: chossing a smaller font (size)", new_fontsize);
+            int new_fontsize = (w - message_x) / message_line1.length() + 4;
+            log2 ("Text cannot fit: choosing a smaller font (tex, new size)", message_line1, new_fontsize);
 
             // rectify the baseline position of the text
             message_y -= (fontsize - new_fontsize) / 8;
@@ -750,7 +749,16 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
                                 NULL);
 
             // Obtain new font extents information
+            memset(&fontInfoMessage, 0x00, sizeof(fontInfoMessage));
             XftTextExtentsUtf8 (display, font, (XftChar8*) message_line1.c_str(), message_line1.length(), &fontInfoMessage);
+
+            // Check for boundaries once again, this time we will cut the text if still is too long
+            if ((message_x + fontInfoMessage.width + 10) > w) {
+                log5 ("Cutting text after downscale as it still wont fit(msg, len, message_x, text_width, image_width)",
+                      message_line1, message_line1.length(), message_x, fontInfoMessage.width, w);
+
+                // TODO: Cut the text and append 3 dots to it
+            }
         }
     } 
     else {
