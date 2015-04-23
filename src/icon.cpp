@@ -659,15 +659,6 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
                                       stamp_w, stamp_h);
     }
 
-    // If we have a status icon, draw it centered on top of the icon
-    // Or at given coordinates if specifed in the form "IconStatus: {x,y} /my/path/file.png"
-    if (image_status != NULL) {
-        imlib_blend_image_onto_image (image_status, 1, 0, 0, status_w, status_h,
-                                      (status_x ? status_x : (w - status_w) / 2),
-                                      (status_y ? status_y : (h - status_h) / 2),
-                                      status_w, status_h);
-    }
-
     // Draw the icon on the surface window, default is top-left.
     if (configuration->get_icon_string(iconid, "relative-to") == "grid") {
       // If it's inside a grid we will position it horizontally centered, and to the bottom.
@@ -686,11 +677,6 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     // Set context to stamped image so we can free it.
     if (image_stamp != NULL) {
       imlib_context_set_image(image_stamp);
-      imlib_free_image_and_decache();
-    }
-
-    if (image_status != NULL) {
-      imlib_context_set_image(image_status);
       imlib_free_image_and_decache();
     }
 
@@ -788,6 +774,14 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
                             message_line2.length(), &fiSmaller);
 
         int fx2=message_x;
+        
+        // If the icon has the "Halign=right" attribute, rectify the horizontal position
+        // of the second lign to be aligned to the right, with respect the first line
+        if (subx) {
+            fx2 = (message_x + fontInfoMessage.width) - fiSmaller.width;
+        }
+
+        // The vertical position of the second line goes below the first line
         int fy2=message_y + fiSmaller.height + y_font_gap;
 
         log3 ("Drawing second message (msg, x, y)", message_line2, fx2, fy2);
@@ -815,6 +809,25 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
   imlib_context_set_image (backsafe);
   imlib_context_set_drawable (win);
   imlib_copy_drawable_to_image (0, 0, 0, iconw, iconh, 0, 0, 1);
+
+  // If we have a status icon, draw it centered on top of the icon
+  // Or at given coordinates if specifed in the form "IconStatus: {x,y} /my/path/file.png"
+  // The status icon uses the coordinates of the complete icon space (width and height keys)
+  // not those of the image. This allows to put the status icon anywhere in the icon box.
+
+  if (image_status != NULL) {
+
+        imlib_context_set_image(image_status);
+
+        // Center the icon if coordinates are set to zero
+        if (!status_x) status_x = (iconw - imlib_image_get_width()) / 2;
+        if (!status_y) status_y = (iconh - imlib_image_get_height()) / 2;
+
+        log3 ("Drawing status icon(icon,x,y)", ficon_status, status_x, status_y);
+        imlib_render_image_on_drawable (status_x, status_y);
+        imlib_context_set_image(image_status);
+        imlib_free_image_and_decache();
+    }
 }
 
 bool Icon::blink_icon(Display *display, XEvent ev)
