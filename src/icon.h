@@ -34,13 +34,16 @@ class Icon
   IconGrid *pgrid;
   int iconx, icony, iconw, iconh;
   int shadowx, shadowy;
+  int stamp_x, stamp_y;
+  int status_x, status_y;
+  int message_x, message_y;
   int icontitlegap;
   int transparency_value;
   bool is_grid;
   int gridx, gridy;
   Cursor cursor;
   int cursor_id;
-  Imlib_Image image, image_stamp;
+  Imlib_Image image, image_stamp, image_status;
   Imlib_Image backsafe;
   Visual *vis;
   Colormap cmap;
@@ -54,8 +57,10 @@ class Icon
   std::string ficon;
   std::string ficon_hover;
   std::string ficon_stamp;
+  std::string ficon_status;
   std::string caption;
-  std::string message;
+  std::string message_line1;
+  std::string message_line2;
 
  public:
   int iconid;
@@ -69,6 +74,7 @@ class Icon
   std::string get_icon_filename(void);
   std::string get_icon_name(void);
   std::string get_commandline(void);
+  std::string get_font_name(void);
   int get_icon_horizontal_placement (int image_width);
   bool is_singleton_running (Display *display);
 
@@ -89,5 +95,6 @@ class Icon
   void set_message (char *new_message);
   void set_icon (char *new_icon);
   void set_icon_stamp (char *new_icon);
+  void set_icon_status (char *new_icon);
 
 };

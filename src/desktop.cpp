@@ -648,7 +648,7 @@ bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Ic
       // Parse the keys (attributes) that can be applied to the icon, pass them to the icon instance
       value[strlen(value)-1]=0x00;
       if (!strcmp (key, "Message:")) {
-	pico_hook->set_message (value);
+        pico_hook->set_message (value);
 	updates++;
       }
       else if (!strcmp (key, "Caption:")) {
@@ -661,6 +661,10 @@ bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Ic
       }
       else if (!strcmp (key, "IconStamp:")) {
 	pico_hook->set_icon_stamp (value);
+	updates++;
+      }
+      else if (!strcmp (key, "IconStatus:")) {
+        pico_hook->set_icon_status (value);
 	updates++;
       }
     }
