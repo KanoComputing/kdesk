@@ -805,11 +805,6 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
       }
   }
 
-  // save the current icon render so we can restore when mouse hovers out
-  imlib_context_set_image (backsafe);
-  imlib_context_set_drawable (win);
-  imlib_copy_drawable_to_image (0, 0, 0, iconw, iconh, 0, 0, 1);
-
   // If we have a status icon, draw it centered on top of the icon
   // Or at given coordinates if specifed in the form "IconStatus: {x,y} /my/path/file.png"
   // The status icon uses the coordinates of the complete icon space (width and height keys)
@@ -828,6 +823,12 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
         imlib_context_set_image(image_status);
         imlib_free_image_and_decache();
     }
+
+  // save the current icon render so we can restore when mouse hovers out
+  imlib_context_set_image (backsafe);
+  imlib_context_set_drawable (win);
+  imlib_copy_drawable_to_image (0, 0, 0, iconw, iconh, 0, 0, 1);
+
 }
 
 bool Icon::blink_icon(Display *display, XEvent ev)
