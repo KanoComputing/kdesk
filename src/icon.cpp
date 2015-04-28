@@ -739,11 +739,15 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
             XftTextExtentsUtf8 (display, font, (XftChar8*) message_line1.c_str(), message_line1.length(), &fontInfoMessage);
 
             // Check for boundaries once again, this time we will cut the text if still is too long
-            if ((message_x + fontInfoMessage.width + 10) > w) {
-                log5 ("Cutting text after downscale as it still wont fit(msg, len, message_x, text_width, image_width)",
-                      message_line1, message_line1.length(), message_x, fontInfoMessage.width, w);
+            
+            if ((message_x + fontInfoMessage.width + new_fontsize) > w) {
+                // Cut the text and append 3 dots to it
+                int num_chars_cut = (fontInfoMessage.width + message_x - w) / new_fontsize + 5;
+                message_line1 = message_line1.substr(0, message_line1.length() - num_chars_cut);
+                message_line1 += "...";
 
-                // TODO: Cut the text and append 3 dots to it
+                log2 ("Cutting text after downscale as it still wont fit(msg, num_chars_cut)",
+                      message_line1, num_chars_cut);
             }
         }
     } 
