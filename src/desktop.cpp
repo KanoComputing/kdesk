@@ -106,16 +106,26 @@ bool Desktop::create_icons (Display *display)
 	pos = pconf->get_icon_string(nicon, "relative-to");
 	x = pconf->get_icon_string(nicon, "x");
 	y = pconf->get_icon_string(nicon, "y");
-	if (pos == "grid" && x != "auto" && y != "auto") {
-	  /* Has hints, skip in the second pass */
-	  if (pass == 1)
-	    continue;
-	}
-	else {
-	  /* No hints, skip in the first pass */
-	  if (pass == 0)
-	    continue;
-	}
+
+        /* This condition is a special exception for outdated LNK files */
+        /* which defined the X and Y coordinates as "auto" in the grid, where it should be "0" */
+        if (pconf->get_icon_string(nicon, "usericon") != "true") {
+
+            if (pos == "grid" && x != "auto" && y != "auto") {
+                /* Has hints, and it's not a user defined icon, skip in the second pass */
+                if (pass == 1)
+                    continue;
+            }
+            else {
+                /* No hints, skip in the first pass */
+                if (pass == 0)
+                    continue;
+            }
+        }
+        else {
+            if (pass == 1)
+                continue;
+        }
 
         Icon *pico = new Icon(pconf, nicon);
         Window wicon = pico->create(display, icon_grid);
