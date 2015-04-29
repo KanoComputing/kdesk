@@ -411,6 +411,10 @@ bool Configuration::load_icons(const char *directory)
       }
 
       if (parse_icon (kdesk_homedir.c_str(), f, numicons) == true) {
+
+        // Put a mark that this is a user-defined icon
+        icons[numicons]["usericon"] = "true";
+
 	numicons++;
       }
     }
