@@ -17,6 +17,7 @@
 
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include <Imlib2.h>
 
@@ -584,6 +585,14 @@ Window Desktop::find_kdesk_control_window (Display *display)
 
 bool Desktop::send_signal (Display *display, const char *signalName, char *message)
 {
+  // Don't trigger anything if we have inherited the environment variable
+  // set on calls to icon hook script
+  const char *recurse_flag=getenv("KDESK_NO_RECURSE");
+  if(recurse_flag){
+    log("Error! Attempt to use kdesk from a process run via iconhook script");
+    return false;
+  }  
+  
   Window wsig = wcontrol; // Kdesk control window, either found by instantiation or enumarated.
 
   // The signal name has been allocated by kdesk, if it's not there, kdesk is not running.
@@ -633,9 +642,16 @@ bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Ic
     log ("Icon handler is empty");
     return false;
   }
-
   // Execute the Icon Hook, parse the stdout, and communicate with the icon to refresh attributes
-  sprintf (chcmdline, "/bin/bash -c \"%s %s\"", hookscript.c_str(), pico_hook->get_icon_name().c_str());
+
+  // Set environment variable so other programs called from script
+  // cannot accidentally create an infinite loop.
+  const char *norec = "export KDESK_NO_RECURSE=1";
+
+  sprintf (chcmdline, "/bin/bash -c \"%s; %s %s\"",
+	   norec,
+	   hookscript.c_str(),
+	   pico_hook->get_icon_name().c_str());
   log1 ("Executing hook script:", chcmdline);
   fp_iconhooks = popen (chcmdline, "r");
   while (fgets (chline, sizeof (chline), fp_iconhooks) != NULL)
