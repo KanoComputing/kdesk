@@ -45,8 +45,15 @@ int execute_hook(const char *hook_script, const char *params)
   size_t cmdline_bytes=1024 * sizeof(char);
   char *chcmdline = (char *) calloc (1, cmdline_bytes);
 
+  // Set environment variable so other programs called from script
+  // cannot accidentally create an infinite loop.
+  const char *norec = "export KDESK_NO_RECURSE=1";
+
   if (chcmdline != NULL && hook_script != NULL) {
-    snprintf (chcmdline, cmdline_bytes, "/bin/bash -c \"%s %s\"", hook_script, (params ? params : ""));
+    snprintf (chcmdline, cmdline_bytes, "/bin/bash -c \"%s; %s %s\"",
+	      norec,
+	      hook_script,
+	      (params ? params : ""));
     log1 ("Executing screen saver hook:", chcmdline);
 
     signal(SIGCHLD, SIG_DFL);
