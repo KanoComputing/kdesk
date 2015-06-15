@@ -96,6 +96,13 @@ void __attribute__ ((constructor)) initialize(void)
         sn_display = sn_display_new (display, error_trap_push, error_trap_pop);
     }
 
+    // renew the startup notify context for apps that chain hourglass requests
+    if (sn_context) {
+        sn_launcher_context_complete(sn_context);
+        sn_launcher_context_unref(sn_context);
+        sn_context=NULL;
+    }
+
     if (!sn_context) {
         sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
     }
