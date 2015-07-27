@@ -69,7 +69,7 @@ bool Configuration::load_conf(const char *filename)
 	ifile >> value;
 	configuration["subtitlefontsize"] = value;
       }
-      
+
       if (token == "Bold:") {
 	ifile >> value;
 	configuration["bold"] = value;
@@ -89,7 +89,7 @@ bool Configuration::load_conf(const char *filename)
 	ifile >> value;
 	configuration["shadowx"] = value;
       }
-      
+
       if (token == "ShadowY:") {
 	ifile >> value;
 	configuration["shadowy"] = value;
@@ -261,7 +261,7 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
   }
   else {
     log1 ("parsing icon file", fpath);
-	
+
     // Process line-by-line tokens
     // In the form "Parameter: some values"
     icons[iconid]["filename"] = fname;
@@ -270,25 +270,25 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
       {
 	std::istringstream iss(line);
 	std::string temp, value, token;
-	    
+
 	// Collect the key name aka "token"
 	iss >> token;
-	
+
 	// Then collect the token's value, up to EOL
 	while (!iss.eof()) {
 	  iss >> temp;
 	  value += temp;
 	  if (!iss.eof()) value += " ";
 	}
-	
+
 	if (token == "AppID:") {
 	  icons[iconid]["appid"] = value;
 	}
-	
+
 	if (token == "Command:") {
 	  icons[iconid]["command"] = value;
 	}
-	
+
 	if (token == "Icon:") {
 	  icons[iconid]["icon"] = value;
 	}
@@ -304,7 +304,7 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	if (token == "IconStatus:") {
 	  icons[iconid]["iconstatus"] = value;
 	}
-	
+
 	if (token == "HoverTransparent:") {
 	  icons[iconid]["hovertransparent"] = value;
 	}
@@ -318,12 +318,12 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	}
 
 	if (token == "Caption:") {
-	  
+
 	  // caption supports environment variable expansion
 	  if (value[0] == '$') {
 	    value = getenv (&value[1]);
 	  }
-	  
+
 	  icons[iconid]["caption"] = value;
 	}
 
@@ -334,27 +334,27 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	if (token == "HAlign:") {
 	  icons[iconid]["halign"] = value;
 	}
-	
+
 	if (token == "X:") {
 	  icons[iconid]["x"] = value;
 	}
-	
+
 	if (token == "Y:") {
 	  icons[iconid]["y"] = value;
 	}
-	
+
 	if (token == "Width:") {
 	  icons[iconid]["width"] = value;
 	}
-	
+
 	if (token == "Height:") {
 	  icons[iconid]["height"] = value;
 	}
-	
+
 	if (token == "Singleton:") {
 	  icons[iconid]["singleton"] = value;
 	}
-	
+
 	if (token == "Relative-To:") {
 	  icons[iconid]["relative-to"] = value;
 	}
@@ -362,6 +362,15 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
         if (token == "Transparency:") {
           icons[iconid]["transparency"] = value;
         }
+
+        if (token == "Disabled:") {
+          icons[iconid]["disabled"] = value;
+        }
+
+        if (token == "Disabled-Icon:") {
+          icons[iconid]["disabled_icon"] = value;
+        }
+
       }
 
     ifile.close();
@@ -425,7 +434,7 @@ bool Configuration::load_icons(const char *directory)
       // add the last grid icon at the end of the list
       if (parse_icon (last_grid_icon_dir, last_grid_icon_file, numicons) == true) {
           numicons++;
-      }      
+      }
   }
 
   log2 ("Number of icons loaded, max permitted", numicons, MAX_ICONS);

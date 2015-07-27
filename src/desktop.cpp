@@ -87,8 +87,8 @@ bool Desktop::create_icons (Display *display)
   }
 
   // Sets the cache size. The size is in bytes. Setting the cache size to 0 effectively flushes the cache
-  // and keeps the cache size at 0 until set to another value. 
-  // Whenever you set the cache size Imlib2 will flush as many old images and pixmap 
+  // and keeps the cache size at 0 until set to another value.
+  // Whenever you set the cache size Imlib2 will flush as many old images and pixmap
   // from the cache as needed until the current cache usage is less than or equal to the cache size.
   if (cache_size > 0) {
       imlib_set_cache_size(cache_size);
@@ -260,7 +260,7 @@ bool Desktop::reload_icons (Display *display)
           }
         }
     }
-  
+
   // search for newly added lnk files and create their desktop icons.
   for (int nicon=0; nicon < pconf->get_numicons(); nicon++)
     {
@@ -278,7 +278,7 @@ bool Desktop::reload_icons (Display *display)
             }
           }
         }
-      
+
       if (!found) {
         // create a new icon handler and add it to the desktop
         log2 ("adding new icon to desktop (name, id)", icon_filename, nicon);
@@ -395,9 +395,19 @@ bool Desktop::process_and_dispatch(Display *display)
 	    log1 ("ButtonPress for unsupported button number - ignoring", ev.xbutton.button);
 	    break;
 	  }
+          // Decide here whether to allow the oneclick and doubleclick events through.
+          // Check the flag to see if the icon has been disabled.
 
-          doubleclicked=((ev.xbutton.time - last_click) < pconf->get_config_int("clickdelay")) ? true : false;
-          oneclick=(pconf->get_config_string("oneclick") == "true") ? true : false;
+          int iconid;
+          iconid = iconHandlers[wtarget]->get_iconid();
+
+          if (pconf->get_icon_string(iconid, "disabled") == "true") {
+            oneclick = false;
+            doubleclicked = false;
+          } else {
+            oneclick=(pconf->get_config_string("oneclick") == "true") ? true : false;
+            doubleclicked=((ev.xbutton.time - last_click) < pconf->get_config_int("clickdelay")) ? true : false;
+          }
 
 	  // A double click event is defined by the time elapsed between 2 clicks: "clickdelay"
 	  // And a grace time period to protect nested double clicks: "clickgrace"
@@ -473,7 +483,7 @@ bool Desktop::process_and_dispatch(Display *display)
 	case Expose:
 	  iconHandlers[wtarget]->draw(display, ev, false);
 	  break;
-	  
+
 	default:
 	  break;
 	}
@@ -541,13 +551,13 @@ Window Desktop::find_kdesk_control_window (Display *display)
   char *windowname=NULL;
   Window *children=NULL, *subchildren=NULL;
   unsigned int numchildren, numsubchildren;
-  
+
   // Enumarate top-level windows in search for Kdesk control window
   XQueryTree (display, root, &returnedroot, &returnedparent, &children, &numchildren);
   XWindowAttributes w;
   int i;
   for (int i=numchildren-1; i>=0 && !kdesk_control_window; i--) {
-    
+
     if (XFetchName (display, children[i], &windowname)) {
       if (!strncmp (windowname, KDESK_CONTROL_WINDOW_NAME, strlen (KDESK_CONTROL_WINDOW_NAME))) {
 	kdesk_control_window = children[i];
@@ -556,10 +566,10 @@ Window Desktop::find_kdesk_control_window (Display *display)
 	break;
       }
     }
-    
+
     // Kdesk might sit a little deeper in the tree hierarchy, let's step in
     XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);
-    
+
     for (int k=numsubchildren-1; k>=0; k--) {
       if (XFetchName (display, subchildren[k], &windowname)) {
 	if (!strncmp (windowname, KDESK_CONTROL_WINDOW_NAME, strlen (KDESK_CONTROL_WINDOW_NAME))) {
@@ -571,11 +581,11 @@ Window Desktop::find_kdesk_control_window (Display *display)
       }
     }
   }
-  
+
   if(children) {
     XFree(children);
   }
-  
+
   if(subchildren) {
     XFree(subchildren);
   }
@@ -591,8 +601,8 @@ bool Desktop::send_signal (Display *display, const char *signalName, char *messa
   if(recurse_flag){
     log("Error! Attempt to use kdesk from a process run via iconhook script");
     return false;
-  }  
-  
+  }
+
   Window wsig = wcontrol; // Kdesk control window, either found by instantiation or enumarated.
 
   // The signal name has been allocated by kdesk, if it's not there, kdesk is not running.
@@ -670,7 +680,7 @@ bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Ic
 	}
 	toks += n;
       }
-	
+
       // Parse the keys (attributes) that can be applied to the icon, pass them to the icon instance
       value[strlen(value)-1]=0x00;
       if (!strcmp (key, "Message:")) {
@@ -694,7 +704,7 @@ bool Desktop::call_icon_hook (Display *display, XEvent ev, string hookscript, Ic
 	updates++;
       }
     }
-    
+
   // Redraw the icon if attributes have been modified
   pclose (fp_iconhooks);
   if (updates) {

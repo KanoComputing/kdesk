@@ -47,7 +47,14 @@ Icon::Icon (Configuration *loaded_conf, int iconidx)
 
   // save the lnk filename, icon, icon hover image files
   filename = configuration->get_icon_string (iconid, "filename");
-  ficon = configuration->get_icon_string (iconid, "icon");
+
+  // If the icon has been disabled, use the disabled icon filepath
+  if (configuration->get_icon_string (iconid, "disabled") == "true") {
+    ficon = configuration->get_icon_string (iconid, "disabled_icon");
+  } else {
+    ficon = configuration->get_icon_string (iconid, "icon");
+  }
+
   ficon_hover = configuration->get_icon_string (iconid, "iconhover");
 
   set_icon_stamp((char *)configuration->get_icon_string (iconid, "iconstamp").c_str());
@@ -176,7 +183,7 @@ void Icon::set_message (char *new_message)
     if (strlen(first_line)) {
         message_line1 = first_line;
     }
-    
+
     if (strlen(second_line)) {
         message_line2 = second_line;
     }
@@ -395,7 +402,7 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
   #endif
 
   log4 ("icon placement (x,y,w,h): @", iconx, icony, iconw, iconh);
-  win = XCreateWindow (display, DefaultRootWindow(display), iconx, icony, 
+  win = XCreateWindow (display, DefaultRootWindow(display), iconx, icony,
 		       iconw, iconh + fontInfoCaption.height + icontitlegap, border,
 		       CopyFromParent, CopyFromParent, CopyFromParent,
 		       CWBackPixmap|CWBackingStore|CWOverrideRedirect|CWEventMask,
@@ -636,7 +643,7 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     // If Icon transparency is provided, apply the mapping now, before rendering the image
     if (iconMapTransparency && transparency_value) {
       colorTrans = imlib_create_color_modifier();
-      imlib_context_set_color_modifier(colorTrans);    
+      imlib_context_set_color_modifier(colorTrans);
       imlib_get_color_modifier_tables(iconMapNone, iconMapNone, iconMapNone, iconMapTransparency);
       imlib_reset_color_modifier();
 
@@ -662,15 +669,15 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     // Draw the icon on the surface window, default is top-left.
     if (configuration->get_icon_string(iconid, "relative-to") == "grid") {
       // If it's inside a grid we will position it horizontally centered, and to the bottom.
-        int gridx = (configuration->get_config_int ("gridwidth") > w ? 
+        int gridx = (configuration->get_config_int ("gridwidth") > w ?
                      (configuration->get_config_int ("gridwidth") - w) / 2 : 0);
 
         int gridy = (configuration->get_config_int ("gridheight") > h ?
                      configuration->get_config_int ("gridheight") - h : 0);
 
       imlib_render_image_on_drawable (gridx, gridy);
-    } 
-    else {   
+    }
+    else {
       imlib_render_image_on_drawable (subx + iconxmove, iconymove);
     }
 
@@ -694,12 +701,12 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
     int fy = iconh;
     if (configuration->get_config_string("shadow") == "true")
       {
-	XftDrawStringUtf8( xftdraw1, &xftcolor_shadow, font, 
-			   fx + shadowx, fy + shadowy + icontitlegap, 
+	XftDrawStringUtf8( xftdraw1, &xftcolor_shadow, font,
+			   fx + shadowx, fy + shadowy + icontitlegap,
 			   (XftChar8 *) caption.c_str(), caption.size());
       }
-    
-    XftDrawStringUtf8 (xftdraw1, &xftcolor, font, 
+
+    XftDrawStringUtf8 (xftdraw1, &xftcolor, font,
 		       fx, fy + icontitlegap,
 		       (XftChar8 *) caption.c_str(), caption.size());
   }
@@ -739,7 +746,7 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
             XftTextExtentsUtf8 (display, font, (XftChar8*) message_line1.c_str(), message_line1.length(), &fontInfoMessage);
 
             // Check for boundaries once again, this time we will cut the text if still is too long
-            
+
             if ((message_x + fontInfoMessage.width + new_fontsize) > w) {
                 // Cut the text and append 3 dots to it
                 int num_chars_cut = (fontInfoMessage.width + message_x - w) / new_fontsize + 5;
@@ -750,7 +757,7 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
                       message_line1, num_chars_cut);
             }
         }
-    } 
+    }
     else {
         // Automatic position. Next to the image.
         // (left or right, depending on how close to the screen border)
@@ -778,7 +785,7 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
                             message_line2.length(), &fiSmaller);
 
         int fx2=message_x;
-        
+
         // If the icon has the "Halign=right" attribute, rectify the horizontal position
         // of the second lign to be aligned to the right, with respect the first line
         if (subx) {
@@ -789,7 +796,7 @@ void Icon::draw(Display *display, XEvent ev, bool fClear)
         int fy2=message_y + fiSmaller.height + y_font_gap;
 
         log3 ("Drawing second message (msg, x, y)", message_line2, fx2, fy2);
-        XftDrawStringUtf8 (xftdraw1, &xftcolor_shadow, fontsmaller ? fontsmaller : font, 
+        XftDrawStringUtf8 (xftdraw1, &xftcolor_shadow, fontsmaller ? fontsmaller : font,
                            fx2, fy2, (XftChar8*) message_line2.c_str(),
                            message_line2.length());
     }
@@ -850,7 +857,7 @@ bool Icon::blink_icon(Display *display, XEvent ev)
     // start by laoding the second texture icon
     log1 ("drawing second texture icon", ficon_hover);
     Imlib_Image imghover = imlib_load_image (ficon_hover.c_str());
-    
+
     // if blending is also requested (HoverTransparent) mix original icon with the second texture
     // with a transparency percentage specified by this same flag (0 will blend with desktop, 255 full opaque blend)
     if (configuration->get_icon_int (iconid, "hovertransparent") > 0) {
@@ -860,7 +867,7 @@ bool Icon::blink_icon(Display *display, XEvent ev)
       imlib_context_set_image(original);
       imlib_context_set_anti_alias(1);
       imlib_context_set_blend(1);
-      
+
       // Create a color modifier which we'll use to blend both images
       colorMod = imlib_create_color_modifier();
       imlib_context_set_color_modifier(colorMod);
@@ -884,7 +891,7 @@ bool Icon::blink_icon(Display *display, XEvent ev)
       // Use the new modified color mapping, and blend the second texture on top of the original icon
       imlib_set_color_modifier_tables (iconMapNone, iconMapNone, iconMapNone, iconMapGlow);
       imlib_blend_image_onto_image (imghover, 1, 0, 0, iconw, iconh, 0, 0, iconw, iconh);
-      
+
     } // if HoverTransparent
     else {
 
@@ -892,7 +899,7 @@ bool Icon::blink_icon(Display *display, XEvent ev)
       imlib_context_set_drawable(win);
       imlib_context_set_image(imghover);
     }
-    
+
     int xoffset = configuration->get_icon_int (iconid, "hoverxoffset");
     int yoffset = configuration->get_icon_int (iconid, "hoveryoffset");
 
@@ -955,8 +962,8 @@ Window Icon::find_icon_window (Display *display, std::string appid)
   }
 
   // Remove the AppID delimiters
-  // TODO: Remove this code eventually, as it's obsolete legacy icon syntax 
-  // for when we used the "pgrep" strategy, for example, 
+  // TODO: Remove this code eventually, as it's obsolete legacy icon syntax
+  // for when we used the "pgrep" strategy, for example,
   // AppID: pcmanf[m] was used to avoid pgrep finding himself.
   //
   appid.erase (std::remove(appid.begin(), appid.end(), '['), appid.end());
@@ -970,7 +977,7 @@ Window Icon::find_icon_window (Display *display, std::string appid)
     {
       // enumerate child windows from each top-level
       XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);
-      for (int k=numsubchildren-1; k>=0 && !wmax; k--) 
+      for (int k=numsubchildren-1; k>=0 && !wmax; k--)
 	{
 	  // Get Class Hint, window title, along with _NET_WM_ICON_GEOMETRY
 	  // If the hint's class name or window title matches AppID...
@@ -978,7 +985,7 @@ Window Icon::find_icon_window (Display *display, std::string appid)
 	  classHint.res_name = classHint.res_class = NULL;
 	  XFetchName (display, subchildren[k], &windowname);
 	  XGetClassHint (display, subchildren[k], &classHint);
-	  
+
 	  if ( (classHint.res_name && !strncasecmp (classHint.res_name, appid.c_str(), strlen (appid.c_str()))) ||
 	       (windowname && !strncasecmp (windowname, appid.c_str(), strlen (appid.c_str()))) )
 	    {
@@ -1025,7 +1032,7 @@ Window Icon::find_icon_window (Display *display, std::string appid)
   if (children) {
     XFree (children);
   }
-  
+
   if (subchildren) {
     XFree (subchildren);
   }
@@ -1055,7 +1062,7 @@ bool Icon::maximize(Display *display, Window win)
     ev.data.l[0] = NormalState;
     XSendEvent (display, DefaultRootWindow (display), False, SubstructureRedirectMask | SubstructureNotifyMask, (XEvent *) &ev);
   }
-  
+
   XFlush (display);
   return true;
 }
@@ -1067,7 +1074,7 @@ bool Icon::maximize(Display *display)
   // then give focus to it.
   static bool fmaximizing=false;
   bool fdone=false;
-  
+
   if (fmaximizing == true) {
     return fdone;
   }
@@ -1092,7 +1099,7 @@ bool Icon::double_click(Display *display, XEvent ev)
   bool success = false;
   string filename = configuration->get_icon_string (iconid, "filename");
   string command  = get_commandline();
-  
+
   bool isrunning = is_singleton_running (display);
   if (isrunning == true) {
     log1 ("not starting app - it's a running singleton", filename);
@@ -1116,7 +1123,7 @@ bool Icon::double_click(Display *display, XEvent ev)
 	    log2 ("error starting app (rc, command)", rc, command.c_str());
 	    _exit (1); // rather than exit() because the latter could interfere with parent's atexit()
 	  }
-	
+
 	log1 ("app has finished", filename);
 	_exit (0);
       }
