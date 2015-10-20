@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 #include <assert.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "bcm_host.h"
 
@@ -351,6 +352,7 @@ static GLfloat inc_and_clip_distance(GLfloat distance, GLfloat distance_inc)
  ***********************************************************/
 static void redraw_scene(CUBE_STATE_T *state)
 {
+  struct timespec ts;
    // Start with a clear screen
    glClear( GL_COLOR_BUFFER_BIT );
 
@@ -385,6 +387,9 @@ static void redraw_scene(CUBE_STATE_T *state)
    glRotatef(90.f, 0.f, 1.f, 0.f ); // bottom face normal along y axis
    glDrawArrays( GL_TRIANGLE_STRIP, 20, 4);
 
+   ts.tv_sec = 0;
+   ts.tv_nsec = random() & 0x7fffff;
+   nanosleep(&ts, NULL);
    eglSwapBuffers(state->display, state->surface);
 }
 
