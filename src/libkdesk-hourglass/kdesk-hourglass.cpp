@@ -20,6 +20,7 @@
 SnDisplay *sn_display=NULL;
 SnLauncherContext *sn_context=NULL;
 Display *display=NULL;
+bool initialized=false;
 
 // local private prototypes
 void __attribute__ ((constructor)) initialize(void);
@@ -51,11 +52,8 @@ void kdesk_hourglass_start_appcmd(char *cmdline)
 
 void kdesk_hourglass_end()
 {
-    // unbind from startup notify
-    if (sn_context) {
-        sn_launcher_context_complete(sn_context);
-        sn_launcher_context_unref(sn_context);
-    }
+    finalize();
+    return;
 }
 
 void _start_launcher_(char *appname, char *cmdline)
@@ -87,6 +85,10 @@ void _start_launcher_(char *appname, char *cmdline)
 // Library constructor
 void __attribute__ ((constructor)) initialize(void)
 {
+    if (initialized) {
+        return;
+    }
+
     display=XOpenDisplay(NULL);
     if (!display) {
         return;
@@ -97,6 +99,7 @@ void __attribute__ ((constructor)) initialize(void)
     }
 
     // renew the startup notify context for apps that chain hourglass requests
+    // i.e. multiple hourglass requests without terminating the process.
     if (sn_context) {
         sn_launcher_context_complete(sn_context);
         sn_launcher_context_unref(sn_context);
@@ -106,14 +109,22 @@ void __attribute__ ((constructor)) initialize(void)
     if (!sn_context) {
         sn_context = sn_launcher_context_new (sn_display, DefaultScreen (display));
     }
+
+    initialized=true;
 }
 
 // Library destructor
 void __attribute__ ((destructor)) finalize(void)
 {
+    if (!initialized) {
+        return;
+    }
+
     if (display) {
         XCloseDisplay(display);
         display=0L;
         sn_display=0L;
     }
+
+    initialized=false;
 }
