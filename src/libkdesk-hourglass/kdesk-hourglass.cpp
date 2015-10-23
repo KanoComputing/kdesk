@@ -80,6 +80,9 @@ void _start_launcher_(char *appname, char *cmdline)
     // We are not interested on the launcher-launchee relationship at this point
     sn_launcher_context_initiate (sn_context, "launcher", "launchee", xlib_time);
     sn_launcher_context_setup_child_process (sn_context);
+
+    // use a new context if this app requests a new hourglass
+    initialized=false;
 }
 
 // Library constructor
@@ -89,9 +92,11 @@ void __attribute__ ((constructor)) initialize(void)
         return;
     }
 
-    display=XOpenDisplay(NULL);
     if (!display) {
-        return;
+        display=XOpenDisplay(NULL);
+        if (!display) {
+            return;
+        }
     }
 
     if (!sn_display) {
