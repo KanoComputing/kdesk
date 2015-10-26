@@ -13,7 +13,8 @@ class Sound
 {
  private:
   Configuration *configuration;
-  std::string *tune;
+  std::string * volatile tune;
+  std::string *tune_tmp;
   pthread_t t;
   bool playing;
 

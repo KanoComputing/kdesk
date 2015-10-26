@@ -54,8 +54,11 @@ bool Sound::play(void)
     sound_cmdline += tune->c_str();
     sound_cmdline += " &";
     log1 ("Playing sound cmdline:", sound_cmdline);
-    delete (tune);
-    tune=NULL;
+
+    // protect against eventual race condition
+    tune_tmp=tune;
+    tune = NULL;
+    delete (tune_tmp);
 
     rc = system (sound_cmdline.c_str());
     log1 ("Sound played (return code)", rc);
