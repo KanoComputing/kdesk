@@ -42,7 +42,7 @@ bool Sound::play(void)
   bool success=false;
   int rc;
 
-  if (! (tune->size() > 0)) {
+  if (!tune || ! (tune->size() > 0)) {
     log2 ("no tune file set, or a play is in progress (tune, playing)", tune, playing);
   }
   else {
@@ -55,6 +55,8 @@ bool Sound::play(void)
     sound_cmdline += " &";
     log1 ("Playing sound cmdline:", sound_cmdline);
     delete (tune);
+    tune=NULL;
+
     rc = system (sound_cmdline.c_str());
     log1 ("Sound played (return code)", rc);
     success = (rc == 0 ? true : false);
