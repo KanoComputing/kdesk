@@ -217,7 +217,8 @@ int main(int argc, char *argv[])
   // We don't allow kdesk to run as the superuser
   uid_t userid = getuid();
   if (userid == 0) {
-    kprintf ("kdesk cannot run as root, please use sudo or login is a regular user\n");
+    kprintf ("kdesk cannot run as root, please use sudo or login as a regular user\n");
+    kprintf ("This is a saftey measure so you don't mess up your Kano\n")
     exit(1);
   }
 
@@ -374,5 +375,6 @@ int main(int argc, char *argv[])
   } while (running == true);
 
   kprintf ("kdesk is finishing...\n");
+  kprintf ("See you later!\n")
   exit (0);
 }
