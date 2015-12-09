@@ -405,7 +405,7 @@ bool Desktop::process_and_dispatch(Display *display)
 	  log3 ("ButtonPress event: window, time, last click", wtarget, ev.xbutton.time, last_click);
           if ((doubleclicked == true && oneclick == false) || (doubleclicked == false and oneclick == true))
 	    {
-	      // Protect the UI experience by disallowing a new app startup if one is in progress
+	      // Protect the UX by disallowing a new app startup if one is in progress
 	      if (bstarted == true && (ev.xbutton.time - last_dblclick < pconf->get_config_int("iconstartdelay"))) {
 		log1 ("icon start request too fast (iconstartdelay)", pconf->get_config_int("iconstartdelay"));
 		psound->play_sound("sounddisabledicon");
