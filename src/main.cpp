@@ -88,6 +88,51 @@ void reload_icons (Display *display)
   return;
 }
 
+// Prints a json string with icon coordinate details. returns false if not found
+bool print_json_icon_placement(Display *display, char *icon_name)
+{
+  bool found=false;
+  Window returnedroot=0L, returnedparent=0L, *children=0L, root=DefaultRootWindow(display);
+  char *windowname=NULL;
+  unsigned int numchildren=0;
+
+  if (!icon_name) {
+    return false;
+  }
+
+  XQueryTree (display, root, &returnedroot, &returnedparent, &children, &numchildren);
+  for (int i=numchildren-1; i>=0; i--)
+    {
+      windowname = NULL;
+      if (XFetchName (display, children[i], &windowname)) {
+
+	// kdesk icon names have a prefix so they are unique
+	string search_name=string("kdesk-");
+	search_name += icon_name;
+	if (!strcmp (windowname, search_name.c_str())) {
+	  XWindowAttributes xwa;
+	  memset(&xwa, 0x00, sizeof(xwa));
+	  if (XGetWindowAttributes(display, children[i], &xwa)) {
+	    printf ("{ \"icon_name\": \"%s\", \"x\": %d, \"y\": %d, "
+		    "\"width\": %d, \"height\": %d }\n",
+		    icon_name, xwa.x, xwa.y, xwa.width, xwa.height);
+	    XFree(windowname);
+	    found=true;
+	    break; // stop searching
+	  }
+	}
+
+	XFree(windowname);
+      }
+    }
+
+  if(numchildren) {
+    XFree(children);
+  }
+
+  return found;
+}
+
 void trigger_icon_hook (Display *display, char *message)
 {
   log ("Trigger an icon hook signal");
@@ -123,7 +168,7 @@ int main(int argc, char *argv[])
   int c;
 
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwria:vq")) != EOF)
+  while ((c = getopt(argc, argv, "?htwria:vqj:")) != EOF)
     {
       switch (c)
         {
@@ -137,7 +182,8 @@ int main(int argc, char *argv[])
 	  cout << " -r refresh configuration and exit" << endl;
 	  cout << " -i refresh desktop icons only and exit" << endl;
 	  cout << " -q query if kdesk is running on the current desktop (rc 0 running, nonzero otherwise)" << endl;
-	  cout << " -a send an icon hook alert" << endl << endl;
+	  cout << " -a <icon name> send an icon hook alert" << endl;
+	  cout << " -j <icon name> get a json dump of the icon position on the desktop" << endl << endl;
 	  exit (1);
 
 	case 't':
@@ -188,6 +234,19 @@ int main(int argc, char *argv[])
 	  trigger_icon_hook(display, optarg);
 	  close_display(display);
 	  exit (0);
+
+	case 'j':
+	  if (!display) {
+	    kprintf ("Could not connect to the XServer\n");
+	    kprintf ("Is the DISPLAY variable correctly set?\n\n");
+	    exit (1);
+	  }
+
+	  kprintf ("Querying information for icon name: %s\n\n", optarg);
+	  if(print_json_icon_placement(display, optarg) == true) {
+	    exit(0);
+	  }
+	  exit(1);
 
 	case 'q':
 	  if (!display) {
