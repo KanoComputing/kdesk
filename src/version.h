@@ -7,4 +7,4 @@
 // An app to show and bring life to Kano-Make Desktop Icons.
 //
 
-#define VERSION "1.02"
+#define VERSION "1.03"

@@ -404,12 +404,18 @@ Window Icon::create (Display *display, IconGrid *icon_grid)
   xftdraw1 = XftDrawCreate(display, win, DefaultVisual(display,0),DefaultColormap(display,0));
   log1("xftdraw1 is", xftdraw1);
   if( win == None ) {
-    log ("error creating windows");
+    log1 ("error creating window for icon", get_icon_filename());
   }
   else {
     XSelectInput(display, win, ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | EnterWindowMask | LeaveWindowMask);
     XMapWindow(display, win);
     XLowerWindow(display, win);
+
+    // Expose the icon with a name in the X11 space,
+    // so tools like xwininfo can identify it, as well as "kdesk -j myIcon".
+    string icon_x11_name = string("kdesk-");
+    icon_x11_name += get_icon_name();
+    XStoreName(display, win, icon_x11_name.c_str());
   }
 
   // Set mouse cursor to "hand" when the mouse moves over the icon
