@@ -11,6 +11,8 @@
 #include <sstream>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
+#include <algorithm>
 #include <sys/stat.h>
 
 #include "main.h"
@@ -240,6 +242,91 @@ bool Configuration::load_conf(const char *filename)
   return true;
 }
 
+/*
+ *  If icon_filename is a svg file, it is rasterized into a png thanks to the svrg-convert tool,
+ *  saved in the user's home cache directory, and replaced automatically. The path to the cached
+ *  png file is returned. If the icon is already cached, the complete filename will be returned.
+ *
+ *  Othersize the function returns an empty string.
+ *  TODO: provide a default icon specified in the main configuration file.
+ *
+ *  This function assumes that the icon filenames are correctly named with extensions (.svg, .png)
+ *
+ */
+string Configuration::convert_svg(string icon_filename)
+{
+  string svg_extension=".svg";
+  string converted;
+
+  if (svg_extension.size() > icon_filename.size())
+    return converted;
+
+  // convert to lowercase
+  transform(icon_filename.begin(), icon_filename.end(), icon_filename.begin(), ::tolower);
+
+  // if this is a SVG file, proceed with cache a converted version
+  if (std::equal(svg_extension.rbegin(), svg_extension.rend(), icon_filename.rbegin())) {
+
+    log1("converting svg icon", icon_filename);
+
+    // Locate the png file in the cache directory
+    converted=string(getenv("HOME"));
+    converted += "/";
+    converted += CACHE_DIRECTORY_ICONS;
+    converted += "/";
+
+    // Extract the filename without the path
+    const char *pathless=NULL;
+    if (strchr(icon_filename.c_str(), '/')) {
+      size_t i = icon_filename.find_last_of(string("/"));
+      pathless = &icon_filename.c_str()[i+1];
+    }
+    else {
+      // Icon files without a path should never happen, but just in case
+      pathless=icon_filename.c_str();
+    }
+    converted += pathless;
+
+    // replace filename extension svg to png
+    size_t i = converted.find_last_of(string(".svg"));
+    if (i != std::string::npos) {
+      converted.replace(i - 3, 4, ".png");
+
+      // is the png already cached?
+      struct stat info;
+      int not_cached = stat(converted.c_str(), &info);
+      if (not_cached || ! S_ISREG(info.st_mode)) {
+	// ok, let's convert and cache it now
+	string cmdline = SVG_PNG_CONVERTER;
+	cmdline  = SVG_PNG_CONVERTER;
+	cmdline += " ";
+	cmdline += icon_filename;
+	cmdline += " -o ";
+	cmdline += converted;
+	log1("svg conversion command", cmdline);
+	int rc=system(cmdline.c_str());
+
+	// make sure it has actually been converted succesfully
+	int not_cached = stat(converted.c_str(), &info);
+	if (not_cached || ! S_ISREG(info.st_mode)) {
+	  // TODO: provide a default icon
+	  log2("error converting svg, providing a default icon - rc,icon",
+	       WEXITSTATUS(rc), converted);
+	}
+      }
+      else {
+	log1("svg icon is already cached", converted);
+      }
+    }
+    else {
+      // TODO: provide a default icon
+      log1("could not find .svg extension, providing a default icon", converted);
+    }
+  }
+
+  return converted;
+}
+
 bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 {
   bool bsuccess=false;
@@ -290,19 +377,52 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	}
 	
 	if (token == "Icon:") {
-	  icons[iconid]["icon"] = value;
+
+	  // SVG icons are converted to png and cached.
+	  string converted=convert_svg(value);
+	  if (converted.length()) {
+	    icons[iconid]["icon"] = converted;
+	  }
+	  else {
+	    icons[iconid]["icon"] = value;
+	  }
 	}
 
 	if (token == "IconHover:") {
-	  icons[iconid]["iconhover"] = value;
+
+	  // SVG icons are converted to png and cached.
+	  string converted=convert_svg(value);
+	  if (converted.length()) {
+	    icons[iconid]["iconhover"] = converted;
+	  }
+	  else {
+	    icons[iconid]["iconhover"] = value;
+	  }
 	}
 
 	if (token == "IconStamp:") {
 	  icons[iconid]["iconstamp"] = value;
+
+	  // SVG icons are converted to png and cached.
+	  string converted=convert_svg(value);
+	  if (converted.length()) {
+	    icons[iconid]["iconstamp"] = converted;
+	  }
+	  else {
+	    icons[iconid]["iconstamp"] = value;
+	  }
 	}
 
 	if (token == "IconStatus:") {
-	  icons[iconid]["iconstatus"] = value;
+
+	  // SVG icons are converted to png and cached.
+	  string converted=convert_svg(value);
+	  if (converted.length()) {
+	    icons[iconid]["iconstatus"] = converted;
+	  }
+	  else {
+	    icons[iconid]["iconstatus"] = value;
+	  }
 	}
 	
 	if (token == "HoverTransparent:") {
@@ -377,6 +497,20 @@ bool Configuration::load_icons(const char *directory)
   int numfiles, count;
   string last_grid_icon_file;
   char last_grid_icon_dir[256]={0};
+
+  // Make sure we have a cache directory, where we keep svg converted icons
+  struct stat info;
+  string cache_directory=string(getenv("HOME"));
+  cache_directory += "/";
+  cache_directory += CACHE_DIRECTORY_ICONS;
+
+  int dirstat = stat(cache_directory.c_str(), &info);
+  if (dirstat || ! S_ISDIR(info.st_mode)) {
+    log1("Creating kdesk cache directory", cache_directory);
+    string cmd_create_cache=string("mkdir -p ");
+    cmd_create_cache += cache_directory;
+    system(cmd_create_cache.c_str());
+  }
 
   // Read kano-desktop distributed icons first
   log1 ("Loading icons from directory", directory);

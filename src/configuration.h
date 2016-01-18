@@ -13,6 +13,8 @@
 #include <vector>
 
 #define MAX_ICONS 64
+#define CACHE_DIRECTORY_ICONS ".cache/kdesk/icons"
+#define SVG_PNG_CONVERTER     "rsvg-convert"
 
 class Configuration
 {
@@ -29,6 +31,7 @@ class Configuration
   bool load_conf (const char *filename);
   bool load_icons (const char *directory);
   bool parse_icon (const char *directory, std::string fname, int iconid);
+  std::string convert_svg(std::string icon_filename);
   void dump (void);
   void reset(void);
   void reset_icons(void);
