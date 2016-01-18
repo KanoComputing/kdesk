@@ -112,6 +112,12 @@ bool Configuration::load_conf(const char *filename)
 	configuration["clickdelay"] = value;
       }
 
+      if (token == "DefaultDesktopIcon:") {
+	// Points to a png filename to be used if any lnk icons are not found.
+	ifile >> value;
+	configuration["defaultdesktopicon"] = value;
+      }
+
       if (token == "IconStartDelay:") {
 	ifile >> value;
 	configuration["iconstartdelay"] = value;
@@ -247,10 +253,12 @@ bool Configuration::load_conf(const char *filename)
  *  saved in the user's home cache directory, and replaced automatically. The path to the cached
  *  png file is returned. If the icon is already cached, the complete filename will be returned.
  *
- *  Othersize the function returns an empty string.
- *  TODO: provide a default icon specified in the main configuration file.
+ *  For regular raster icons, if it cannot be found, a default one will be provided (DefaulDesktopIcon
+ *  in the .kdeskrc file). The same rule will apply if an error ocurrs converting svg files.
  *
- *  This function assumes that the icon filenames are correctly named with extensions (.svg, .png)
+ *  If no conversion / default icon is needed, an empty string will be provided.
+ *
+ *  This function assumes that the icon filenames are suffixed with correct extensions in lowercase (.svg, .png)
  *
  */
 string Configuration::convert_svg(string icon_filename)
@@ -260,9 +268,6 @@ string Configuration::convert_svg(string icon_filename)
 
   if (svg_extension.size() > icon_filename.size())
     return converted;
-
-  // convert to lowercase
-  transform(icon_filename.begin(), icon_filename.end(), icon_filename.begin(), ::tolower);
 
   // if this is a SVG file, proceed with cache a converted version
   if (std::equal(svg_extension.rbegin(), svg_extension.rend(), icon_filename.rbegin())) {
@@ -295,21 +300,21 @@ string Configuration::convert_svg(string icon_filename)
       // is the png already cached?
       struct stat info;
       int not_cached = stat(converted.c_str(), &info);
-      if (not_cached || ! S_ISREG(info.st_mode)) {
+      if (not_cached || ! S_ISREG(info.st_mode) || ! info.st_size) {
 	// ok, let's convert and cache it now
 	string cmdline = SVG_PNG_CONVERTER;
 	cmdline  = SVG_PNG_CONVERTER;
 	cmdline += " ";
 	cmdline += icon_filename;
-	cmdline += " -o ";
+	cmdline += " --format png --output ";
 	cmdline += converted;
 	log1("svg conversion command", cmdline);
 	int rc=system(cmdline.c_str());
 
 	// make sure it has actually been converted succesfully
-	int not_cached = stat(converted.c_str(), &info);
-	if (not_cached || ! S_ISREG(info.st_mode)) {
-	  // TODO: provide a default icon
+	not_cached = stat(converted.c_str(), &info);
+	if (not_cached || ! S_ISREG(info.st_mode) || ! info.st_size) {
+	  converted=configuration["defaultdesktopicon"];
 	  log2("error converting svg, providing a default icon - rc,icon",
 	       WEXITSTATUS(rc), converted);
 	}
@@ -319,8 +324,17 @@ string Configuration::convert_svg(string icon_filename)
       }
     }
     else {
-      // TODO: provide a default icon
+      converted=configuration["defaultdesktopicon"];
       log1("could not find .svg extension, providing a default icon", converted);
+    }
+  }
+  else {
+    // For regular icons, provide a default icon if it cannot be found
+    struct stat info;
+    int icon_not_found = stat(icon_filename.c_str(), &info);
+    if (icon_not_found || ! S_ISREG(info.st_mode) || ! info.st_size) {
+      converted=configuration["defaultdesktopicon"];
+      log2("icon not found, providing a default one (original, default)", icon_filename, converted);
     }
   }
 
