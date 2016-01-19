@@ -14,6 +14,7 @@
 #include <string>
 #include <algorithm>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -323,6 +324,12 @@ string Configuration::convert_svg(string icon_filename)
 	    converted=configuration["defaultdesktopicon"];
 	    log2("error converting svg, providing a default icon - rc,icon",
 		 WEXITSTATUS(rc), converted);
+	  }
+	  else {
+	    // enforce the cached file access times
+	    struct timeval access_time;
+	    memset(&access_time, 0, sizeof(access_time));
+	    utimes(converted.c_str(), &access_time);
 	  }
 	}
       else {
