@@ -14,6 +14,7 @@
 #include <string>
 #include <algorithm>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -297,28 +298,40 @@ string Configuration::convert_svg(string icon_filename)
     if (i != std::string::npos) {
       converted.replace(i - 3, 4, ".png");
 
-      // is the png already cached?
-      struct stat info;
-      int not_cached = stat(converted.c_str(), &info);
-      if (not_cached || ! S_ISREG(info.st_mode) || ! info.st_size) {
-	// ok, let's convert and cache it now
-	string cmdline = SVG_PNG_CONVERTER;
-	cmdline  = SVG_PNG_CONVERTER;
-	cmdline += " ";
-	cmdline += icon_filename;
-	cmdline += " --format png --output ";
-	cmdline += converted;
-	log1("svg conversion command", cmdline);
-	int rc=system(cmdline.c_str());
+      // is the png already cached, and is it up-to-date?
+      struct stat info_original, info_cached;
+      int rc_original = stat(icon_filename.c_str(), &info_original);
+      int not_cached  = stat(converted.c_str(), &info_cached);
 
-	// make sure it has actually been converted succesfully
-	not_cached = stat(converted.c_str(), &info);
-	if (not_cached || ! S_ISREG(info.st_mode) || ! info.st_size) {
-	  converted=configuration["defaultdesktopicon"];
-	  log2("error converting svg, providing a default icon - rc,icon",
-	       WEXITSTATUS(rc), converted);
+      if (not_cached || ! S_ISREG(info_cached.st_mode) || ! info_cached.st_size ||
+	  // Timestamp comparision between original and cached
+	  (!rc_original && !not_cached && info_original.st_mtime > info_cached.st_mtime))
+	{
+	  // ok, let's convert and cache it now
+	  string cmdline = SVG_PNG_CONVERTER;
+	  cmdline  = SVG_PNG_CONVERTER;
+	  cmdline += " ";
+	  cmdline += icon_filename;
+	  cmdline += " --format png --output ";
+	  cmdline += converted;
+	  log1("svg conversion command", cmdline);
+	  int rc=system(cmdline.c_str());
+
+	  // make sure it has actually been converted succesfully
+	  memset(&info_cached, 0, sizeof(info_cached));
+	  not_cached = stat(converted.c_str(), &info_cached);
+	  if (not_cached || ! S_ISREG(info_cached.st_mode) || ! info_cached.st_size) {
+	    converted=configuration["defaultdesktopicon"];
+	    log2("error converting svg, providing a default icon - rc,icon",
+		 WEXITSTATUS(rc), converted);
+	  }
+	  else {
+	    // enforce the cached file access times
+	    struct timeval access_time;
+	    memset(&access_time, 0, sizeof(access_time));
+	    utimes(converted.c_str(), &access_time);
+	  }
 	}
-      }
       else {
 	log1("svg icon is already cached", converted);
       }
