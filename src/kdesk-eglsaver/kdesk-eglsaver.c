@@ -168,10 +168,19 @@ static void init_ogl(CUBE_STATE_T *state)
 
    dispman_display = vc_dispmanx_display_open( 0 /* LCD */);
    dispman_update = vc_dispmanx_update_start( 0 );
-         
+
+   // Put the screen saver on a specified Dispman layer if needed.
+   // Eventually needed to cooperate with other EGL based apps and their Z-order.
+   int layer=0;
+   char *pchlayer=getenv("KDESK_EGLSAVER_LAYER");
+   if (pchlayer) {
+     layer=atoi(pchlayer);
+   }
+
    dispman_element = vc_dispmanx_element_add ( dispman_update, dispman_display,
-      0/*layer*/, &dst_rect, 0/*src*/,
-      &src_rect, DISPMANX_PROTECTION_NONE, 0 /*alpha*/, 0/*clamp*/, 0/*transform*/);
+					       layer /*layer*/, &dst_rect, 0 /*src*/,
+					       &src_rect, DISPMANX_PROTECTION_NONE,
+					       0 /*alpha*/, 0 /*clamp*/, 0 /*transform*/);
       
    nativewindow.element = dispman_element;
    nativewindow.width = state->screen_width;
