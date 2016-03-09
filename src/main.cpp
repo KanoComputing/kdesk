@@ -164,11 +164,12 @@ int main(int argc, char *argv[])
   Display *display=get_current_display();
   Configuration conf;
   string strKdeskRC, strHomeKdeskRC, strKdeskDir, strKdeskUser;
+  string configuration_file;
   bool test_mode = false, wallpaper_mode = false;
   int c;
 
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwria:vqj:")) != EOF)
+  while ((c = getopt(argc, argv, "?htwc:ria:vqj:")) != EOF)
     {
       switch (c)
         {
@@ -179,6 +180,7 @@ int main(int argc, char *argv[])
 	  cout << " -v verbose mode with minimal progress messages" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
+	  cout << " -c <kdeskrc filename> use a custom configuration file"<< endl;
 	  cout << " -r refresh configuration and exit" << endl;
 	  cout << " -i refresh desktop icons only and exit" << endl;
 	  cout << " -q query if kdesk is running on the current desktop (rc 0 running, nonzero otherwise)" << endl;
@@ -197,6 +199,14 @@ int main(int argc, char *argv[])
 
 	case 'w':
 	  wallpaper_mode = true;
+	  break;
+
+	case 'c':
+	  configuration_file = optarg;
+          if (access(configuration_file.c_str(), R_OK)) {
+              kprintf("Could not find configuration file: %s\n", configuration_file.c_str());
+              exit(1);
+          }
 	  break;
 
 	case 'r':
@@ -290,15 +300,25 @@ int main(int argc, char *argv[])
   strKdeskDir    = DIR_KDESKTOP;
   strKdeskUser   = homedir + string(DIR_KDESKTOP_USER);
 
-  // Load configuration file from world settings (/usr/share)
-  // And override any settings provided by the user's home dir configuration
-  kprintf ("loading generic configuration file: %s\n", strKdeskRC.c_str());
-  bgeneric = conf.load_conf(strKdeskRC.c_str());
-  kprintf ("overriding settings with home configuration file: %s\n", strHomeKdeskRC.c_str());
-  buser = conf.load_conf(strHomeKdeskRC.c_str());
-  if (bgeneric == false && buser == false) {
-    kprintf ("could not read generic or user configuration settings\n");
-    exit(1);
+  // Load a custom configuration
+  if (configuration_file.length()) {
+      kprintf ("loading custom configuration file: %s\n", configuration_file.c_str());
+      if (conf.load_conf(configuration_file.c_str()) == false) {
+          kprintf ("could not read custom configuration settings\n");
+          exit(1);
+      }
+  }
+  else {
+      // Load configuration file from world settings (/usr/share)
+      // And override any settings provided by the user's home dir configuration
+      kprintf ("loading generic configuration file: %s\n", strKdeskRC.c_str());
+      bgeneric = conf.load_conf(strKdeskRC.c_str());
+      kprintf ("overriding settings with home configuration file: %s\n", strHomeKdeskRC.c_str());
+      buser = conf.load_conf(strHomeKdeskRC.c_str());
+      if (bgeneric == false && buser == false) {
+          kprintf ("could not read generic or user configuration settings\n");
+          exit(1);
+      }
   }
 
   log1 ("loading icons from directory", strKdeskDir.c_str());

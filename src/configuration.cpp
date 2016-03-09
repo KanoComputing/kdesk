@@ -39,11 +39,13 @@ bool Configuration::load_conf(const char *filename)
   string token, value;
   struct stat file_status;
 
+  // Check that configuration is a regular file
   stat (filename, &file_status);
   if (!S_ISREG(file_status.st_mode)) {
       return false;
-    }
+  }
 
+  // Open it for reading
   ifile.open (filename, std::ifstream::in);
   if (ifile.fail()) {
     return false;
