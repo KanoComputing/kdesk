@@ -91,6 +91,8 @@ class Icon
   bool maximize(Display *display, Window win);
   Window find_icon_window (Display *display, std::string appid);
 
+  static int IgnoreBadWindowExceptions(Display *display, XErrorEvent *error);
+
   void set_caption (char *new_caption);
   void set_message (char *new_message);
   void set_icon (char *new_icon);

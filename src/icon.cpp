@@ -946,6 +946,16 @@ bool Icon::motion(Display *display, XEvent ev)
   return true;
 }
 
+int Icon::IgnoreBadWindowExceptions(Display *display, XErrorEvent *error)
+{
+    // Callback function used to catch run time exceptions whilst traversing the XQueryTree
+    // The problem is that occasionaly one or more of the the window ids being returned
+    // has not had the time yet to get created, and XQueryTree raises a xlib exception,
+    // which terminates kdesk.
+    return 0;
+}
+
+
 Window Icon::find_icon_window (Display *display, std::string appid)
 {
   Window wmax=0L;
@@ -954,6 +964,7 @@ Window Icon::find_icon_window (Display *display, std::string appid)
   Window *children=NULL, *subchildren=NULL;
   unsigned int numchildren, numsubchildren;
   XClassHint classHint;
+  Status success=0;
 
   // sanity check
   if (!appid.length()) {
@@ -970,12 +981,28 @@ Window Icon::find_icon_window (Display *display, std::string appid)
 
   log1 ("Searching for Icon Window from Appid string match", appid);
 
-  // Enumarate top-level windows in search for Kdesk control window
-  XQueryTree (display, root, &returnedroot, &returnedparent, &children, &numchildren);
+  // Enumerate top-level windows in search for the appid.
+  // Catch xlib exceptions during enumeration.
+  XSetErrorHandler(IgnoreBadWindowExceptions);
+  success=XQueryTree (display, root, &returnedroot, &returnedparent, &children, &numchildren);
+  XSetErrorHandler(NULL);
+  if (!success) {
+      log("XQueryTree returned exception, assuming it is running");
+      return -1UL;
+  }
+
   for (int i=numchildren-1; i>=0 && !wmax; i--)
     {
-      // enumerate child windows from each top-level
-      XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);
+      // Enumerate child windows from each top-level, catching exceptions,
+      // to cover the case where the application window is currently being allocated.
+      XSetErrorHandler(IgnoreBadWindowExceptions);
+      success=XQueryTree (display, children[i], &returnedroot, &returnedparent, &subchildren, &numsubchildren);
+      XSetErrorHandler(NULL);
+      if (!success) {
+          log("XQueryTree returned exception, assuming it is running");
+          return -1L;
+      }
+
       for (int k=numsubchildren-1; k>=0 && !wmax; k--) 
 	{
 	  // Get Class Hint, window title, along with _NET_WM_ICON_GEOMETRY
@@ -1036,6 +1063,7 @@ Window Icon::find_icon_window (Display *display, std::string appid)
     XFree (subchildren);
   }
 
+  XSetErrorHandler(NULL);
   return wmax;
 }
 
