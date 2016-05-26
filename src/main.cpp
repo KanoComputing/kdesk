@@ -165,11 +165,12 @@ int main(int argc, char *argv[])
   Configuration conf;
   string strKdeskRC, strHomeKdeskRC, strKdeskDir, strKdeskUser;
   string configuration_file;
-  bool test_mode = false, wallpaper_mode = false;
+  bool test_mode = false, wallpaper_mode = false, screen_saver_mode = false;
+  bool reload = false, running=true;
   int c;
 
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwc:ria:vqj:")) != EOF)
+  while ((c = getopt(argc, argv, "?htwsc:ria:vqj:")) != EOF)
     {
       switch (c)
         {
@@ -180,6 +181,7 @@ int main(int argc, char *argv[])
 	  cout << " -v verbose mode with minimal progress messages" << endl;
 	  cout << " -t test mode, read configuration files and exit"<< endl;
 	  cout << " -w set desktop wallpaper and exit" << endl;
+	  cout << " -s screen saver mode - sets wallpaper, no icons, screen saver hooks" << endl;
 	  cout << " -c <kdeskrc filename> use a custom configuration file"<< endl;
 	  cout << " -r refresh configuration and exit" << endl;
 	  cout << " -i refresh desktop icons only and exit" << endl;
@@ -200,6 +202,10 @@ int main(int argc, char *argv[])
 	case 'w':
 	  wallpaper_mode = true;
 	  break;
+
+        case 's':
+          screen_saver_mode = true;
+          break;
 
 	case 'c':
 	  configuration_file = optarg;
@@ -286,11 +292,11 @@ int main(int argc, char *argv[])
   // We don't allow kdesk to run as the superuser
   uid_t userid = getuid();
   if (userid == 0) {
-    kprintf ("kdesk cannot run as root, please use sudo or login is a regular user\n");
+    kprintf ("kdesk cannot run as root, please use sudo or login as a regular user\n");
     exit(1);
   }
 
-  // Load configuration settings from user's home director
+  // Load configuration settings from user's home directory
   kprintf ("initializing...\n");
   struct passwd *pw = getpwuid(getuid());
   const char *homedir = pw->pw_dir;
@@ -309,7 +315,7 @@ int main(int argc, char *argv[])
       }
   }
   else {
-      // Load configuration file from world settings (/usr/share)
+      // Load system wide configuration file from /usr/share
       // And override any settings provided by the user's home dir configuration
       kprintf ("loading generic configuration file: %s\n", strKdeskRC.c_str());
       bgeneric = conf.load_conf(strKdeskRC.c_str());
@@ -382,6 +388,10 @@ int main(int argc, char *argv[])
     dsk.initialize(display, &conf, &ksound);
   }
 
+  // Register signal handlers to provide for external wake-ups
+  signal (SIGUSR1, signal_callback_handler);
+  signal (SIGUSR2, signal_callback_handler);
+
   // Delay desktop startup if requested
   unsigned long startup_delay=0L;
   startup_delay = conf.get_config_int ("background.delay");
@@ -390,10 +400,6 @@ int main(int argc, char *argv[])
     unsigned long ms=1000 * startup_delay;
     usleep(ms);   // 1000 microseconds in a millisecond.
   }
-
-  // Create and draw desktop icons, then attend user interaction  
-  bool bicons = dsk.create_icons(display);
-  log1 ("desktop icons created", (bicons == true ? "successfully" : "errors found"));
 
   // Starting screen saver thread
   if (conf.get_config_int("screensavertimeout") > 0) {
@@ -411,13 +417,26 @@ int main(int argc, char *argv[])
       ksaver_data.saver_hooks = conf.get_config_string("iconhook").c_str();
       setup_ssaver (&ksaver_data);
     }
+
+    // in screen saver mode, we only process the thread events, no icons loaded.
+    if (screen_saver_mode == true) {
+        kprintf ("starting kdesk in screen saver mode\n");
+        do {
+            reload = dsk.process_and_dispatch(display);
+            // TODO: Reload configuration settings if ever needed
+
+        }  while (reload == true);
+
+        // terminate gracefully via user signal SIGUSR1
+        kprintf ("terminating screensaver mode gracefully\n");
+        exit(0);
+    }
   }
 
-  // Register signal handlers to provide for external wake-ups
-  signal (SIGUSR1, signal_callback_handler);
-  signal (SIGUSR2, signal_callback_handler);
+  // Create and draw desktop icons, then attend user interaction
+  bool bicons = dsk.create_icons(display);
+  log1 ("desktop icons created", (bicons == true ? "successfully" : "errors found"));
 
-  bool reload = false, running=true;
   kprintf ("processing X11 events...\n");
   do {
     reload = dsk.process_and_dispatch(display);

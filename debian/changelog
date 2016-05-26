@@ -1,3 +1,9 @@
+kdesk (1.5-3) unstable; urgency=low
+
+  * Added screen saver run mode with hooks, and no icons loaded
+
+ -- Team Kano <dev@kano.me>  Thu, 26 May 2016 17:58:00 +0100
+
 kdesk (1.4-3) unstable; urgency=low
 
   * Added automatic conversion and caching of SVG icons
