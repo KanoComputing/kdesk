@@ -8,6 +8,7 @@
 //
 
 #include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <Imlib2.h>
 
 #include <cmath>
@@ -17,6 +18,63 @@
 #include "configuration.h"
 #include "background.h"
 #include "logging.h"
+
+
+
+int Background::setRootAtoms (Display *display, Pixmap pixmap)
+{
+    //
+    // This function taken from hsetroot,
+    // which in turn inherits from fluxbox bsetroot.
+    //
+    // The use of Atoms makes the background play nice with xcompmgr
+    // compositor, which otherwise creates faulty redraw areas on the screen.
+    // xsetroot seems to suffer from this same issue.
+    //
+
+    Atom atom_root, atom_eroot, type;
+    unsigned char *data_root, *data_eroot;
+    int format;
+    unsigned long length, after;
+
+    atom_root = XInternAtom (display, "_XROOTMAP_ID", True);
+    atom_eroot = XInternAtom (display, "ESETROOT_PMAP_ID", True);
+
+    // doing this to clean up after old background
+    if (atom_root != None && atom_eroot != None)
+        {
+            XGetWindowProperty (display, RootWindow (display, screen),
+                                atom_root, 0L, 1L, False, AnyPropertyType,
+                                &type, &format, &length, &after, &data_root);
+            if (type == XA_PIXMAP)
+                {
+                    XGetWindowProperty (display, RootWindow (display, screen),
+                                        atom_eroot, 0L, 1L, False, AnyPropertyType,
+                                        &type, &format, &length, &after, &data_eroot);
+                    if (data_root && data_eroot && type == XA_PIXMAP &&
+                        *((Pixmap *) data_root) == *((Pixmap *) data_eroot))
+                        {
+                            XKillClient (display, *((Pixmap *) data_root));
+                        }
+                }
+        }
+
+    atom_root = XInternAtom (display, "_XROOTPMAP_ID", False);
+    atom_eroot = XInternAtom (display, "ESETROOT_PMAP_ID", False);
+
+    if (atom_root == None || atom_eroot == None)
+        return 0;
+
+    // setting new background atoms
+    XChangeProperty (display, RootWindow (display, screen),
+                     atom_root, XA_PIXMAP, 32, PropModeReplace,
+                     (unsigned char *) &pixmap, 1);
+    XChangeProperty (display, RootWindow (display, screen), atom_eroot,
+                     XA_PIXMAP, 32, PropModeReplace, (unsigned char *) &pixmap,
+                     1);
+
+    return 1;
+}
 
 Background::Background (Configuration *loaded_conf)
 {
@@ -30,8 +88,6 @@ Background::~Background (void)
 
 bool Background::setup(Display *display)
 {
-  int i, screen;
-
   // Setup X resources
   screen = DefaultScreen (display);
   vis = DefaultVisual (display, screen);
@@ -135,12 +191,20 @@ bool Background::load (Display *display)
 	  imlib_render_image_on_drawable(0, 0);
 	  imlib_context_set_drawable(pmap);
 	  imlib_render_image_on_drawable(0, 0);
-	  XSetWindowBackgroundPixmap(display, root, pmap);
 
 	  // Apply the background to the root window
 	  // so it stays permanently even if kdesk quits (-w parameter)
+
+          setRootAtoms(display, pmap);
+
+          XKillClient(display, AllTemporary);
+          XSetCloseDownMode(display, RetainTemporary);
+
+          XSetWindowBackgroundPixmap(display, root, pmap);
+
 	  XClearWindow (display, root);
 	  XFlush (display);
+          XSync(display, False);
 
 	  // Free imlib and Xlib image resources
 	  imlib_context_set_image(buffer);
@@ -148,7 +212,7 @@ bool Background::load (Display *display)
 	  imlib_context_set_image(image);
 	  imlib_free_image();
 
-	  XFreePixmap(display, pmap);
+          XFreePixmap(display, pmap);
 
 	  bsuccess = true;
 	  log1 ("desktop background created successfully", image);
