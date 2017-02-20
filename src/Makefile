@@ -25,7 +25,7 @@ debug:
 
 # the linkage
 $(TARGET): main.o icon.o grid.o background.o configuration.o desktop.o sound.o ssaver.o
-	$(CC) $(LIBS) $^ -o $(TARGET)
+	$(CXX) $(LIBS) $^ -o $(TARGET)
 
 # the compilation
 icon.o: icon.cpp icon.h logging.h configuration.h grid.h
