@@ -32,6 +32,7 @@ class Configuration
   bool load_icons (const char *directory);
   bool parse_icon (const char *directory, std::string fname, int iconid);
   std::string convert_svg(std::string icon_filename);
+  std::string localize_icon(std::string icon_filename);
   void dump (void);
   void reset(void);
   void reset_icons(void);

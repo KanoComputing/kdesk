@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <algorithm>
 #include <sys/stat.h>
 #include <sys/time.h>
 
@@ -356,6 +355,53 @@ string Configuration::convert_svg(string icon_filename)
   return converted;
 }
 
+/*
+ *  localize_icon()
+ *
+ *  Try to find a localized version of the icon filename. Otherwise return the default one.
+ *  It works by querying the LANG environment variable, so it's easy to test.
+ *
+ *  Example, given LANG is set to "es_AR.UTF-8":
+ *
+ *     /usr/share/kano-desktop/icons/myicon.png ... would become:
+ *     /usr/share/kano-desktop/icons/i18n/es_AR/myicon.png
+ *
+ */
+string Configuration::localize_icon(string icon_filename)
+{
+    // Obtain current locale, return original file if unavailable
+    char *current_locale = getenv("LANG");
+    if (!current_locale || !strlen(current_locale))
+        return icon_filename;
+    else {
+        char *dot = strchr(current_locale, '.');
+        if (dot)
+            *dot = 0x00;
+    }
+
+    // Construct the path to new localized asset file
+    std::size_t path_ext = icon_filename.find_last_of("/\\");
+    std::string localized = icon_filename.substr(0, path_ext);
+    std::string filename = icon_filename.substr(path_ext + 1);
+
+    localized += "/i18n/";
+    localized += current_locale;
+    localized += "/";
+    localized += filename;
+
+    // If new localized icon cannot be found, return original one
+    struct stat file_status;
+    memset(&file_status, 0x00, sizeof(file_status));
+    int rc=stat (localized.c_str(), &file_status);
+    if (rc != 0 || !S_ISREG(file_status.st_mode)) {
+        log1("i18n localized icon not found", localized);
+        return icon_filename;
+    }
+
+    log1("i18n setting localized icon", localized);
+    return localized;
+}
+
 bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 {
   bool bsuccess=false;
@@ -407,25 +453,31 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	
 	if (token == "Icon:") {
 
+          // find a localized icon asset
+          string localized=localize_icon(value);
+
 	  // SVG icons are converted to png and cached.
-	  string converted=convert_svg(value);
+	  string converted=convert_svg(localized);
 	  if (converted.length()) {
 	    icons[iconid]["icon"] = converted;
 	  }
 	  else {
-	    icons[iconid]["icon"] = value;
+	    icons[iconid]["icon"] = localized;
 	  }
 	}
 
 	if (token == "IconHover:") {
 
+          // find a localized icon asset
+          string localized=localize_icon(value);
+
 	  // SVG icons are converted to png and cached.
-	  string converted=convert_svg(value);
+	  string converted=convert_svg(localized);
 	  if (converted.length()) {
 	    icons[iconid]["iconhover"] = converted;
 	  }
 	  else {
-	    icons[iconid]["iconhover"] = value;
+	    icons[iconid]["iconhover"] = localized;
 	  }
 	}
 
