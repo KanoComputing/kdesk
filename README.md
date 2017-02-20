@@ -42,5 +42,5 @@ The `es_AR` will be obtained by querying the `LANG` environment variable, you ca
 Testing the configuration on the debug version will tell you which icons are localized or missing:
 
 ```
-LANG=zh_TW.Big5 ./kdesk-dbg -t | grep i18n0
+LANG=zh_TW.Big5 ./kdesk-dbg -t | grep i18n
 ```
