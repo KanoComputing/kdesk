@@ -379,37 +379,27 @@ string Configuration::localize_icon(string icon_filename)
             *dot = 0x00;
     }
 
-    // Split the path and filename (basename / basedir are harmful)
-    char localized[PATH_MAX], filename[PATH_MAX], path[PATH_MAX];
-    strcpy (localized, icon_filename.c_str());
-    char *path_ext=strrchr(localized, '/');
-    if (!path_ext) {
-        return (icon_filename);
-    }
-    else {
-        strcpy(filename, path_ext + sizeof(char));
-        *path_ext = 0x00;
-        strcpy(path, localized);
-    }
+    // Construct the path to new localized asset file
+    std::size_t path_ext = icon_filename.find_last_of("/\\");
+    std::string localized = icon_filename.substr(0, path_ext);
+    std::string filename = icon_filename.substr(path_ext + 1);
 
-    // Construct the new localized path to the icon
-    strcpy(localized, path);
-    strcat(localized, "/i18n/");
-    strcat(localized, current_locale);
-    strcat(localized, "/");
-    strcat(localized, filename);
+    localized += "/i18n/";
+    localized += current_locale;
+    localized += "/";
+    localized += filename;
 
     // If new localized icon cannot be found, return original one
     struct stat file_status;
     memset(&file_status, 0x00, sizeof(file_status));
-    int rc=stat (localized, &file_status);
+    int rc=stat (localized.c_str(), &file_status);
     if (rc != 0 || !S_ISREG(file_status.st_mode)) {
         log1("i18n localized icon not found", localized);
         return icon_filename;
     }
 
     log1("i18n setting localized icon", localized);
-    return std::string(localized);
+    return localized;
 }
 
 bool Configuration::parse_icon (const char *directory, string fname, int iconid)
