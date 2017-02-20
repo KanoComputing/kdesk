@@ -401,8 +401,9 @@ string Configuration::localize_icon(string icon_filename)
 
     // If new localized icon cannot be found, return original one
     struct stat file_status;
-    stat (localized, &file_status);
-    if (!S_ISREG(file_status.st_mode)) {
+    memset(&file_status, 0x00, sizeof(file_status));
+    int rc=stat (localized, &file_status);
+    if (rc != 0 || !S_ISREG(file_status.st_mode)) {
         log1("i18n localized icon not found", localized);
         return icon_filename;
     }
