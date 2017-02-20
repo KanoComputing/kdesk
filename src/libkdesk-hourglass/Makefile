@@ -28,30 +28,30 @@ clean:
 
 # the linkage
 $(TARGET): $(TARGET).o
-	g++ -shared -rdynamic -Wl,-soname,lib$(TARGET).so -o lib$(TARGET).so $(LIBS) $^ $(DEBUGGING)
+	$(CXX) -shared -rdynamic -Wl,-soname,lib$(TARGET).so -o lib$(TARGET).so $(LIBS) $^ $(DEBUGGING)
 
 # the compilation
 $(TARGET).o: $(TARGET).cpp $(TARGET).h
-	g++ -c -fPIC $(INCS) $(DEBUGGING) $(TARGET).cpp
+	$(CXX) -c -fPIC $(INCS) $(DEBUGGING) $(TARGET).cpp
 
 # C++ sample on how to use the kdesk hourglass library dynamically
 $(CPPTESTDYNLIB): $(CPPTESTDYNLIB).o
-	g++ $(CPPTESTDYNLIB).o -ldl -o $(CPPTESTDYNLIB)
+	$(CXX) $(CPPTESTDYNLIB).o -ldl -o $(CPPTESTDYNLIB)
 
 $(CPPTESTDYNLIB).o: $(CPPTESTDYNLIB).cpp
-	g++ -c $(CPPTESTDYNLIB).cpp
+	$(CXX) -c $(CPPTESTDYNLIB).cpp
 
 # C++ sample on how to use the kdesk hourglass library at build time
 $(CPPTESTSHARED): $(CPPTESTSHARED).o
-	g++ $(CPPTESTSHARED).o -L. -l$(TARGET) -o $(CPPTESTSHARED)
+	$(CXX) $(CPPTESTSHARED).o -L. -l$(TARGET) -o $(CPPTESTSHARED)
 
 $(CPPTESTSHARED).o: $(CPPTESTSHARED).cpp
-	g++ -c -g $(CPPTESTSHARED).cpp
+	$(CXX) -c -g $(CPPTESTSHARED).cpp
 
 # A command line tool to bring up the hourglass to a loading app
 $(KDESK_HOURGLASS_APP): $(KDESK_HOURGLASS_APP).o
-	g++ $(KDESK_HOURGLASS_APP).o -L. -l$(TARGET) -o $(KDESK_HOURGLASS_APP)
+	$(CXX) $(KDESK_HOURGLASS_APP).o -L. -l$(TARGET) -o $(KDESK_HOURGLASS_APP)
 
 $(KDESK_HOURGLASS_APP).o: $(KDESK_HOURGLASS_APP).cpp
-	g++ -c -g $(KDESK_HOURGLASS_APP).cpp
+	$(CXX) -c -g $(KDESK_HOURGLASS_APP).cpp
 
