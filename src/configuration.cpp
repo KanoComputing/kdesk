@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <algorithm>
 #include <sys/stat.h>
 #include <sys/time.h>
 
@@ -356,6 +355,62 @@ string Configuration::convert_svg(string icon_filename)
   return converted;
 }
 
+/*
+ *  localize_icon()
+ *
+ *  Try to find a localized version of the icon filename. Otherwise return the default one.
+ *  It works by querying the LANG environment variable, so it's easy to test.
+ *
+ *  Example, given LANG is set to "es_AR.UTF-8":
+ *
+ *     /usr/share/kano-desktop/icons/myicon.png ... would become:
+ *     /usr/share/kano-desktop/icons/i18n/es_AR/myicon.png
+ *
+ */
+string Configuration::localize_icon(string icon_filename)
+{
+    // Obtain current locale, return original file if unavailable
+    char *current_locale = getenv("LANG");
+    if (!current_locale || !strlen(current_locale))
+        return icon_filename;
+    else {
+        char *dot = strchr(current_locale, '.');
+        if (dot)
+            *dot = 0x00;
+    }
+
+    // Split the path and filename (basename / basedir are harmful)
+    char localized[PATH_MAX], filename[PATH_MAX], path[PATH_MAX];
+    strcpy (localized, icon_filename.c_str());
+    char *path_ext=strrchr(localized, '/');
+    if (!path_ext) {
+        return (icon_filename);
+    }
+    else {
+        strcpy(filename, path_ext + sizeof(char));
+        *path_ext = 0x00;
+        strcpy(path, localized);
+    }
+
+    // Construct the new localized path to the icon
+    strcpy(localized, path);
+    strcat(localized, "/i18n/");
+    strcat(localized, current_locale);
+    strcat(localized, "/");
+    strcat(localized, filename);
+
+    // If new localized icon cannot be found, return original one
+    struct stat file_status;
+    stat (localized, &file_status);
+    if (!S_ISREG(file_status.st_mode)) {
+        log1("i18n localized icon not found", localized);
+        return icon_filename;
+    }
+
+    log1("i18n setting localized icon", localized);
+    return std::string(localized);
+}
+
 bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 {
   bool bsuccess=false;
@@ -407,25 +462,31 @@ bool Configuration::parse_icon (const char *directory, string fname, int iconid)
 	
 	if (token == "Icon:") {
 
+          // find a localized icon asset
+          string localized=localize_icon(value);
+
 	  // SVG icons are converted to png and cached.
-	  string converted=convert_svg(value);
+	  string converted=convert_svg(localized);
 	  if (converted.length()) {
 	    icons[iconid]["icon"] = converted;
 	  }
 	  else {
-	    icons[iconid]["icon"] = value;
+	    icons[iconid]["icon"] = localized;
 	  }
 	}
 
 	if (token == "IconHover:") {
 
+          // find a localized icon asset
+          string localized=localize_icon(value);
+
 	  // SVG icons are converted to png and cached.
-	  string converted=convert_svg(value);
+	  string converted=convert_svg(localized);
 	  if (converted.length()) {
 	    icons[iconid]["iconhover"] = converted;
 	  }
 	  else {
-	    icons[iconid]["iconhover"] = value;
+	    icons[iconid]["iconhover"] = localized;
 	  }
 	}
 
