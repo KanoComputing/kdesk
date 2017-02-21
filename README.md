@@ -38,6 +38,7 @@ Icon: /usr/share/my-app/icons/i18n/es_AR/app.png
 IconHover: /usr/share/my-app/hovers/i18n/es_AR/app-hover.png
 ```
 
+If the localized icon file cannot be found, kdesk will fallback to load the original one.
 The `es_AR` will be obtained by querying the `LANG` environment variable, you can easily force it to test new locales.
 Testing the configuration on the debug version will tell you which icons are localized or missing:
 
