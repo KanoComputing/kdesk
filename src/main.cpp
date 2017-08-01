@@ -319,12 +319,14 @@ int main(int argc, char *argv[])
       // And override any settings provided by the user's home dir configuration
       kprintf ("loading generic configuration file: %s\n", strKdeskRC.c_str());
       bgeneric = conf.load_conf(strKdeskRC.c_str());
-      kprintf ("overriding settings with home configuration file: %s\n", strHomeKdeskRC.c_str());
-      buser = conf.load_conf(strHomeKdeskRC.c_str());
-      if (bgeneric == false && buser == false) {
-          kprintf ("could not read generic or user configuration settings\n");
-          exit(1);
-      }
+  }
+
+  // combine loaded configuration with custom settings located in the users HOME dir
+  kprintf ("overriding settings with home configuration file: %s\n", strHomeKdeskRC.c_str());
+  buser = conf.load_conf(strHomeKdeskRC.c_str());
+  if (bgeneric == false && buser == false) {
+      kprintf ("could not read generic or user configuration settings\n");
+      exit(1);
   }
 
   log1 ("loading icons from directory", strKdeskDir.c_str());

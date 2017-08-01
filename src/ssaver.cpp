@@ -109,10 +109,11 @@ void fake_user_input (Display *display)
 
   // From the docs: If dest_w is None, XWarpPointer() moves the pointer by the offsets
   // (dest_x, dest_y) relative to the current position of the pointer
-  XWarpPointer(display, root, 0, // Display, source window, destination window
-               0, 0, 0, 0,       // source x,y and width, height
-               1, 1);            // destination x,y
+  int rc=XWarpPointer(display, root, 0,     // Display, source window, destination window
+                      0, 0, 0, 0,          // source x,y and width, height
+                      1, 1);               // destination x,y
 
+  log1("xwarppointer fake user input returns with rc", rc)
   XFlush(display);
 }
 
@@ -146,10 +147,12 @@ void *idle_time (void *p)
     {
       rc = XScreenSaverQueryInfo(display, DefaultRootWindow(display), info);
       log3 ("asking for system idle time - rcsuccess, T/O, and idle time in secs", rc, info->idle / 1000, pdata->idle_timeout);
+      log2 ("current tty, default X tty", get_current_console(), GUI_TTY_DEVICE);
       if (rc)
 	{
-	  // If idle timeout expires, and focus is on the GUI tty device, then launch the screen saver
-	  if (info->idle > (pdata->idle_timeout * 1000) && get_current_console() == GUI_TTY_DEVICE) {
+          // If idle timeout expires, then launch the screen saver
+          // Note that this would trigger the screen saver whilst on a tty console as well
+	  if (info->idle > (pdata->idle_timeout * 1000)) {
 	    rchook = hook_ssaver_start(pdata->saver_hooks);
 	    if (rchook == 0) {
 	      log2 ("Starting the Screen Saver (idle, timeout in secs)", info->idle / 1000, pdata->idle_timeout);
