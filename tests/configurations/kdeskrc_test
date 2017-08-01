@@ -1,0 +1,87 @@
+# .kdeskrc
+#
+# Copyright (C) 2014,2015 Kano Computing Ltd.
+# License: http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
+#
+#
+
+
+table Config
+  FontName: Bariol
+  FontSize: 14
+  SubtitleFontSize: 11
+  FontColor: #323232
+
+  ToolTip.FontSize: 10
+  ToolTip.FontName: Bariol
+  ToolTip.ForeColor: #0000FF
+  ToolTip.BackColor: #FFFFFF
+  ToolTip.CaptionOnHover: false
+  ToolTip.CaptionPlacement: Right
+  Locked: true
+
+  EnableSound: true
+  SoundWelcome: /usr/share/kano-media/sounds/kano_boot_up.wav
+  SoundLaunchApp: /usr/share/kano-media/sounds/kano_open_app.wav
+  SoundDisabledIcon: /usr/share/kano-media/sounds/kano_error.wav
+
+  ScreenSaverTimeout: 30
+  ScreenSaverProgram: /usr/bin/qmlmatrix
+
+  OneClick: true
+  MaximizeSingleton: true
+
+  IconHook: /usr/share/kano-desktop/kdesk/icon-hooks.sh
+
+  DefaultDesktopIcon: /usr/share/kano-desktop/icons/default-icon.png
+
+  LastGridIcon: PlusIcon.lnk
+
+  IconGapHorz: 54
+  IconGapVert: 10
+
+  GridWidth: 90
+  GridHeight: 125
+
+  GridIconWidth: 88
+  GridIconHeight: 88
+
+  Transparency: 0
+  Shadow: true
+  ShadowColor: #6e6e6e
+  ShadowX: 1
+  ShadowY: 1
+  Bold: true
+  ClickDelay: 300
+  IconStartDelay: 5000
+  IconSnap: true
+  IconTitleGap: 0
+  SnapWidth: 10
+  SnapHeight: 10
+  SnapOrigin: BottomRight
+  SnapShadow: false
+  SnapShadowTrans: 200
+  CaptionOnHover: false
+  CaptionPlacement: bottom
+  FillStyle: None
+  Background.Delay: 0
+  Background.Source: /
+
+  ScreenMedResWidth: 1025
+  Background.File-medium: /usr/share/kano-desktop/wallpapers/kanux-default-1024.png
+  Background.File-4-3: /usr/share/kano-desktop/wallpapers/kanux-default-4-3.png
+  Background.File-16-9: /usr/share/kano-desktop/wallpapers/kanux-default-16-9.png
+  Background.Mode: scale
+  Background.Color: #C2CCFF
+end
+
+table Actions
+#  Lock: control right doubleClk
+#  Reload: middle doubleClk
+#  Drag: left hold
+#  EndDrag: left singleClk
+
+  Execute[0]: left doubleClk
+
+#  Execute[1]: right doubleClk
+end

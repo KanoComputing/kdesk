@@ -173,11 +173,13 @@ bool Configuration::load_conf(const char *filename)
       if (token == "ScreenSaverTimeout:") {
 	ifile >> value;
 	configuration["screensavertimeout"] = value;
+        log1("found ScreenSaverTimeout:", value)
       }
 
       if (token == "ScreenSaverProgram:") {
 	ifile >> value;
 	configuration["screensaverprogram"] = value;
+        log1("found ScreenSaverProgram:", value)
       }
 
       if (token == "OneClick:") {
