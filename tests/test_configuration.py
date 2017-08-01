@@ -7,8 +7,12 @@
 import os
 
 def run_kdesk_configuration(configuration):
+
+    # allow the tests to run either isolated on this repo, or on a kano os image / real RPI
+    os.environ["PATH"] = '../src:' + os.environ['PATH']
+
     # we run kdesk in test mode, possibly with custom configuration file
-    command='../src/kdesk-dbg -v -t'
+    command='kdesk-dbg -v -t'
     if configuration:
         command += ' -c {}'.format(configuration)
     return os.popen(command).read()
