@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
   kprintf ("initializing...\n");
   struct passwd *pw = getpwuid(getuid());
   const char *homedir = pw->pw_dir;
-  bool bgeneric, buser = false;
+  bool bconf, buser = false;
   strKdeskRC     = FILE_KDESKRC;
   strHomeKdeskRC = homedir + string("/") + string(FILE_HOME_KDESKRC);
   strKdeskDir    = DIR_KDESKTOP;
@@ -309,7 +309,8 @@ int main(int argc, char *argv[])
   // Load a custom configuration
   if (configuration_file.length()) {
       kprintf ("loading custom configuration file: %s\n", configuration_file.c_str());
-      if (conf.load_conf(configuration_file.c_str()) == false) {
+      bconf = conf.load_conf(configuration_file.c_str());
+      if (!bconf) {
           kprintf ("could not read custom configuration settings\n");
           exit(1);
       }
@@ -318,13 +319,13 @@ int main(int argc, char *argv[])
       // Load system wide configuration file from /usr/share
       // And override any settings provided by the user's home dir configuration
       kprintf ("loading generic configuration file: %s\n", strKdeskRC.c_str());
-      bgeneric = conf.load_conf(strKdeskRC.c_str());
+      bconf = conf.load_conf(strKdeskRC.c_str());
   }
 
   // combine loaded configuration with custom settings located in the users HOME dir
   kprintf ("overriding settings with home configuration file: %s\n", strHomeKdeskRC.c_str());
   buser = conf.load_conf(strHomeKdeskRC.c_str());
-  if (bgeneric == false && buser == false) {
+  if (bconf == false && buser == false) {
       kprintf ("could not read generic or user configuration settings\n");
       exit(1);
   }
