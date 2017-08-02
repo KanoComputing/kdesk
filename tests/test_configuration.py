@@ -42,3 +42,22 @@ def test_config_combined_with_custom():
 
     out=run_kdesk_configuration(config_file)
     assert(out.find('found ScreenSaverTimeout: 10') != -1)
+
+def test_config_combined_with_absent_home():
+    config_file='configurations/kdeskrc_test'
+    homeconf='{}/.kdeskrc'.format(os.getenv("HOME"))
+    if os.path.isfile(homeconf):
+        os.remove(homeconf)
+
+    out=run_kdesk_configuration(config_file)
+    assert(out.find('found ScreenSaverTimeout: 30') != -1)
+    assert(out.find('could not read generic or user configuration settings') == -1)
+
+def test_config_custom_missing():
+    config_file='configurations/nonexistent'
+    homeconf='{}/.kdeskrc'.format(os.getenv("HOME"))
+    if os.path.isfile(homeconf):
+        os.remove(homeconf)
+
+    out=run_kdesk_configuration(config_file)
+    assert(out.find('Could not find configuration file: {}'.format(config_file)) != -1)
