@@ -1,3 +1,10 @@
+kdesk (4.0.0-0) unstable; urgency=low
+
+  * Build for Debian Stretch
+  * Added flag -m to disable MIT-SHM XServer extension
+
+ -- Team Kano <dev@kano.me>  Tue, 22 May 2018 14:46:00 +0100
+
 kdesk (1.6-3) unstable; urgency=low
 
   * Added support for localizing desktop icons
