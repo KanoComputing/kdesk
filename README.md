@@ -18,7 +18,7 @@ Check all the detailed information in the [wiki](https://github.com/KanoComputin
 [Collaboration](https://github.com/KanoComputing/kdesk/wiki/Collaboration)  
 
 
-###Localization
+### Localization
 
 kdesk supports localization of two icon file types: `Icon` and `IconHover`.
 

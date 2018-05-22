@@ -23,6 +23,8 @@
 
 #include "X11/extensions/scrnsaver.h"
 
+#include <X11/extensions/XShm.h>
+
 #include "version.h"
 #include "main.h"
 #include "icon.h"
@@ -32,6 +34,7 @@
 #include "logging.h"
 #include "ssaver.h"
 
+
 // A printf macro sensitive to the -v (verbose) flag
 // Use kprintf for regular stdout messages instead of printf or cout
 bool verbose=false; // Kdesk is mute by default, no stdout messages unless in Debug build
@@ -39,6 +42,10 @@ bool verbose=false; // Kdesk is mute by default, no stdout messages unless in De
 
 // The desktop object will be dynamically accessed to refresh the configuration
 static Desktop dsk;
+
+// Flag to enable imlib2 to use the MIT-SHM X11 extension, see command line options.
+// Disabled by default to fix black areas on Debian Stretch
+bool enable_shm=false;
 
 // local function prototypes
 void signal_callback_handler(int signum);
@@ -158,6 +165,23 @@ void close_display(Display *display)
     XCloseDisplay(display);
 }
 
+
+/*
+ * XShmQueryExtension
+ *
+ * This is an instrumented function that replaces the official API
+ * from the libXext library - X11 extensions. It allows to disable this extension for kdesk.
+ *
+ * On Debian Stretch, using the MIT-SHM extension from imlib2 produces unfortunate
+ * graphics artifacts that break the rendering with black areas.
+ *
+ */
+int XShmQueryExtension(Display *d)
+{
+    return (enable_shm);
+}
+
+
 int main(int argc, char *argv[])
 {
   Status rc;
@@ -169,8 +193,9 @@ int main(int argc, char *argv[])
   bool reload = false, running=true;
   int c;
 
+
   // Collect command-line parameters
-  while ((c = getopt(argc, argv, "?htwsc:ria:vqj:")) != EOF)
+  while ((c = getopt(argc, argv, "?htwsc:ria:vqmj:")) != EOF)
     {
       switch (c)
         {
@@ -187,6 +212,7 @@ int main(int argc, char *argv[])
 	  cout << " -i refresh desktop icons only and exit" << endl;
 	  cout << " -q query if kdesk is running on the current desktop (rc 0 running, nonzero otherwise)" << endl;
 	  cout << " -a <icon name> send an icon hook alert" << endl;
+	  cout << " -m enable the use of MIT-SHM XServer extension (default=" << enable_shm << ")" << endl;
 	  cout << " -j <icon name> get a json dump of the icon position on the desktop" << endl << endl;
 	  exit (1);
 
@@ -263,6 +289,11 @@ int main(int argc, char *argv[])
 	    exit(0);
 	  }
 	  exit(1);
+
+        case 'm':
+            kprintf ("Enabling use of the MIT-SHM Xserver extension\n");
+            enable_shm=true;
+            break;
 
 	case 'q':
 	  if (!display) {
