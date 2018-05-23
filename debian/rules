@@ -3,8 +3,14 @@
 %:
 	dh $@
 
+override_dh_auto_build:
+	# FIXME: The chroot environment should handle these links
+	ln -sfv -r /opt/vc/lib/libbrcmEGL.so /opt/vc/lib/libEGL.so
+	ln -sfv -r /opt/vc/lib/libbrcmGLESv2.so /opt/vc/lib/libGLESv2.so
+	make kdesk
+
 override_dh_strip:
-	# don't strip synmbols off libkdesk-hourglass.so
+	# don't strip symbols off libkdesk-hourglass.so
 	# FIXME: find a better way to resolve this issue
 
 override_dh_shlibdeps:
