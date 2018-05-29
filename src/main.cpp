@@ -187,6 +187,7 @@ int main(int argc, char *argv[])
   Status rc;
   Display *display=get_current_display();
   Configuration conf;
+  KSAVER_DATA ksaver_data;
   string strKdeskRC, strHomeKdeskRC, strKdeskDir, strKdeskUser;
   string configuration_file;
   bool test_mode = false, wallpaper_mode = false, screen_saver_mode = false;
@@ -439,16 +440,18 @@ int main(int argc, char *argv[])
   if (conf.get_config_int("screensavertimeout") > 0) {
 
     int rc=0, event_base=0, error_base=0;
+
     rc = XScreenSaverQueryExtension (display, &event_base, &error_base);
     if (rc == 0) {
       kprintf ("This XServer does not provide Screen Saver extensions - disabling\n");
     }
     else {
-      KSAVER_DATA ksaver_data;
+      memset(&ksaver_data, 0, sizeof(KSAVER_DATA));
+
       ksaver_data.display_name  = NULL;   // NULL means the currently attached display
       ksaver_data.idle_timeout  = conf.get_config_int("screensavertimeout");
-      ksaver_data.saver_program = conf.get_config_string("screensaverprogram").c_str();
-      ksaver_data.saver_hooks = conf.get_config_string("iconhook").c_str();
+      ksaver_data.saver_program = strdup(conf.get_config_string("screensaverprogram").c_str());
+      ksaver_data.saver_hooks   = strdup(conf.get_config_string("iconhook").c_str());
       setup_ssaver (&ksaver_data);
     }
 
@@ -463,6 +466,8 @@ int main(int argc, char *argv[])
 
         // terminate gracefully via user signal SIGUSR1
         kprintf ("terminating screensaver mode gracefully\n");
+        free(ksaver_data.saver_program);
+        free(ksaver_data.saver_hooks);
         exit(0);
     }
   }
@@ -504,6 +509,12 @@ int main(int argc, char *argv[])
     }
 
   } while (running == true);
+
+  // Free strings used to start screen saver
+  if (ksaver_data.saver_program)
+      free(ksaver_data.saver_program);
+  if (ksaver_data.saver_hooks)
+      free(ksaver_data.saver_hooks);
 
   kprintf ("kdesk is finishing...\n");
   exit (0);
