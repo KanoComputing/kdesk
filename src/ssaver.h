@@ -17,10 +17,10 @@
 
 typedef struct _ksaver_data {
 
-  const char *display_name;           // Usually this can be set to NULL to attach to first available display
-  unsigned long idle_timeout;         // seconds to idle before starting the screen saver
-  const char *saver_program;          // path to binary program that paints the screen saver
-  const char *saver_hooks;            // path to a hook script that will be executed to alert on screen saver transitions (start, finish)
+  char *display_name;           // Usually this can be set to NULL to attach to first available display
+  unsigned long idle_timeout;   // seconds to idle before starting the screen saver
+  char *saver_program;          // path to binary program that paints the screen saver
+  char *saver_hooks;            // path to a hook script that will be executed to alert on screen saver transitions (start, finish)
 
 } KSAVER_DATA;
 
