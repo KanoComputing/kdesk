@@ -1,1 +1,2 @@
-src/kdesk-dbg /usr/bin
+#!/usr/bin/dh-exec
+build/debug/kdesk/kdesk => /usr/bin/kdesk-dbg

@@ -15,9 +15,9 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include "main.h"
-#include "configuration.h"
-#include "logging.h"
+#include "kdesk/paths.h"
+#include "kdesk/configuration.h"
+#include "kdesk/logging.h"
 
 // Name of the reserved icon filename which will always
 // be positioned at the last cell of the grid

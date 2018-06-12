@@ -7,19 +7,12 @@
 all: kdesk
 
 kdesk:
-	cd src/libkdesk-hourglass && make all
-
-	cd src && make -B
-	cd src && make debug -B
-
-	cd src/kdesk-eglsaver && make all
-	cd src/kdesk-blur && make all
+	mkdir -p build/release
+	cd build/release && cmake -DCMAKE_BUILD_TYPE=Release ../../src && make
 
 debug:
-	cd src/libkdesk-hourglass && make all
-	cd src && make debug -B
-	cd src/kdesk-eglsaver && make debug
-	cd src/kdesk-blur && make debug
+	mkdir -p build/debug
+	cd build/debug && cmake -DCMAKE_BUILD_TYPE=Debug ../../src && make
 
 kano-debber:
 	mkdir -p /home/user/.kdesktop

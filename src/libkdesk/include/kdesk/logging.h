@@ -1,11 +1,19 @@
-//
-// Macro to log in debug mode. When built for release, the code just disappears.
-//
-// Copyright (C) 2013-2014 Kano Computing Ltd.
-// License: http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
-//
-// An app to show and bring life to Kano-Make Desktop Icons.
-//
+/**
+ * logging.h
+ *
+ * Copyright (C) 2013-2018 Kano Computing Ltd.
+ * License: http://www.gnu.org/licenses/gpl-2.0.txt GNU GPLv2
+ *
+ * Macro to log in debug mode. When built for release, the code just disappears.
+ *
+ * An app to show and bring life to Kano-Make Desktop Icons.
+ *
+ */
+
+
+#ifndef __KDESK_LOGGING_H__
+#define __KDESK_LOGGING_H__
+
 
 #include <iostream>
 
@@ -34,3 +42,6 @@ using namespace std;
 #define log4(s,f,j,k,l)   {}
 #define log5(s,f,j,k,l,m) {}
 #endif
+
+
+#endif  // __KDESK_LOGGING_H__

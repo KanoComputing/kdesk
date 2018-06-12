@@ -25,13 +25,14 @@
 
 #include <X11/extensions/XShm.h>
 
+#include <kdesk/logging.h>
+#include <kdesk/paths.h>
+
 #include "version.h"
-#include "main.h"
 #include "icon.h"
 #include "background.h"
 #include "sound.h"
 #include "desktop.h"
-#include "logging.h"
 #include "ssaver.h"
 
 

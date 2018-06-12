@@ -10,8 +10,8 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#include "configuration.h"
-#include "logging.h"
+#include <kdesk/configuration.h>
+#include <kdesk/logging.h>
 #include "sound.h"
 
 Sound::Sound (Configuration *loaded_conf)

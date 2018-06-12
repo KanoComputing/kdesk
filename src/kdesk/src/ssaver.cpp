@@ -13,15 +13,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "logging.h"
-#include "ssaver.h"
-
 #include <sys/wait.h>
 
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <linux/vt.h>
 #include <unistd.h>
+
+#include <kdesk/logging.h>
+
+#include "ssaver.h"
 
 // Returns the currently active tty on the local system
 // If 0 is returned this info could not be obtained

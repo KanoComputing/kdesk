@@ -22,8 +22,9 @@
 #include <algorithm>
 #include <cctype>
 
+#include <kdesk/logging.h>
+
 #include "icon.h"
-#include "logging.h"
 #include "grid.h"
 
 Icon::Icon (Configuration *loaded_conf, int iconidx)

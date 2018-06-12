@@ -1,8 +1,7 @@
-src/libkdesk-hourglass/libkdesk-hourglass.so /usr/lib
-src/libkdesk-hourglass/kdesk-hourglass.h /usr/include/
-src/libkdesk-hourglass/testlib.py /usr/share/doc/kdesk
-src/libkdesk-hourglass/testmodule.py /usr/share/doc/kdesk
-src/libkdesk-hourglass/testdynlib.cpp /usr/share/doc/kdesk
-src/libkdesk-hourglass/testshared.cpp /usr/share/doc/kdesk
-src/libkdesk-hourglass/python/* /usr/lib/python2.7/dist-packages/kdesk
-src/libkdesk-hourglass/kdesk-hourglass-app /usr/bin
+build/release/libkdesk-hourglass/kdesk-hourglass-app /usr/bin
+build/release/libkdesk-hourglass/libkdesk-hourglass.so /usr/lib
+build/release/libkdesk/libkdesk.a /usr/lib
+src/libkdesk-hourglass/include/* /usr/include/
+src/libkdesk-hourglass/examples /usr/share/doc/kdesk
+src/libkdesk-hourglass/python/kdesk /usr/lib/python2.7/dist-packages/
+src/libkdesk/include/* /usr/include

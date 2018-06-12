@@ -5,9 +5,10 @@
 // License: http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
 //
 
-#include "configuration.h"
+#include <kdesk/configuration.h>
+#include <kdesk/logging.h>
+
 #include "grid.h"
-#include "logging.h"
 
 
 // Static non-const member variable need be defined at file scope

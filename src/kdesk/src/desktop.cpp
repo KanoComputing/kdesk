@@ -23,16 +23,16 @@
 
 #include <kdesk-hourglass.h>
 
-#include "main.h"
-
 #include <unistd.h>
 #include <map>
+
+#include <kdesk/logging.h>
+#include <kdesk/paths.h>
 
 #include "icon.h"
 #include "sound.h"
 #include "background.h"
 #include "desktop.h"
-#include "logging.h"
 #include "grid.h"
 
 Desktop::Desktop(void)

@@ -14,9 +14,10 @@
 #include <memory.h>
 #include <stdlib.h>
 
-#include "configuration.h"
+#include <kdesk/configuration.h>
+#include <kdesk/logging.h>
+
 #include "background.h"
-#include "logging.h"
 
 Background::Background (Configuration *loaded_conf)
 {

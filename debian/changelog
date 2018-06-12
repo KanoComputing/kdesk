@@ -1,13 +1,9 @@
-kdesk (4.0.1-0) unstable; urgency=low
-
-  * Fixed a memory leak that stopped screen saver from working
-
- -- Team Kano <dev@kano.me>  Tue, 29 May 2018 15:27:00 +0100
-
 kdesk (4.0.0-0) unstable; urgency=low
 
   * Build for Debian Stretch
   * Added flag -m to disable MIT-SHM XServer extension
+  * Fixed a memory leak that stopped screen saver from working
+  * Split out core functionality into library
 
  -- Team Kano <dev@kano.me>  Tue, 22 May 2018 14:46:00 +0100
 

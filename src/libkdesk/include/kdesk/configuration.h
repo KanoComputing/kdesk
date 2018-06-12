@@ -1,11 +1,17 @@
-//
-// config.h
-//
-// Copyright (C) 2013-2014 Kano Computing Ltd.
-// License: http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
-//
-// An app to show and bring life to Kano-Make Desktop Icons.
-//
+/**
+ * config.h
+ *
+ * Copyright (C) 2013-2018 Kano Computing Ltd.
+ * License: http://www.gnu.org/licenses/gpl-2.0.txt GNU GPLv2
+ *
+ * An app to show and bring life to Kano-Make Desktop Icons.
+ *
+ */
+
+
+#ifndef __KDESK_CONFIGURATION_H__
+#define __KDESK_CONFIGURATION_H__
+
 
 #include <fstream>
 #include <iostream>
@@ -44,3 +50,6 @@ class Configuration
   int get_icon_int(int iconid, std::string key);
   int get_numicons(void);
 };
+
+
+#endif  // __KDESK_CONFIGURATION_H__

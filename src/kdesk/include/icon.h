@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-#include "configuration.h"
+#include <kdesk/configuration.h>
 
 // Default icon cursor when mouse moves over the icon
 // 

@@ -3,7 +3,9 @@ Maintainer: Team Kano <dev@kano.me>
 Section: x11
 Priority: optional
 Standards-Version: 1.1.0
-Build-Depends: libx11-dev, libxft-dev, libimlib2-dev, libstartup-notification0-dev, libxss-dev, libraspberrypi-dev, debhelper (>=9.0.0), g++-4.7
+Build-Depends: debhelper (>=9.0.0), dh-exec, libx11-dev, libxft-dev,
+ libimlib2-dev, libstartup-notification0-dev, libxss-dev, libraspberrypi-dev,
+ g++-4.7, cmake, make, g++
 
 Package: kdesk
 Architecture: any

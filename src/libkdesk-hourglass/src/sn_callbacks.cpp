@@ -19,7 +19,7 @@
 #define SN_API_NOT_YET_FROZEN
 #include <libsn/sn.h>
 
-#include "logging.h"
+#include <kdesk/logging.h>
 
 unsigned int error_trap_depth;
 

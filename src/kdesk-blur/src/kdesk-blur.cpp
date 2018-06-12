@@ -16,7 +16,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include "logging.h"
+#include "kdesk/logging.h"
 #include "kdesk-blur.h"
 
 void *BlurDesktop (void *pvnothing);
