@@ -20,11 +20,13 @@ class Background
 
  public:
   bool running;
+  int screen;
 
  public:
   Background (Configuration *loaded_conf);
   virtual ~Background (void);
-  
+
+  int setRootAtoms (Display *display, Pixmap pixmap);
   bool setup (Display *display);
   bool load (Display *display);
   bool draw (Display *display);
